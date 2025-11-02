@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import userRoutes from './routes/userRoutes';
 
 const app = express();
 
@@ -14,6 +15,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Participium API is running' });
 });
+
+// Routes
+app.use('/api/users', userRoutes);
 
 export default app;
 
