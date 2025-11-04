@@ -4,6 +4,8 @@ export class UserDTO {
   username: string;
   firstName: string;
   lastName: string;
+  role: "CITIZEN";
   createdAt: Date;
 }
+
 

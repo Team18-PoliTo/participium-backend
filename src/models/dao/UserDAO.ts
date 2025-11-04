@@ -1,5 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
 
+export type UserRole = "CITIZEN";
+
 @Entity("users")
 class UserDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
@@ -17,10 +19,19 @@ class UserDAO {
   @Column({ nullable: false })
   lastName: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, select: false })
   password: string;
 
-  @CreateDateColumn()
+  @Column({ type: "varchar", default: "CITIZEN" })
+  role: UserRole;
+
+  @Column({ type: "int", default: 0 })
+  failedLoginAttempts: number;
+
+  @Column({ type: "datetime", nullable: true })
+  lastLoginAt?: Date;
+
+  @CreateDateColumn({ type: "datetime" })
   createdAt: Date;
 }
 
