@@ -19,7 +19,9 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // Routes
 app.use('/api/users', userRoutes);
-app.use('/api/internalUsers', internalUserRoutes); // Example for internal user routes
+
+// add here authorization, everything under here is protected
+app.use('/api/admin', internalUserRoutes); // Example for internal user routes
 
 export default app;
 
