@@ -9,7 +9,11 @@ export class InternalUserMapper {
       firstName: userDAO.firstName,
       lastName: userDAO.lastName,
       createdAt: userDAO.createdAt,
-      role: userDAO.role.id,
+      // role may be undefined if relations weren't loaded; default to 0 (TBD)
+      role:
+        userDAO.role && (userDAO.role as any).id !== undefined
+          ? (userDAO.role as any).id
+          : 0,
     };
   }
 }
