@@ -9,6 +9,7 @@ export class UserMapper {
       username: userDAO.username,
       firstName: userDAO.firstName,
       lastName: userDAO.lastName,
+      role: userDAO.role,
       createdAt: userDAO.createdAt
     };
   }
