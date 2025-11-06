@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import userRoutes from './routes/userRoutes';
+import internalUserRoutes from './routes/internalUserRoutes';
 
 const app = express();
 
@@ -18,6 +19,9 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // Routes
 app.use('/api/users', userRoutes);
+
+// add here authorization, everything under here is protected
+app.use('/api/admin', internalUserRoutes); // Example for internal user routes
 
 export default app;
 

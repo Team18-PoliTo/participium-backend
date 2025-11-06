@@ -1,0 +1,18 @@
+import { Router } from 'express';
+import InternalUserController from '../controllers/InternalUserController';
+import InternalUserService from '../services/internalUserService';
+import InternalUserRepository from '../repositories/InternalUserRepository';
+
+const router = Router();
+
+// Dependency Injection Setup
+const internalUserRepository = new InternalUserRepository();
+const internalUserService = new InternalUserService(internalUserRepository);
+const internalUserController = new InternalUserController(internalUserService);
+
+// POST /register - Register a new internalUser
+// to add authorization layer
+router.post('/addEmployee', internalUserController.create.bind(internalUserController));
+
+export default router;
+
