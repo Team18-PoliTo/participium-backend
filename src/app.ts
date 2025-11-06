@@ -21,7 +21,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 app.use('/api/users', userRoutes);
 
 // add here authorization, everything under here is protected
-app.use('/api/admin', internalUserRoutes); // Example for internal user routes
+app.use('/api/admin', internalUserRoutes);
 
 export default app;
 

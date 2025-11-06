@@ -1,6 +1,9 @@
 import { InternalUserMapper } from "../mappers/InternalUserMapper";
 import { InternalUserDTO } from "../models/dto/InternalUserDTO";
-import { RegisterInternalUserRequestDTO } from "../models/dto/RegisterInternalUserRequestDTO";
+import {
+  RegisterInternalUserRequestDTO,
+  UpdateInternalUserRequestDTO,
+} from "../models/dto/ValidRequestDTOs";
 import InternalUserDAO from "../models/dao/InternalUserDAO";
 import InternalUserRepository from "../repositories/InternalUserRepository";
 import * as bcrypt from "bcrypt";
@@ -9,6 +12,8 @@ import RoleRepository from "../repositories/RoleRepository";
 interface IInternalUserRepository {
   create(user: Partial<InternalUserDAO>): Promise<InternalUserDAO>;
   findByEmail(email: string): Promise<InternalUserDAO | null>;
+  findById(id: number): Promise<InternalUserDAO | null>;
+  update(user: InternalUserDAO): Promise<InternalUserDAO>;
 }
 
 class InternalUserService {
@@ -45,6 +50,34 @@ class InternalUserService {
     });
 
     return InternalUserMapper.toDTO(newInternalUser);
+  }
+
+  async update(
+    id: number,
+    data: UpdateInternalUserRequestDTO,
+  ): Promise<InternalUserDTO> {
+    const internalUserDAO = await this.userRepository.findById(id);
+    if (!internalUserDAO) {
+      throw new Error("InternalUser not found");
+    }
+    // Update fields
+    if (data.newFirstName !== undefined) {
+      internalUserDAO.firstName = data.newFirstName;
+    }
+    if (data.newLastName !== undefined) {
+      internalUserDAO.lastName = data.newLastName;
+    }
+    if (data.newEmail !== undefined) {
+      const existingUser = await this.userRepository.findByEmail(data.newEmail!);
+      if (existingUser && existingUser.id !== id) {
+        throw new Error("Email already in use by another user");
+      }
+      internalUserDAO.email = data.newEmail;
+    }
+    const updatedInternalUser = await this.userRepository.update(
+      internalUserDAO
+    );
+    return InternalUserMapper.toDTO(updatedInternalUser);
   }
 }
 
