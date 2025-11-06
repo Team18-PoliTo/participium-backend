@@ -9,6 +9,7 @@ interface IUserRepository {
   create(user: Partial<UserDAO>): Promise<UserDAO>;
   findByEmail(email: string): Promise<UserDAO | null>;
   findByUsername(username: string): Promise<UserDAO | null>;
+  fetchAll():Promise<UserDAO[]>;
 }
 
 class UserService {
