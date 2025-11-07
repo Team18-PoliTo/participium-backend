@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { RegisterRequestDTO } from "../models/dto/RegisterRequestDTO";
+import { RegisterRequestDTO } from "../models/dto/ValidRequestDTOs";
 import { IUserService } from "../services/IUserService";
 import { validate } from "class-validator";
 import {plainToClass, plainToInstance} from "class-transformer";

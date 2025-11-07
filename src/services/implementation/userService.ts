@@ -1,6 +1,6 @@
 import { UserMapper } from "../../mappers/UserMapper";
 import { UserDTO } from "../../models/dto/UserDTO";
-import { RegisterRequestDTO } from "../../models/dto/RegisterRequestDTO";
+import { RegisterRequestDTO } from "../../models/dto/ValidRequestDTOs";
 import UserRepository from "../../repositories/implementation/UserRepository";
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";

@@ -1,6 +1,6 @@
-import {RegisterRequestDTO} from "../models/dto/RegisterRequestDTO";
-import {UserDTO} from "../models/dto/UserDTO";
-import {LoginRequestDTO} from "../models/dto/LoginRequestDTO";
+import { RegisterRequestDTO } from "../models/dto/ValidRequestDTOs";
+import { UserDTO } from "../models/dto/UserDTO";
+import { LoginRequestDTO } from "../models/dto/LoginRequestDTO";
 
 export interface IUserService {
     register(registerData: RegisterRequestDTO): Promise<UserDTO>;
