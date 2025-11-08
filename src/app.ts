@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import userRoutes from './routes/userRoutes';
-import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 
@@ -19,7 +18,5 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // Routes
 app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-
 export default app;
 

@@ -25,10 +25,6 @@ export class UserRepository implements IUserRepository {
   async findByUsername(username: string): Promise<UserDAO | null> {
     return await this.repo.findOne({ where: { username } });
   }
-
-  async fetchAll(): Promise<UserDAO[]>{
-    return await this.repo.find();
-  }
 }
 
 export default UserRepository;
