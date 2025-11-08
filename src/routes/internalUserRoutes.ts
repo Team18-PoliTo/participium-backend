@@ -10,6 +10,9 @@ const internalUserRepository = new InternalUserRepository();
 const internalUserService = new InternalUserService(internalUserRepository);
 const internalUserController = new InternalUserController(internalUserService);
 
+//GET /users - GET all internalUsers
+router.get('/users',internalUserController.fetch.bind(internalUserController));
+
 // POST /register - Register a new internalUser
 router.post('/addEmployee', internalUserController.create.bind(internalUserController));
 
