@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import userRoutes from './routes/userRoutes';
 import internalUserRoutes from './routes/internalUserRoutes';
+import { requireAuth, requireAdmin } from './middleware/authMiddleware';
 
 const app = express();
 
@@ -12,16 +13,17 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Participium API is running' });
 });
 
-// Routes
+// Public (citizen) routes
 app.use('/api/users', userRoutes);
 
-// add here authorization, everything under here is protected
-app.use('/api/admin', internalUserRoutes);
+// Protected admin-only routes
+app.use('/api/admin', requireAuth, requireAdmin, internalUserRoutes);
 
 export default app;
+
 
