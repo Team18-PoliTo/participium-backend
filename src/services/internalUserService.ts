@@ -14,6 +14,7 @@ interface IInternalUserRepository {
   findByEmail(email: string): Promise<InternalUserDAO | null>;
   findById(id: number): Promise<InternalUserDAO | null>;
   update(user: InternalUserDAO): Promise<InternalUserDAO>;
+  fetchAll(): Promise<InternalUserDAO []>
 }
 
 class InternalUserService {
@@ -79,6 +80,12 @@ class InternalUserService {
     );
     return InternalUserMapper.toDTO(updatedInternalUser);
   }
+
+  async fetchUsers(): Promise<InternalUserDTO []>{
+    const users = await this.userRepository.fetchAll();
+    return users.map((user) => InternalUserMapper.toDTO(user));
+  }
+
 }
 
 export const userService = new InternalUserService();

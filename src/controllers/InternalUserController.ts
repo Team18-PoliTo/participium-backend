@@ -13,6 +13,7 @@ interface IInternalUserService {
     id: number,
     data: UpdateInternalUserRequestDTO
   ): Promise<InternalUserDTO>;
+  fetchUsers(): Promise<InternalUserDTO[]>;
 }
 
 class InternalUserController {
@@ -75,6 +76,22 @@ class InternalUserController {
       next(error);
     }
   }
+
+  async fetch(req: Request, res: Response, next: NextFunction): Promise<void>{
+    try {
+      const users = await this.internalUserService.fetchUsers();
+      res.status(200).json(users);
+    } catch (error) {
+      if (
+        error instanceof Error        
+      ) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
 }
 
 export default InternalUserController;
