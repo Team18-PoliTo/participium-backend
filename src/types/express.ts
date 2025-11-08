@@ -1,11 +1,5 @@
 import 'express';
-
-export type AuthInfo = {
-    sub: number;
-    kind: 'internal' | 'public';
-    role?: string;
-    email?: string;
-};
+import type { AuthInfo } from './AuthInfo';
 
 declare global {
     namespace Express {
