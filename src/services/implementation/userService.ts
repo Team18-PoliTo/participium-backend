@@ -56,6 +56,14 @@ class UserService implements IUserService {
 
     return { token, user: UserMapper.toDTO(user) };
   }
+
+  async disableUserById(id: number): Promise<'ok' | 'not_found'> {
+    const user = await this.userRepository.findById(id);
+    if (!user) return 'not_found';
+
+    await this.userRepository.update(id, { deletedAt: new Date() });
+    return 'ok';
+  }
 }
 
 export const userService = new UserService();

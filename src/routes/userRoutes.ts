@@ -16,5 +16,7 @@ router.post('/register', userController.register.bind(userController));
 // POST /login - Authenticate user
 router.post('/login', userController.login.bind(userController));
 
+router.delete('/users/:id',  userController.deleteUser.bind(userController));
+
 export default router;
 

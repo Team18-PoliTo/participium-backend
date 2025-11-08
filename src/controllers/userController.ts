@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { RegisterRequestDTO } from "../models/dto/ValidRequestDTOs";
 import { IUserService } from "../services/IUserService";
 import { validate } from "class-validator";
-import {plainToClass, plainToInstance} from "class-transformer";
+import { plainToInstance} from "class-transformer";
 import {LoginRequestDTO} from "../models/dto/LoginRequestDTO";
 
 
@@ -49,6 +49,31 @@ class UserController {
         res.status(401).json({ error: "Invalid credentials" });
         return;
       }
+      next(err);
+    }
+  }
+
+  async deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id <= 0) {
+        res.status(400).json({ message: 'Invalid user id' });
+        return;
+      }
+
+      if (req.auth && req.auth.sub === id) {
+        res.status(400).json({ message: 'You cannot delete your own account' });
+        return;
+      }
+
+      const result = await this.userService.disableUserById(id);
+      if (result === 'not_found') {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+
+      res.status(204).send();
+    } catch (err) {
       next(err);
     }
   }

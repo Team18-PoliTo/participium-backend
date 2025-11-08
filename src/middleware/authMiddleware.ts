@@ -105,7 +105,4 @@ export const requireRole = (allowedRoles: string[]) => {
     };
 };
 
-/**
- * Shortcut for admin-only access
- */
 export const requireAdmin = requireRole(['ADMIN']);

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, DeleteDateColumn} from "typeorm";
 
 export type UserRole = "CITIZEN";
 
@@ -33,6 +33,9 @@ class UserDAO {
 
   @CreateDateColumn({ type: "datetime" })
   createdAt: Date;
+
+  @DeleteDateColumn({ type: "datetime", nullable: true })
+  deletedAt: Date | null;
 }
 
 export default UserDAO;
