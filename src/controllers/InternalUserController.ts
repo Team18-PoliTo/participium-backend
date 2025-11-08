@@ -156,7 +156,9 @@ class InternalUserController {
       const users = await this.internalUserService.fetchUsers();
       res.status(200).json(users);
     } catch (error) {
-      if (error instanceof Error) {
+      if (
+        error instanceof Error        
+      ) {
         res.status(400).json({ error: error.message });
         return;
       }
