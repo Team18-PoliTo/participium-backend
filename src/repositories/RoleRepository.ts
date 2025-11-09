@@ -5,6 +5,7 @@ import RoleDAO from "../models/dao/RoleDAO";
 interface IRoleRepository {
   create(role: RoleDAO): Promise<RoleDAO>;
   findById(id: number): Promise<RoleDAO | null>;
+  findAll() :Promise<RoleDAO[]>;
 }
 
 export class RoleRepository implements IRoleRepository {
@@ -21,6 +22,10 @@ export class RoleRepository implements IRoleRepository {
   
   async findById(id: number): Promise<RoleDAO | null> {
     return await this.repo.findOneBy({ id });
+  }
+
+  async findAll() :Promise<RoleDAO[]>{
+    return await this.repo.find();
   }
 }
 
