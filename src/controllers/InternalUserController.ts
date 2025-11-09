@@ -99,7 +99,6 @@ class InternalUserController {
         return;
       }
 
-      // Если у тебя в req.auth.sub лежит id текущего internal user — можно защититься от самоудаления:
       if ((req as any).auth?.sub && Number((req as any).auth.sub) === id) {
         res.status(403).json({ message: 'You cannot delete your own account' });
         return;
