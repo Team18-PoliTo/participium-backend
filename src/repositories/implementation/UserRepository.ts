@@ -28,10 +28,6 @@ export class UserRepository implements IUserRepository {
     return await this.repo.findOne({ where: { username } });
   }
 
-  async findById(id: number): Promise<UserDAO | null> {
-    return await this.repo.findOne({ where: { id } });
-  }
-
   async update(id: number, patch: Partial<UserDAO>): Promise<void> {
     await this.repo.update({ id }, patch);
   }

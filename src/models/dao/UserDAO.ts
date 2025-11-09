@@ -33,9 +33,6 @@ class UserDAO {
 
   @CreateDateColumn({ type: "datetime" })
   createdAt: Date;
-
-  @DeleteDateColumn({ type: "datetime", nullable: true })
-  deletedAt: Date | null;
 }
 
 export default UserDAO;

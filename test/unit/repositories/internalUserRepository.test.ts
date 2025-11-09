@@ -1,6 +1,7 @@
 import  InternalUserRepository  from "../../../src/repositories/InternalUserRepository"
 import InternalUserDAO from "../../../src/models/dao/InternalUserDAO";
 import { Repository } from "typeorm";
+import UserDAO from "../../../src/models/dao/UserDAO";
 
 describe("InternalUserRepository", () => {
   let repo: InternalUserRepository;
@@ -63,6 +64,35 @@ describe("InternalUserRepository", () => {
       expect(result).toBeNull();
     });
   });
+
+  describe("findById", () => {
+    it("should call findOne with where.id and relations and return the user", async () => {
+      const user = { id: 55, email: "u@test.com", role: {} } as InternalUserDAO;
+      typeOrmMock.findOne.mockResolvedValue(user);
+
+      const result = await repo.findById(55);
+
+      expect(typeOrmMock.findOne).toHaveBeenCalledWith({
+        where: { id: 55 },
+        relations: ["role"],
+      });
+      expect(result).toBe(user);
+    });
+
+    it("should return null when user does not exist", async () => {
+      typeOrmMock.findOne.mockResolvedValue(null);
+
+      const result = await repo.findById(55);
+
+      expect(typeOrmMock.findOne).toHaveBeenCalledWith({
+        where: { id: 55 },
+        relations: ["role"],
+      });
+      expect(result).toBeNull();
+    });
+  });
+
+
 
   describe("update", () => {
     it("should save and return the updated user", async () => {
