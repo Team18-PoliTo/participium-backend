@@ -127,5 +127,71 @@ describe("InternalUserService", () => {
       expect(result.lastName).toBe("B");
       expect(result.email).toBe("a@b.com");
     });
+
+
+    describe("fetchUsers", () => {
+      beforeEach(() => {
+        userRepositoryMock.fetchAll = jest.fn();
+      });
+
+      it("should return mapped list of users", async () => {
+        const t1 = new Date("2024-01-02T03:04:05.000Z");
+        const t2 = new Date("2024-01-03T10:20:30.000Z");
+
+        const daoUsers: any[] = [
+          {
+            id: 1,
+            email: "a@b.com",
+            firstName: "A",
+            lastName: "B",
+            role: 0,
+            createdAt: t1,
+            password: "hash",
+          },
+          {
+            id: 2,
+            email: "x@y.com",
+            firstName: "X",
+            lastName: "Y",
+            role: 0,
+            createdAt: t2,
+            password: "hash2",
+          },
+        ];
+
+        (userRepositoryMock.fetchAll as jest.Mock).mockResolvedValue(daoUsers);
+
+        const result = await service.fetchUsers();
+
+        expect(userRepositoryMock.fetchAll).toHaveBeenCalledTimes(1);
+        expect(result).toEqual([
+          expect.objectContaining({
+            id: 1,
+            email: "a@b.com",
+            firstName: "A",
+            lastName: "B",
+            role: 0,
+            createdAt: t1,
+          }),
+          expect.objectContaining({
+            id: 2,
+            email: "x@y.com",
+            firstName: "X",
+            lastName: "Y",
+            role: 0,
+            createdAt: t2,
+          }),
+        ]);
+      });
+
+      it("should return empty array when no users exist", async () => {
+        (userRepositoryMock.fetchAll as jest.Mock).mockResolvedValue([]);
+
+        const result = await service.fetchUsers();
+
+        expect(userRepositoryMock.fetchAll).toHaveBeenCalledTimes(1);
+        expect(result).toEqual([]);
+      });
+    });
   });
 });
