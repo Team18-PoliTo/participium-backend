@@ -7,6 +7,7 @@ interface IInternalUserRepository {
   findByEmail(email: string): Promise<InternalUserDAO | null>;
   findById(id: number): Promise<InternalUserDAO | null>;
   update(user: InternalUserDAO): Promise<InternalUserDAO>;
+  fetchAll(): Promise<InternalUserDAO []>;
 }
 
 export class InternalUserRepository implements IInternalUserRepository {
@@ -29,6 +30,9 @@ export class InternalUserRepository implements IInternalUserRepository {
   }
   async update(user: InternalUserDAO): Promise<InternalUserDAO> {
     return await this.repo.save(user);
+  }
+  async fetchAll(): Promise<InternalUserDAO []> {
+    return await this.repo.find(); 
   }
 }
 

@@ -73,6 +73,7 @@ const userController = new UserController(userService);
  * /users/register:
  *   post:
  *     summary: Register a new citizen user
+ *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:
@@ -99,6 +100,7 @@ router.post("/register", userController.register.bind(userController));
  * /users/login:
  *   post:
  *     summary: Login user
+ *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:

@@ -10,7 +10,7 @@
     "dev:watch": "nodemon --watch 'src/**/*.ts' --exec ts-node server.ts",
     "typeorm": "ts-node ./node_modules/typeorm/cli.js",
     "migration:run": "npm run typeorm -- migration:run -d ./src/config/database.ts",
-    "test": "npx jest --coverage",
+    "test": "npx jest --runInBand --detectOpenHandles --coverage",
     "swagger:generate": "ts-node ./swagger.ts"
   },
   "keywords": [],

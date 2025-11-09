@@ -52,9 +52,32 @@ const internalUserController = new InternalUserController(internalUserService);
 
 /**
  * @swagger
+ * /admin/employees:
+ *   get:
+ *     summary: Fetch all internal users
+ *     description: Retrieves all internal users from the database.
+ *     tags: [Internal Users]
+ *     responses:
+ *       200:
+ *         description: List of internal users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/InternalUserDTO'
+ *       400:
+ *         description: Failed to retrieve internal users
+ */
+//GET /users - GET all internalUsers
+router.get("/users", internalUserController.fetch.bind(internalUserController));
+
+/**
+ * @swagger
  * /admin/addEmployee:
  *   post:
  *     summary: Add a new internal user
+ *     tags: [Internal Users]
  *     requestBody:
  *       required: true
  *       content:
@@ -84,6 +107,7 @@ router.post(
  * /admin/updateEmployee/{id}:
  *   put:
  *     summary: Update an internal user
+ *     tags: [Internal Users]
  *     parameters:
  *       - in: path
  *         name: id

@@ -13,6 +13,7 @@ interface IInternalUserService {
     id: number,
     data: UpdateInternalUserRequestDTO
   ): Promise<InternalUserDTO>;
+  fetchUsers(): Promise<InternalUserDTO[]>;
 }
 
 class InternalUserController {
@@ -20,7 +21,6 @@ class InternalUserController {
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // Transform and validate request body
       const registerDTO = plainToClass(
         RegisterInternalUserRequestDTO,
         req.body
@@ -35,7 +35,6 @@ class InternalUserController {
         return;
       }
 
-      // Register internalUser
       const internalUser = await this.internalUserService.register(registerDTO);
       res.status(201).json(internalUser);
     } catch (error) {
@@ -52,12 +51,12 @@ class InternalUserController {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      // i want id to be a number converted froms string
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
         res.status(400).json({ error: "Invalid ID format" });
         return;
       }
+
       const internalUserData: UpdateInternalUserRequestDTO = req.body;
       const updatedUser = await this.internalUserService.update(
         id,
@@ -70,6 +69,21 @@ class InternalUserController {
         error.message === "InternalUser with this email already exists"
       ) {
         res.status(409).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async fetch(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const users = await this.internalUserService.fetchUsers();
+      res.status(200).json(users);
+    } catch (error) {
+      if (
+        error instanceof Error        
+      ) {
+        res.status(400).json({ error: error.message });
         return;
       }
       next(error);
