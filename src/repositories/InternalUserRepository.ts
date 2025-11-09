@@ -1,7 +1,6 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../config/database";
 import InternalUserDAO from "../models/dao/InternalUserDAO";
-import UserDAO from "../models/dao/UserDAO";
 
 interface IInternalUserRepository {
   create(user: InternalUserDAO): Promise<InternalUserDAO>;

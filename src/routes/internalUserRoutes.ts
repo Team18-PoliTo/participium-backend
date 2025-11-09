@@ -70,7 +70,7 @@ const internalUserController = new InternalUserController(internalUserService);
  *         description: Failed to retrieve internal users
  */
 //GET /users - GET all internalUsers
-router.get("/users", internalUserController.fetch.bind(internalUserController));
+router.get("/employees", internalUserController.fetch.bind(internalUserController));
 
 /**
  * @swagger
@@ -171,6 +171,6 @@ router.put(
  *       404:
  *         description: User not found
  */
-router.delete('/users/:id', internalUserController.delete.bind(internalUserController));
+router.delete('/employees/:id', internalUserController.delete.bind(internalUserController));
 
 export default router;

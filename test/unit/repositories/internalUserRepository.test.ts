@@ -1,7 +1,6 @@
 import  InternalUserRepository  from "../../../src/repositories/InternalUserRepository"
 import InternalUserDAO from "../../../src/models/dao/InternalUserDAO";
 import { Repository } from "typeorm";
-import UserDAO from "../../../src/models/dao/UserDAO";
 
 describe("InternalUserRepository", () => {
   let repo: InternalUserRepository;

@@ -8,7 +8,6 @@ import InternalUserDAO from "../models/dao/InternalUserDAO";
 import InternalUserRepository from "../repositories/InternalUserRepository";
 import * as bcrypt from "bcrypt";
 import RoleRepository from "../repositories/RoleRepository";
-import UserDAO from "../models/dao/UserDAO";
 
 interface IInternalUserRepository {
   create(user: Partial<InternalUserDAO>): Promise<InternalUserDAO>;
