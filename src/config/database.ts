@@ -40,7 +40,11 @@ export async function initializeDatabase() {
         const rolesRepository = AppDataSource.getRepository(RoleDAO);
         const rolesToAdd = [
           { id: 0, role: "TBD" },
-          { id: 1, role: "ADMIN" },
+          { id: 1, role: "ADMIN" }, //municipal administrator 
+          { id: 2, role: "PRO"}, //public relations officer
+          { id: 3, role: "TOS"}, //technical office staff
+          { id: 4, role: "ET"}, //enviromental technician 
+          {}
           // Other roles can be added here
         ];
         for (const roleData of rolesToAdd) {
