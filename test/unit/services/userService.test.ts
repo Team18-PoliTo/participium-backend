@@ -16,7 +16,6 @@ jest.mock('jsonwebtoken', () => {
     return { __esModule: true, default: { sign }, sign };
 });
 
-// Importing exactly like in the service
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -166,4 +165,37 @@ describe('UserService — stable nuclear mode', () => {
 
         expect(repo.update).toHaveBeenCalledWith(userBase.id, { failedLoginAttempts: 2 });
     });
+
+    it('disableUserById: when user exists -> calls findById(id), sets deletedAt and returns ok', async () => {
+        repo.findById.mockResolvedValueOnce({ id: 123 } as any);
+
+        const fixed = new Date('2024-01-02T03:04:05.000Z');
+        jest.useFakeTimers().setSystemTime(fixed);
+
+        const res = await service.disableUserById(123);
+
+        expect(repo.findById).toHaveBeenCalledWith(123);
+        expect(repo.update).toHaveBeenCalledTimes(1);
+
+        const [selector, patch] = (repo.update as jest.Mock).mock.calls[0];
+        expect(selector).toBe(123);
+        expect(patch).toEqual(expect.objectContaining({ deletedAt: expect.any(Date) }));
+        expect((patch as any).deletedAt.toISOString()).toBe(fixed.toISOString());
+
+        expect(res).toBe('ok');
+
+        jest.useRealTimers();
+    });
+
+
+    it('disableUserById: when user does not exist -> returns not_found and does not call update', async () => {
+        repo.findById.mockResolvedValueOnce(null);
+
+        const res = await service.disableUserById(555);
+
+        expect(repo.findById).toHaveBeenCalledWith(555);
+        expect(repo.update).not.toHaveBeenCalled();
+        expect(res).toBe('not_found');
+    });
+
 });

@@ -82,6 +82,17 @@ describe('UserRepository', () => {
         expect(res).toBe(user);
     });
 
+    it('findById(): calls findOne with id', async () => {
+        const user = { id: 55, email: 'u@test.com' } as UserDAO;
+        ormRepoMock.findOne.mockResolvedValue(user);
+
+        const res = await repoUnderTest.findById(55);
+
+        expect(ormRepoMock.findOne).toHaveBeenCalledWith({ where: { id: 55 } });
+        expect(res).toBe(user);
+    });
+
+
     it('update(): forwards id selector and patch', async () => {
         await repoUnderTest.update(42, { firstName: 'New' });
         expect(ormRepoMock.update).toHaveBeenCalledWith({ id: 42 }, { firstName: 'New' });
