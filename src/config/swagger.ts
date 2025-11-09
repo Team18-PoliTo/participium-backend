@@ -10,11 +10,10 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: "http://localhost:3001/api",
+        url: "/api",
       },
     ],
   },
-  // Indica tutti i file che contengono le annotazioni JSDoc
   apis: [
     "./src/routes/*.ts",
     "./src/models/dto/*.ts"
