@@ -66,24 +66,32 @@ describe("InternalUserRepository", () => {
   });
 
   describe("findById", () => {
-    it("should call findOne with where.id and return the user", async () => {
-      const user = { id: 55, email: "u@test.com" } as InternalUserDAO;
+    it("should call findOne with where.id and relations and return the user", async () => {
+      const user = { id: 55, email: "u@test.com", role: {} } as InternalUserDAO;
       typeOrmMock.findOne.mockResolvedValue(user);
 
       const result = await repo.findById(55);
-      expect(typeOrmMock.findOne).toHaveBeenCalledWith({ where: { id: 55 } });
+
+      expect(typeOrmMock.findOne).toHaveBeenCalledWith({
+        where: { id: 55 },
+        relations: ["role"],
+      });
       expect(result).toBe(user);
     });
 
     it("should return null when user does not exist", async () => {
       typeOrmMock.findOne.mockResolvedValue(null);
 
-      const result = await repo.findById(999);
+      const result = await repo.findById(55);
 
-      expect(typeOrmMock.findOne).toHaveBeenCalledWith({ where: { id: 999 } });
+      expect(typeOrmMock.findOne).toHaveBeenCalledWith({
+        where: { id: 55 },
+        relations: ["role"],
+      });
       expect(result).toBeNull();
     });
   });
+
 
 
   describe("update", () => {

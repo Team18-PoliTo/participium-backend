@@ -146,7 +146,31 @@ router.put(
   internalUserController.update.bind(internalUserController)
 );
 
-// DELETE  /employee/:id
-router.delete('/users/:id',  internalUserController.delete.bind(internalUserController));
+/**
+ * @swagger
+ * /admin/users/{id}:
+ *   delete:
+ *     summary: Disable (soft delete) an internal user
+ *     description: Marks the internal user as disabled (soft delete).
+ *     tags: [Internal Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Internal user ID
+ *     responses:
+ *       204:
+ *         description: User disabled successfully (no content returned)
+ *       400:
+ *         description: Invalid user id
+ *       403:
+ *         description: You cannot delete your own account
+ *       404:
+ *         description: User not found
+ */
+router.delete('/users/:id', internalUserController.delete.bind(internalUserController));
 
 export default router;
