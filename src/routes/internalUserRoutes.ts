@@ -19,4 +19,7 @@ router.post('/addEmployee', internalUserController.create.bind(internalUserContr
 // PUT /updateEmployee/:id
 router.put('/updateEmployee/:id', internalUserController.update.bind(internalUserController));
 
+// DELETE  /employee/:id
+router.delete('/users/:id',  internalUserController.delete.bind(internalUserController));
+
 export default router;

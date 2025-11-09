@@ -14,6 +14,7 @@ interface IInternalUserService {
     data: UpdateInternalUserRequestDTO
   ): Promise<InternalUserDTO>;
   fetchUsers(): Promise<InternalUserDTO[]>;
+  disableById(id: number): Promise<'ok' | 'not_found'>;
 }
 
 class InternalUserController {
@@ -163,6 +164,32 @@ class InternalUserController {
         return;
       }
       next(error);
+    }
+  }
+
+  async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const id = Number(req.params.id);
+      if (!Number.isFinite(id) || id < 0) {
+        res.status(400).json({ message: 'Invalid internal user id' });
+        return;
+      }
+
+      // Если у тебя в req.auth.sub лежит id текущего internal user — можно защититься от самоудаления:
+      if ((req as any).auth?.sub && Number((req as any).auth.sub) === id) {
+        res.status(403).json({ message: 'You cannot delete your own account' });
+        return;
+      }
+
+      const result = await this.internalUserService.disableById(id);
+      if (result === 'not_found') {
+        res.status(404).json({ message: 'Internal user not found' });
+        return;
+      }
+
+      res.status(204).send();
+    } catch (err) {
+      next(err);
     }
   }
 }

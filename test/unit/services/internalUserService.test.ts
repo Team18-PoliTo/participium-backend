@@ -128,4 +128,38 @@ describe("InternalUserService", () => {
       expect(result.email).toBe("a@b.com");
     });
   });
+
+  describe('disableById', () => {
+    it('when user exists -> calls findById(id), sets deletedAt and returns ok', async () => {
+      // подменяем "сейчас", чтобы проверить точное значение deletedAt
+      const fixed = new Date('2024-01-02T03:04:05.000Z');
+      jest.useFakeTimers().setSystemTime(fixed);
+
+      userRepositoryMock.findById.mockResolvedValueOnce({ id: 123 } as InternalUserDAO);
+      userRepositoryMock.update.mockResolvedValueOnce({});
+
+      const res = await service.disableById(123);
+
+      expect(userRepositoryMock.findById).toHaveBeenCalledWith(123);
+      expect(userRepositoryMock.update).toHaveBeenCalledTimes(1);
+
+      const updateArg = userRepositoryMock.update.mock.calls[0][0] as InternalUserDAO;
+      expect(updateArg).toEqual(expect.objectContaining({ id: 123, deletedAt: expect.any(Date) }));
+      expect(updateArg.deletedAt!.toISOString()).toBe(fixed.toISOString());
+
+      expect(res).toBe('ok');
+
+      jest.useRealTimers();
+    });
+
+    it('when user does not exist -> returns not_found and does not call update', async () => {
+      userRepositoryMock.findById.mockResolvedValueOnce(null);
+
+      const res = await service.disableById(555);
+
+      expect(userRepositoryMock.findById).toHaveBeenCalledWith(555);
+      expect(userRepositoryMock.update).not.toHaveBeenCalled();
+      expect(res).toBe('not_found');
+    });
+  });
 });
