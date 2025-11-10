@@ -78,7 +78,7 @@ const roleController = new RoleController(roleService);
  *         description: Failed to retrieve internal users
  */
 //GET /users - GET all internalUsers
-router.get("/users", internalUserController.fetch.bind(internalUserController));
+router.get("/employees", internalUserController.fetch.bind(internalUserController));
 
 /**
  * @swagger

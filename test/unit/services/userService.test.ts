@@ -16,7 +16,6 @@ jest.mock('jsonwebtoken', () => {
     return { __esModule: true, default: { sign }, sign };
 });
 
-// Importing exactly like in the service
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 

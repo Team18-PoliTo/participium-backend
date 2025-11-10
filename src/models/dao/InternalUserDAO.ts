@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, DeleteDateColumn} from "typeorm";
 import RoleDAO from "./RoleDAO";
 
 @Entity("internal-users")
@@ -23,6 +23,9 @@ class InternalUserDAO {
 
   @ManyToOne(() => RoleDAO, (role) => role.users, { nullable: false })
   role: RoleDAO;
+
+  @DeleteDateColumn({ type: "datetime", nullable: true })
+  deletedAt: Date | null;
 }
 
 export default InternalUserDAO;
