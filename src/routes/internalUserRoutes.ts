@@ -2,6 +2,9 @@ import { Router } from "express";
 import InternalUserController from "../controllers/InternalUserController";
 import InternalUserService from "../services/internalUserService";
 import InternalUserRepository from "../repositories/InternalUserRepository";
+import RoleRepository from "../repositories/RoleRepository";
+import RoleService from "../services/RoleService";
+import RoleController from "../controllers/RoleController";
 
 const router = Router();
 
@@ -9,6 +12,11 @@ const router = Router();
 const internalUserRepository = new InternalUserRepository();
 const internalUserService = new InternalUserService(internalUserRepository);
 const internalUserController = new InternalUserController(internalUserService);
+
+
+const roleRepository = new RoleRepository();
+const roleService = new RoleService(roleRepository);
+const roleController = new RoleController(roleService);
 
 // DTOs
 /**
@@ -148,29 +156,24 @@ router.put(
 
 /**
  * @swagger
- * /admin/users/{id}:
- *   delete:
- *     summary: Disable (soft delete) an internal user
- *     description: Marks the internal user as disabled (soft delete).
- *     tags: [Internal Users]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *           minimum: 1
- *         description: Internal user ID
+ * /admin/roles:
+ *   get:
+ *     summary: Fetch all roles
+ *     description: Retrieves a list of all available roles in the system.
+ *     tags: [Roles]
  *     responses:
- *       204:
- *         description: User disabled successfully (no content returned)
+ *       200:
+ *         description: List of roles successfully retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/RoleDTO'
  *       400:
- *         description: Invalid user id
- *       403:
- *         description: You cannot delete your own account
- *       404:
- *         description: User not found
+ *         description: Failed to retrieve roles
  */
-router.delete('/employees/:id', internalUserController.delete.bind(internalUserController));
+//GET /role - GET all roles
+router.get('/roles', roleController.getAll.bind(roleController));
 
 export default router;
