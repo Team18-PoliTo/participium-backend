@@ -86,6 +86,17 @@ class InternalUserService {
     return users.map((user) => InternalUserMapper.toDTO(user));
   }
 
+  async disableById(id: number): Promise<'ok' | 'not_found'> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      return 'not_found';
+    }
+
+    user.deletedAt = new Date();
+    await this.userRepository.update(user);
+
+    return 'ok';
+  }
 }
 
 export const userService = new InternalUserService();
