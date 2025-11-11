@@ -29,7 +29,7 @@ app.use('/api/auth', authRoutes);
 
 // Public (citizen) routes
 app.use('/api/citizens', citizenRoutes);
-app.use('/api/citizen/reports', requireAuth, requireCitizen, reportRoutes);
+app.use('/api/citizens/reports', requireAuth, requireCitizen, reportRoutes);
 
 // Protected admin-only routes
 app.use('/api/admin/internal-users', requireAuth, requireAdmin, internalUserRoutes);
