@@ -38,6 +38,7 @@ class ReportService {
       newReport.photo3 = pathPrefix + data.binaryPhoto3.filename;
     }
     // TODO: call minIO service to upload photos on these paths
+    // example: storePicture(newReport.photo1, data.binaryPhoto1.data);
 
     await this.reportRepository.update(newReport);
 
