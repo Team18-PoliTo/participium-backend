@@ -8,6 +8,8 @@ import roleRoutes from './routes/roleRoutes';
 import { requireAuth, requireAdmin } from './middleware/authMiddleware';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import { initMinio } from "./config/initMinio";
+
 
 const app = express();
 
@@ -17,6 +19,12 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+( async () =>{
+
+  await initMinio();
+
+})();
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
