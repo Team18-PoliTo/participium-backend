@@ -44,3 +44,5 @@ class ReportService {
     return ReportMapper.toDTO(newReport);
   }
 }
+export const reportService = new ReportService();
+export default ReportService;
