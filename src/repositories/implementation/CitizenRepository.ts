@@ -1,4 +1,3 @@
-// src/repositories/implementation/UserRepository.ts
 import { Repository, DataSource } from 'typeorm';
 import CitizenDAO from '../../models/dao/CitizenDAO';
 import { AppDataSource } from '../../config/database';
@@ -16,6 +15,10 @@ export class CitizenRepository implements ICitizenRepository {
   async create(citizen: Partial<CitizenDAO>): Promise<CitizenDAO> {
     const entity = this.repo.create(citizen);
     return await this.repo.save(entity);
+  }
+
+  async findById(id: number): Promise<CitizenDAO | null> {
+    return await this.repo.findOne({ where: { id } });
   }
 
   async findByEmail(

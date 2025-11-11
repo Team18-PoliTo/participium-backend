@@ -1,22 +1,17 @@
 // middleware/authMiddleware.ts
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import InternalUserRepository from '../repositories/InternalUserRepository';
-import type { AuthInfo } from '../types/AuthInfo';
-import '../types/express'; // ensures Express.Request has `auth`
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import InternalUserRepository from "../repositories/InternalUserRepository";
+import type { AuthInfo } from "../types/AuthInfo";
+import "../types/express"; // ensures Express.Request has `auth`
 
-const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret";
 const internalUserRepo = new InternalUserRepository();
 
 type AuthTokenPayload = jwt.JwtPayload & AuthInfo;
 
 function isAuthTokenPayload(x: unknown): x is AuthTokenPayload {
-    return (
-        !!x &&
-        typeof x === 'object' &&
-        'sub' in x &&
-        'kind' in x
-    );
+  return !!x && typeof x === "object" && "sub" in x && "kind" in x;
 }
 
 /**
@@ -25,47 +20,55 @@ function isAuthTokenPayload(x: unknown): x is AuthTokenPayload {
  * - Extracts auth info from JWT
  * - Stores it in `req.auth` for easy access by later middleware & handlers
  */
-export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-    try {
-        const header = req.header('Authorization') ?? '';
-        const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+export const requireAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    const header = req.header("Authorization") ?? "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : "";
 
-        if (!token) {
-            res.status(401).json({ message: 'Unauthorized (missing token)' });
-            return;
-        }
-
-        const decoded = jwt.verify(token, JWT_SECRET);
-
-        if (typeof decoded === 'string' || !isAuthTokenPayload(decoded)) {
-            res.status(401).json({ message: 'Unauthorized (invalid token payload)' });
-            return;
-        }
-
-        // Store the authenticated user info in the request object
-        req.auth = {
-            sub: Number(decoded.sub),
-            kind: decoded.kind,
-            role: decoded.role,
-            email: decoded.email,
-        };
-
-        next();
-    } catch {
-        res.status(401).json({ message: 'Unauthorized (invalid token)' });
+    if (!token) {
+      res.status(401).json({ message: "Unauthorized (missing token)" });
+      return;
     }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    if (typeof decoded === "string" || !isAuthTokenPayload(decoded)) {
+      res.status(401).json({ message: "Unauthorized (invalid token payload)" });
+      return;
+    }
+
+    // Store the authenticated user info in the request object
+    req.auth = {
+      sub: Number(decoded.sub),
+      kind: decoded.kind,
+      role: decoded.role,
+      email: decoded.email,
+    };
+
+    next();
+  } catch {
+    res.status(401).json({ message: "Unauthorized (invalid token)" });
+  }
 };
 
 /**
  * requireAuthenticated:
  * Ensures that `req.auth` exists and authentication was performed.
  */
-export const requireAuthenticated = (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.auth) {
-        res.status(401).json({ message: 'Unauthorized' });
-        return;
-    }
-    next();
+export const requireAuthenticated = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.auth) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  next();
 };
 
 /**
@@ -75,34 +78,58 @@ export const requireAuthenticated = (req: Request, res: Response, next: NextFunc
  *   we fetch the role from the database and cache it back into `req.auth.role`.
  */
 export const requireRole = (allowedRoles: string[]) => {
-    const allowed = allowedRoles.map(r => r.toUpperCase());
+  const allowed = allowedRoles.map((r) => r.toUpperCase());
 
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            if (!req.auth) {
-                res.status(401).json({ message: 'Unauthorized' });
-                return;
-            }
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      if (!req.auth) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
 
-            let role = req.auth.role;
+      let role = req.auth.role;
 
-            // If role is missing but it's an internal user, fetch from DB and cache it
-            if (!role && req.auth.kind === 'internal') {
-                const internalUser = await internalUserRepo.findById(req.auth.sub);
-                role = (internalUser as any)?.role?.name as string | undefined;
-                if (role) req.auth.role = role;
-            }
+      // If role is missing but it's an internal user, fetch from DB and cache it
+      if (!role && req.auth.kind === "internal") {
+        const internalUser = await internalUserRepo.findById(req.auth.sub);
+        role = (internalUser as any)?.role?.name as string | undefined;
+        if (role) req.auth.role = role;
+      }
 
-            if (!role || !allowed.includes(String(role).toUpperCase())) {
-                res.status(403).json({ message: 'Forbidden: insufficient permissions' });
-                return;
-            }
+      if (!role || !allowed.includes(String(role).toUpperCase())) {
+        res
+          .status(403)
+          .json({ message: "Forbidden: insufficient permissions" });
+        return;
+      }
 
-            next();
-        } catch {
-            res.status(500).json({ message: 'Cannot verify role' });
-        }
-    };
+      next();
+    } catch {
+      res.status(500).json({ message: "Cannot verify role" });
+    }
+  };
 };
 
-export const requireAdmin = requireRole(['ADMIN']);
+export const requireAdmin = requireRole(["ADMIN"]);
+
+export const requireCitizen = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.auth) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  if (req.auth.kind !== "citizen") {
+    res.status(403).json({ message: "Forbidden: not a citizen" });
+    return;
+  }
+
+  next();
+};

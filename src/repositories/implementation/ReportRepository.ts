@@ -1,0 +1,30 @@
+import { Repository } from "typeorm";
+import { AppDataSource } from "../../config/database";
+import ReportDAO from "../../models/dao/ReportDAO";
+import CitizenDAO from "../../models/dao/CitizenDAO";
+import { ReportDTO } from "../../models/dto/ReportDTO";
+import { IReportRepository } from "../IReportRepository";
+
+export class ReportRepository implements IReportRepository {
+  private repo: Repository<ReportDAO>;
+
+  constructor() {
+    this.repo = AppDataSource.getRepository(ReportDAO);
+  }
+
+  async create(reportDAO: ReportDAO): Promise<ReportDAO> {
+    const report = this.repo.create(reportDAO);
+    return await this.repo.save(report);
+  }
+  async findById(id: number): Promise<ReportDAO | null> {
+    return await this.repo.findOne({
+      where: { id },
+      relations: ["citizen"],
+    });
+  }
+
+  // update to add photos paths
+  async update(reportDAO: Partial<ReportDAO>): Promise<ReportDAO> {
+    return await this.repo.save(reportDAO);
+  }
+}

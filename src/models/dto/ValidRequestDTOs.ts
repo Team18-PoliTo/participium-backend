@@ -6,7 +6,10 @@ import {
   IsOptional,
   IsInt,
   Min,
+  ValidateNested,
 } from "class-validator";
+import { BinaryFileDTO } from "./ReportDTO";
+import { Type } from "class-transformer";
 
 export class RegisterCitizenRequestDTO {
   @IsEmail({}, { message: "Invalid email format" })
@@ -65,4 +68,53 @@ export class UpdateInternalUserRequestDTO {
   @IsInt({ message: "newRoleId must be a number" })
   @Min(0)
   newRoleId?: number;
+}
+
+export class CreateReportRequestDTO {
+  @IsString({message: "Title must be a string"})
+  @IsNotEmpty({ message: "Title is required" })
+  title: string;
+  
+  @IsString({message: "Description must be a string"})
+  @IsNotEmpty({ message: "Description is required" })
+  description: string;
+  
+  @IsInt({ message: "citizenId must be a number" })
+  @Min(1)
+  citizenId: number;
+
+  @IsString({message: "Category must be a string"})
+  @IsNotEmpty({ message: "Category is required" })
+  category: string;
+
+
+  @IsNotEmpty({ message: "At least one photo is required" })
+  binaryPhoto1:{
+    filename: string;
+    data: Buffer;
+    size: number;
+    mimetype: string;
+  };
+
+  @IsOptional()
+  binaryPhoto2?: {
+    filename: string;
+    data: Buffer;
+    size: number;
+    mimetype: string;
+  };
+
+  @IsOptional()
+  binaryPhoto3?: {
+    filename: string;
+    data: Buffer;
+    size: number;
+    mimetype: string;
+  };
+
+  @IsNotEmpty({ message: "Location is required" })
+  location: {
+    latitude: number;
+    longitude: number;
+  };
 }

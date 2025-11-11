@@ -1,4 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
+import { on } from "events";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from "typeorm";
+import ReportDAO from "./ReportDAO";
 
 export type CitizenStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
@@ -33,6 +35,9 @@ class CitizenDAO {
 
   @CreateDateColumn({ type: "datetime" })
   createdAt: Date;
+
+  @OneToMany(() => ReportDAO, (report) => report.citizen, { nullable: true, onDelete: "CASCADE" })
+  reports: ReportDAO[];
 }
 
 export default CitizenDAO;
