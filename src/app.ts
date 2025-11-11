@@ -9,6 +9,8 @@ import { requireAuth, requireAdmin, requireCitizen } from './middleware/authMidd
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import reportRoutes from './routes/reportRoutes';
+import { initMinio } from "./config/initMinio";
+
 
 const app = express();
 
@@ -18,6 +20,12 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+( async () =>{
+
+  await initMinio();
+
+})();
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
