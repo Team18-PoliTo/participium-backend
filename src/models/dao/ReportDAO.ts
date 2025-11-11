@@ -7,16 +7,14 @@ import {
 } from "typeorm";
 import CitizenDAO from "./CitizenDAO";
 
-export type ReportStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
-
-//title, description,  category , photos (min 1 max 3).
-
-@Entity("Report")
+@Entity("reports")
 class ReportDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
   id: number;
 
-  @ManyToOne(() => CitizenDAO, (citizen) => citizen.reports, { nullable: false })
+  @ManyToOne(() => CitizenDAO, (citizen) => citizen.reports, {
+    nullable: false,
+  })
   citizen: CitizenDAO;
 
   @Column({ nullable: false })
@@ -28,19 +26,22 @@ class ReportDAO {
   @Column({ nullable: false })
   category: string;
 
-  @Column({ nullable: false })
+  // minIO ObjecKey
+  @Column({ nullable: true })
   photo1: string;
 
+  // minIO ObjecKey
   @Column({ nullable: true })
   photo2: string;
 
+  // minIO ObjecKey
   @Column({ nullable: true })
   photo3: string;
 
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   location: string;
 }
 
