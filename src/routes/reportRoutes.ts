@@ -136,6 +136,8 @@ const reportController = new ReportController(reportService);
  *   post:
  *     summary: Create a new report
  *     tags: [Citizens]
+ *     security:  
+ *        - citizenPassword: []
  *     requestBody:
  *       required: true
  *       content:
