@@ -2,9 +2,6 @@ import { Router } from "express";
 import InternalUserController from "../controllers/InternalUserController";
 import InternalUserService from "../services/internalUserService";
 import InternalUserRepository from "../repositories/InternalUserRepository";
-import RoleRepository from "../repositories/RoleRepository";
-import RoleService from "../services/RoleService";
-import RoleController from "../controllers/RoleController";
 
 const router = Router();
 
@@ -12,11 +9,6 @@ const router = Router();
 const internalUserRepository = new InternalUserRepository();
 const internalUserService = new InternalUserService(internalUserRepository);
 const internalUserController = new InternalUserController(internalUserService);
-
-
-const roleRepository = new RoleRepository();
-const roleService = new RoleService(roleRepository);
-const roleController = new RoleController(roleService);
 
 // DTOs
 /**
@@ -52,19 +44,24 @@ const roleController = new RoleController(roleService);
  *         lastName:
  *           type: string
  *         role:
- *           type: integer
+ *           type: string
  *         createdAt:
  *           type: string
  *           format: date-time
+ *         status:
+ *           type: string
+ *           enum: [ACTIVE, SUSPENDED, DEACTIVATED]
  */
 
 /**
  * @swagger
- * /admin/employees:
+ * /admin/internal-users:
  *   get:
  *     summary: Fetch all internal users
  *     description: Retrieves all internal users from the database.
  *     tags: [Internal Users]
+ *     security:
+ *       - internalPassword: []
  *     responses:
  *       200:
  *         description: List of internal users
@@ -77,15 +74,16 @@ const roleController = new RoleController(roleService);
  *       400:
  *         description: Failed to retrieve internal users
  */
-//GET /users - GET all internalUsers
-router.get("/employees", internalUserController.fetch.bind(internalUserController));
+router.get("/", internalUserController.fetch.bind(internalUserController));
 
 /**
  * @swagger
- * /admin/addEmployee:
+ * /admin/internal-users:
  *   post:
  *     summary: Add a new internal user
  *     tags: [Internal Users]
+ *     security:
+ *       - internalPassword: []
  *     requestBody:
  *       required: true
  *       content:
@@ -104,18 +102,16 @@ router.get("/employees", internalUserController.fetch.bind(internalUserControlle
  *       409:
  *         description: Email already exists
  */
-// POST /register - Register a new internalUser
-router.post(
-  "/addEmployee",
-  internalUserController.create.bind(internalUserController)
-);
+router.post("/", internalUserController.create.bind(internalUserController));
 
 /**
  * @swagger
- * /admin/updateEmployee/{id}:
+ * /admin/internal-users/{id}:
  *   put:
  *     summary: Update an internal user
  *     tags: [Internal Users]
+ *     security:
+ *       - internalPassword: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -148,32 +144,33 @@ router.post(
  *       409:
  *         description: Email already in use
  */
-// PUT /updateEmployee/:id
-router.put(
-  "/updateEmployee/:id",
-  internalUserController.update.bind(internalUserController)
-);
+router.put("/:id", internalUserController.update.bind(internalUserController));
 
 /**
  * @swagger
- * /admin/roles:
- *   get:
- *     summary: Fetch all roles
- *     description: Retrieves a list of all available roles in the system.
- *     tags: [Roles]
+ * /admin/internal-users/{id}:
+ *   delete:
+ *     summary: Disable an internal user
+ *     tags: [Internal Users]
+ *     security:
+ *       - internalPassword: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Internal user ID
  *     responses:
- *       200:
- *         description: List of roles successfully retrieved
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/RoleDTO'
+ *       204:
+ *         description: Internal user disabled successfully
  *       400:
- *         description: Failed to retrieve roles
+ *         description: Invalid ID
+ *       403:
+ *         description: Attempted to delete own account
+ *       404:
+ *         description: Internal user not found
  */
-//GET /role - GET all roles
-router.get('/roles', roleController.getAll.bind(roleController));
+router.delete("/:id", internalUserController.delete.bind(internalUserController));
 
 export default router;

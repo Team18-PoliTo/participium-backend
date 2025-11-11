@@ -43,22 +43,23 @@ describe("InternalUser E2E (real DB)", () => {
     password: "StrongPass123",
   };
 
-  test("POST /addEmployee → should register a new internal user", async () => {
+  test("POST / → should register a new internal user", async () => {
     const res = await request(app)
-      .post("/addEmployee")
+      .post("/")
       .send(validInternalUser)
       .expect(201);
 
     expect(res.body).toHaveProperty("id");
     expect(res.body.email).toBe(validInternalUser.email);
     expect(res.body.firstName).toBe(validInternalUser.firstName);
+    expect(res.body.status).toBe("ACTIVE");
   });
 
-  test("POST /addEmployee → should fail when email already exists", async () => {
-    await request(app).post("/addEmployee").send(validInternalUser);
+  test("POST / → should fail when email already exists", async () => {
+    await request(app).post("/").send(validInternalUser);
 
     const res = await request(app)
-      .post("/addEmployee")
+      .post("/")
       .send({
         ...validInternalUser,
         firstName: "Bob",
@@ -68,14 +69,14 @@ describe("InternalUser E2E (real DB)", () => {
     expect(res.body.error).toBe("InternalUser with this email already exists");
   });
 
-  test("PUT /updateEmployee/:id → should update first name and last name", async () => {
+  test("PUT /:id → should update first name and last name", async () => {
     const created = await request(app)
-      .post("/addEmployee")
+      .post("/")
       .send(validInternalUser)
       .expect(201);
 
     const res = await request(app)
-      .put(`/updateEmployee/${created.body.id}`)
+      .put(`/${created.body.id}`)
       .send({
         newFirstName: "UpdatedFirst",
         newLastName: "UpdatedLast",
@@ -84,11 +85,12 @@ describe("InternalUser E2E (real DB)", () => {
 
     expect(res.body.firstName).toBe("UpdatedFirst");
     expect(res.body.lastName).toBe("UpdatedLast");
+    expect(res.body.status).toBe("ACTIVE");
   });
 
-  test("PUT /updateEmployee/:id → should fail for invalid id", async () => {
+  test("PUT /:id → should fail for invalid id", async () => {
     const res = await request(app)
-      .put("/updateEmployee/notanumber")
+      .put("/notanumber")
       .send({
         newFirstName: "Fail",
       })

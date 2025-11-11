@@ -3,12 +3,9 @@ import {
   IsString,
   IsNotEmpty,
   MinLength,
-  isEmail,
-  isNotEmpty,
-  IsNumber,
 } from "class-validator";
 
-export class RegisterRequestDTO {
+export class RegisterCitizenRequestDTO {
   @IsEmail({}, { message: "Invalid email format" })
   @IsNotEmpty({ message: "Email is required" })
   email: string;

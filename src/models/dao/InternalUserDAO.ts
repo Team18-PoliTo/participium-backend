@@ -1,5 +1,7 @@
-import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, DeleteDateColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from "typeorm";
 import RoleDAO from "./RoleDAO";
+
+export type InternalUserStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
 @Entity("internal-users")
 class InternalUserDAO {
@@ -18,14 +20,14 @@ class InternalUserDAO {
   @Column({ nullable: false })
   password: string;
 
+  @Column({ type: "varchar", default: () => "'ACTIVE'", nullable: true })
+  status: InternalUserStatus;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @ManyToOne(() => RoleDAO, (role) => role.users, { nullable: false })
   role: RoleDAO;
-
-  @DeleteDateColumn({ type: "datetime", nullable: true })
-  deletedAt: Date | null;
 }
 
 export default InternalUserDAO;

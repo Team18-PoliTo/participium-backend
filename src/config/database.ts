@@ -72,8 +72,9 @@ export async function initializeDatabase() {
             firstName: "AdminFirstName",
             lastName: "AdminLastName",
             email: "admin@admin.com",
-            password: await bcrypt.hash("admin", 10),
+            password: await bcrypt.hash("password", 10),
             role: role,
+            status: "ACTIVE",
           });
           await internalUserRepository.save(admin);
           console.log("Admin configured");
