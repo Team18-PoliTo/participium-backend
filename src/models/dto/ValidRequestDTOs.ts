@@ -71,11 +71,11 @@ export class UpdateInternalUserRequestDTO {
 }
 
 export class CreateReportRequestDTO {
-  @IsString()
+  @IsString({message: "Title must be a string"})
   @IsNotEmpty({ message: "Title is required" })
   title: string;
   
-  @IsString()
+  @IsString({message: "Description must be a string"})
   @IsNotEmpty({ message: "Description is required" })
   description: string;
   
@@ -83,24 +83,34 @@ export class CreateReportRequestDTO {
   @Min(1)
   citizenId: number;
 
-  @IsString()
+  @IsString({message: "Category must be a string"})
   @IsNotEmpty({ message: "Category is required" })
   category: string;
 
-  @ValidateNested()
-  @Type(() => BinaryFileDTO)
+
   @IsNotEmpty({ message: "At least one photo is required" })
-  binaryPhoto1: BinaryFileDTO;
+  binaryPhoto1:{
+    filename: string;
+    data: Buffer;
+    size: number;
+    mimetype: string;
+  };
 
-  @ValidateNested()
-  @Type(() => BinaryFileDTO)
   @IsOptional()
-  binaryPhoto2?: BinaryFileDTO;
+  binaryPhoto2?: {
+    filename: string;
+    data: Buffer;
+    size: number;
+    mimetype: string;
+  };
 
-  @ValidateNested()
-  @Type(() => BinaryFileDTO)
   @IsOptional()
-  binaryPhoto3?: BinaryFileDTO;
+  binaryPhoto3?: {
+    filename: string;
+    data: Buffer;
+    size: number;
+    mimetype: string;
+  };
 
   @IsNotEmpty({ message: "Location is required" })
   location: {

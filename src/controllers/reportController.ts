@@ -26,9 +26,11 @@ class ReportController {
       const report = await this.reportService.create(createReportDTO);
       res.status(201).json(report);
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(500).json({ error: error.message });
+      if (error instanceof Error && error.message === "Citizen not found") {
+        res.status(404).json({ error: error.message });
         return;
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
       }
       next(error);
     }
