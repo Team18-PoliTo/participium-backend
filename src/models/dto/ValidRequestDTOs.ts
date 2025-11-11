@@ -3,6 +3,9 @@ import {
   IsString,
   IsNotEmpty,
   MinLength,
+  IsOptional,
+  IsInt,
+  Min,
 } from "class-validator";
 
 export class RegisterCitizenRequestDTO {
@@ -49,10 +52,17 @@ export class RegisterInternalUserRequestDTO {
 }
 
 export class UpdateInternalUserRequestDTO {
+  @IsOptional()
   @IsEmail({}, { message: "Invalid email format" })
   newEmail?: string;
+  @IsOptional()
   @IsString()
   newFirstName?: string;
+  @IsOptional()
   @IsString()
   newLastName?: string;
+  @IsOptional()
+  @IsInt({ message: "newRoleId must be a number" })
+  @Min(0)
+  newRoleId?: number;
 }

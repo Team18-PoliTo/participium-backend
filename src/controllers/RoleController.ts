@@ -13,7 +13,7 @@ class RoleController {
    *   get:
    *     summary: Fetch all user roles
    *     description: Retrieves all available internal user roles in the system.
-   *     tags: [Internal Users]
+   *     tags: [Roles]
    *     responses:
    *       200:
    *         description: List of available roles

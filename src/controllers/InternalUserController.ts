@@ -58,16 +58,24 @@ class InternalUserController {
         return;
       }
 
-      const internalUserData: UpdateInternalUserRequestDTO = req.body;
-      const updatedUser = await this.internalUserService.update(
-        id,
-        internalUserData
-      );
+      const updateDTO = plainToClass(UpdateInternalUserRequestDTO, req.body);
+      const errors = await validate(updateDTO);
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((err) => Object.values(err.constraints || {}).join(", "))
+          .join("; ");
+        res.status(400).json({ error: errorMessages });
+        return;
+      }
+
+      const updatedUser = await this.internalUserService.update(id, updateDTO);
       res.status(200).json(updatedUser);
     } catch (error) {
       if (
         error instanceof Error &&
-        error.message === "InternalUser with this email already exists"
+        (error.message === "InternalUser with this email already exists" ||
+          error.message === "Role not found" ||
+          error.message === "Role already assigned")
       ) {
         res.status(409).json({ error: error.message });
         return;

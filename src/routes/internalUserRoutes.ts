@@ -32,6 +32,9 @@ const internalUserController = new InternalUserController(internalUserService);
  *         password:
  *           type: string
  *           minLength: 6
+ *         roleId:
+ *           type: integer
+ *           description: Optional role identifier (defaults to 0)
  *     InternalUserDTO:
  *       type: object
  *       properties:
@@ -132,6 +135,9 @@ router.post("/", internalUserController.create.bind(internalUserController));
  *                 type: string
  *               newLastName:
  *                 type: string
+ *               newRoleId:
+ *                 type: integer
+ *                 description: Optional new role identifier
  *     responses:
  *       200:
  *         description: Internal user updated

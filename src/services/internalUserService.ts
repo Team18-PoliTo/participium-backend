@@ -39,7 +39,6 @@ class InternalUserService {
     // Hash password
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // deafult role at registration time
     const role = await this.roleRepository.findById(0);
     if (!role) {
       throw new Error("Default role not found");
@@ -80,9 +79,18 @@ class InternalUserService {
       }
       internalUserDAO.email = newEmail;
     }
-    const updatedInternalUser = await this.userRepository.update(
-      internalUserDAO
-    );
+    if (data.newRoleId !== undefined) {
+       const currentRoleId = (internalUserDAO.role as any)?.id;
+      if (currentRoleId !== 0 || data.newRoleId === currentRoleId) {
+        throw new Error("Role already assigned");
+      }
+      const newRole = await this.roleRepository.findById(data.newRoleId);
+      if (!newRole) {
+        throw new Error("Role not found");
+      }
+      internalUserDAO.role = newRole;
+    }
+    const updatedInternalUser = await this.userRepository.update(internalUserDAO);
     return InternalUserMapper.toDTO(updatedInternalUser);
   }
 
