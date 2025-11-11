@@ -1,9 +1,9 @@
-import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, DeleteDateColumn} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from "typeorm";
 
-export type UserRole = "CITIZEN";
+export type CitizenStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
 @Entity("users")
-class UserDAO {
+class CitizenDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
   id: number;
 
@@ -22,8 +22,8 @@ class UserDAO {
   @Column({ nullable: false, select: false })
   password: string;
 
-  @Column({ type: "varchar", default: "CITIZEN" })
-  role: UserRole;
+  @Column({ type: "varchar", default: () => "'ACTIVE'", nullable: true })
+  status: CitizenStatus;
 
   @Column({ type: "int", default: 0 })
   failedLoginAttempts: number;
@@ -35,5 +35,5 @@ class UserDAO {
   createdAt: Date;
 }
 
-export default UserDAO;
+export default CitizenDAO;
 

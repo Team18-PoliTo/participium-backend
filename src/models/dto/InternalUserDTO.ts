@@ -4,5 +4,6 @@ export class InternalUserDTO {
   firstName: string;
   lastName: string;
   createdAt: Date;
-  role: number = 0;
+  role: number | string;
+  status: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 }

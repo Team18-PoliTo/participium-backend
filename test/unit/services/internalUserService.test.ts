@@ -1,3 +1,21 @@
+jest.mock("bcrypt", () => ({
+  __esModule: true,
+  compare: jest.fn(async () => true),
+  hash: jest.fn(async () => "hashed"),
+  default: {
+    compare: jest.fn(async () => true),
+    hash: jest.fn(async () => "hashed"),
+  },
+}));
+
+jest.mock("jsonwebtoken", () => ({
+  __esModule: true,
+  sign: jest.fn(() => "jwt-token"),
+  default: {
+    sign: jest.fn(() => "jwt-token"),
+  },
+}));
+
 import InternalUserService from "../../../src/services/internalUserService";
 import { InternalUserMapper } from "../../../src/mappers/InternalUserMapper";
 import {
@@ -5,6 +23,8 @@ import {
   UpdateInternalUserRequestDTO,
 } from "../../../src/models/dto/ValidRequestDTOs";
 import InternalUserDAO from "../../../src/models/dao/InternalUserDAO";
+import * as bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 describe("InternalUserService", () => {
   let userRepositoryMock: any;
@@ -49,14 +69,15 @@ describe("InternalUserService", () => {
 
     it("should create user successfully", async () => {
       userRepositoryMock.findByEmail.mockResolvedValue(null);
-      roleRepositoryMock.findById.mockResolvedValue({ id: 0, name: "default" });
+      roleRepositoryMock.findById.mockResolvedValue({ id: 0, role: "TBD" });
       userRepositoryMock.create.mockImplementation(
-        async (user: InternalUserDAO) => ({ ...user, id: 1 })
+        async (user: InternalUserDAO) => ({ ...user, id: 1, status: "ACTIVE" })
       );
 
       const result = await service.register(dto);
       expect(result.id).toBe(1);
       expect(userRepositoryMock.create).toHaveBeenCalled();
+      expect(result.status).toBe("ACTIVE");
     });
   });
 
@@ -95,6 +116,7 @@ describe("InternalUserService", () => {
         email: "a@b.com",
         firstName: "A",
         lastName: "B",
+        status: "ACTIVE",
       } as InternalUserDAO;
       userRepositoryMock.findById.mockResolvedValue(dao);
       userRepositoryMock.findByEmail.mockResolvedValue(null);
@@ -114,6 +136,7 @@ describe("InternalUserService", () => {
         email: "a@b.com",
         firstName: "A",
         lastName: "B",
+        status: "ACTIVE",
       } as InternalUserDAO;
       userRepositoryMock.findById.mockResolvedValue(dao);
       userRepositoryMock.findByEmail.mockResolvedValue(null);
@@ -126,6 +149,60 @@ describe("InternalUserService", () => {
       expect(result.firstName).toBe("Partial");
       expect(result.lastName).toBe("B");
       expect(result.email).toBe("a@b.com");
+    });
+
+    it("should update role when newRoleId provided", async () => {
+      const dao = {
+        id: 3,
+        email: "staff@city.com",
+        firstName: "Staff",
+        lastName: "Member",
+        status: "ACTIVE",
+        role: { id: 0, role: "TBD" },
+      } as InternalUserDAO;
+      userRepositoryMock.findById.mockResolvedValue(dao);
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      roleRepositoryMock.findById.mockResolvedValue({ id: 1, role: "ADMIN" });
+      userRepositoryMock.update.mockImplementation(async (user: InternalUserDAO) => ({
+        ...user,
+      }));
+
+      const result = await service.update(3, { newRoleId: 1 });
+
+      expect(roleRepositoryMock.findById).toHaveBeenCalledWith(1);
+      expect(result.role).toBe("ADMIN");
+    });
+
+    it("should reject role change if already assigned", async () => {
+      const dao = {
+        id: 4,
+        email: "assigned@city.com",
+        firstName: "Assigned",
+        lastName: "User",
+        status: "ACTIVE",
+        role: { id: 2, role: "ADMIN" },
+      } as InternalUserDAO;
+      userRepositoryMock.findById.mockResolvedValue(dao);
+
+      await expect(service.update(4, { newRoleId: 3 })).rejects.toThrow(
+        "Role already assigned"
+      );
+    });
+
+    it("should reject assigning same placeholder role", async () => {
+      const dao = {
+        id: 5,
+        email: "placeholder@city.com",
+        firstName: "Place",
+        lastName: "Holder",
+        status: "ACTIVE",
+        role: { id: 0, role: "TBD" },
+      } as InternalUserDAO;
+      userRepositoryMock.findById.mockResolvedValue(dao);
+
+      await expect(service.update(5, { newRoleId: 0 })).rejects.toThrow(
+        "Role already assigned"
+      );
     });
 
 
@@ -144,18 +221,20 @@ describe("InternalUserService", () => {
             email: "a@b.com",
             firstName: "A",
             lastName: "B",
-            role: 0,
+            role: { role: "EMPLOYEE" },
             createdAt: t1,
             password: "hash",
+            status: "ACTIVE",
           },
           {
             id: 2,
             email: "x@y.com",
             firstName: "X",
             lastName: "Y",
-            role: 0,
+            role: { role: "ADMIN" },
             createdAt: t2,
             password: "hash2",
+            status: "SUSPENDED",
           },
         ];
 
@@ -170,16 +249,18 @@ describe("InternalUserService", () => {
             email: "a@b.com",
             firstName: "A",
             lastName: "B",
-            role: 0,
+            role: "EMPLOYEE",
             createdAt: t1,
+            status: "ACTIVE",
           }),
           expect.objectContaining({
             id: 2,
             email: "x@y.com",
             firstName: "X",
             lastName: "Y",
-            role: 0,
+            role: "ADMIN",
             createdAt: t2,
+            status: "SUSPENDED",
           }),
         ]);
       });
@@ -192,6 +273,28 @@ describe("InternalUserService", () => {
         expect(userRepositoryMock.fetchAll).toHaveBeenCalledTimes(1);
         expect(result).toEqual([]);
       });
+    });
+  });
+
+  describe("disableById", () => {
+    it("should mark user as deactivated", async () => {
+      const dao = { id: 10, status: "ACTIVE" } as InternalUserDAO;
+      userRepositoryMock.findById.mockResolvedValue(dao);
+      userRepositoryMock.update.mockResolvedValue({ ...dao, status: "DEACTIVATED" });
+
+      const result = await service.disableById(10);
+
+      expect(result).toBe("ok");
+      expect(userRepositoryMock.update).toHaveBeenCalledWith(
+        expect.objectContaining({ status: "DEACTIVATED" })
+      );
+    });
+
+    it("should return not_found when user missing", async () => {
+      userRepositoryMock.findById.mockResolvedValue(null);
+      const result = await service.disableById(10);
+      expect(result).toBe("not_found");
+      expect(userRepositoryMock.update).not.toHaveBeenCalled();
     });
   });
 });

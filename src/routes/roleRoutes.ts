@@ -1,0 +1,46 @@
+import { Router } from "express";
+import RoleController from "../controllers/RoleController";
+import RoleService from "../services/RoleService";
+import RoleRepository from "../repositories/RoleRepository";
+
+const router = Router();
+
+const roleRepository = new RoleRepository();
+const roleService = new RoleService(roleRepository);
+const roleController = new RoleController(roleService);
+
+/**
+ * @swagger
+ * tags:
+ *   name: Roles
+ *   description: Administrative role management
+ */
+
+/**
+ * @swagger
+ * /admin/roles:
+ *   get:
+ *     summary: Fetch all internal user roles
+ *     tags: [Roles]
+ *     security:
+ *       - internalPassword: []
+ *     responses:
+ *       200:
+ *         description: List of roles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   role:
+ *                     type: string
+ *       400:
+ *         description: Could not fetch roles
+ */
+router.get("/", roleController.getAll.bind(roleController));
+
+export default router;

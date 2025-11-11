@@ -1,8 +1,8 @@
 import request from "supertest";
 import express, { Express } from "express";
-import userRouter from "../../src/routes/userRoutes";
+import citizenRouter from "../../src/routes/citizenRoutes";
 import { AppDataSource } from "../../src/config/database";
-import UserDAO from "../../src/models/dao/UserDAO";
+import CitizenDAO from "../../src/models/dao/CitizenDAO";
 
 let app: Express;
 
@@ -15,11 +15,11 @@ beforeAll(async () => {
 
   app = express();
   app.use(express.json());
-  app.use("/", userRouter);
+  app.use("/", citizenRouter);
 });
 
 beforeEach(async () => {
-  const repo = AppDataSource.getRepository(UserDAO);
+  const repo = AppDataSource.getRepository(CitizenDAO);
   await repo.clear();
 });
 
@@ -29,8 +29,8 @@ afterAll(async () => {
   }
 });
 
-describe("User Registration E2E (real DB)", () => {
-  const validUser = {
+describe("Citizen Registration E2E (real DB)", () => {
+  const validCitizen = {
     email: "john@example.com",
     username: "johnny",
     firstName: "John",
@@ -38,43 +38,44 @@ describe("User Registration E2E (real DB)", () => {
     password: "strongpass",
   };
 
-  test("POST /register → should register a new user", async () => {
+  test("POST /register → should register a new citizen", async () => {
     const res = await request(app)
       .post("/register")
-      .send(validUser)
+      .send(validCitizen)
       .expect(201);
 
     expect(res.body).toHaveProperty("id");
-    expect(res.body.email).toBe(validUser.email);
-    expect(res.body.username).toBe(validUser.username);
+    expect(res.body.email).toBe(validCitizen.email);
+    expect(res.body.username).toBe(validCitizen.username);
+    expect(res.body.status).toBe("ACTIVE");
   });
 
   test("POST /register → should fail when email already exists", async () => {
-    await request(app).post("/register").send(validUser);
+    await request(app).post("/register").send(validCitizen);
 
     const res = await request(app)
       .post("/register")
       .send({
-        ...validUser,
+        ...validCitizen,
         username: "different",
       })
       .expect(409);
 
-    expect(res.body.error).toBe("User with this email already exists");
+    expect(res.body.error).toBe("Citizen with this email already exists");
   });
 
   test("POST /register → should fail when username already exists", async () => {
-    await request(app).post("/register").send(validUser);
+    await request(app).post("/register").send(validCitizen);
 
     const res = await request(app)
       .post("/register")
       .send({
-        ...validUser,
+        ...validCitizen,
         email: "another@example.com",
       })
       .expect(409);
 
-    expect(res.body.error).toBe("User with this username already exists");
+    expect(res.body.error).toBe("Citizen with this username already exists");
   });
 
   test("POST /register → should fail validation for invalid data", async () => {

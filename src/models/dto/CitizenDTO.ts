@@ -1,10 +1,10 @@
-export class UserDTO {
+export class CitizenDTO {
   id: number;
   email: string;
   username: string;
   firstName: string;
   lastName: string;
-  role: "CITIZEN";
+  status: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
   createdAt: Date;
 }
 
