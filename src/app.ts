@@ -5,9 +5,10 @@ import citizenRoutes from './routes/citizenRoutes';
 import internalUserRoutes from './routes/internalUserRoutes';
 import authRoutes from './routes/authRoutes';
 import roleRoutes from './routes/roleRoutes';
-import { requireAuth, requireAdmin } from './middleware/authMiddleware';
+import { requireAuth, requireAdmin, requireCitizen } from './middleware/authMiddleware';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import reportRoutes from './routes/reportRoutes';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 
 // Public (citizen) routes
 app.use('/api/citizens', citizenRoutes);
+app.use('/api/citizen/reports', requireAuth, requireCitizen, reportRoutes);
 
 // Protected admin-only routes
 app.use('/api/admin/internal-users', requireAuth, requireAdmin, internalUserRoutes);
