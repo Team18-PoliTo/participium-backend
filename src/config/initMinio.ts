@@ -5,16 +5,20 @@ export const initMinio = async () => {
     const exists = await minioClient.bucketExists(MINIO_BUCKET).catch(() => false);
 
     if (!exists) {
+      console.log(`[MinIO] Bucket "${MINIO_BUCKET}" does not exist. Creating...`);
       await minioClient.makeBucket(MINIO_BUCKET, "us-east-1");
-      console.log(`Created MinIO bucket: ${MINIO_BUCKET}`);
+      console.log(`[MinIO] Created bucket: ${MINIO_BUCKET}`);
     } else {
-      console.log(`MinIO bucket already exists: ${MINIO_BUCKET}`);
+      console.log(`[MinIO] Bucket already exists: ${MINIO_BUCKET}`);
     }
 
-    // Simple connection test
     const buckets = await minioClient.listBuckets();
-    console.log("Buckets::", buckets.map(b => b.name));
-  } catch (err) {
-    console.error("MinIO initialization failed:", err);
+    console.log("[MinIO] Buckets:", buckets.map(b => b.name));
+  } catch (error: any) {
+    if (error.code === "BucketAlreadyOwnedByYou" || error.code === "BucketAlreadyExists") {
+      console.log(`[MinIO] Bucket "${MINIO_BUCKET}" already exists.`);
+    } else {
+      console.error("[MinIO] Initialization failed:", error);
+    }
   }
 };

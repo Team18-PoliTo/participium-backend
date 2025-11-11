@@ -5,7 +5,7 @@ import { IReportRepository } from "../../repositories/IReportRepository";
 import { ReportRepository } from "../../repositories/implementation/ReportRepository";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
 import { ICitizenRepository } from "../../repositories/ICitizenRepository";
-
+import MinIoService from "../MinIoService";
 class ReportService {
   constructor(
     private reportRepository: IReportRepository = new ReportRepository(),
@@ -37,8 +37,28 @@ class ReportService {
     if (data.binaryPhoto3) {
       newReport.photo3 = pathPrefix + data.binaryPhoto3.filename;
     }
-    // TODO: call minIO service to upload photos on these paths
-    // example: storePicture(newReport.photo1, data.binaryPhoto1.data);
+      
+    const uploadedPhotos: string[] = [];
+
+    const photos = [
+      data.binaryPhoto1,
+      data.binaryPhoto2,
+      data.binaryPhoto3,
+    ].filter((p): p is NonNullable<typeof p> => !!p); // remove undefined
+
+    for (const photo of photos) {
+      const objectKey = pathPrefix + photo.filename;
+
+      // Upload file binary data to MinIO
+      await MinIoService.uploadFile(objectKey, photo.data, photo.mimetype);
+
+      uploadedPhotos.push(objectKey);
+    }
+
+    // Assign uploaded MinIO object keys to the report entity
+    if (uploadedPhotos[0]) newReport.photo1 = uploadedPhotos[0];
+    if (uploadedPhotos[1]) newReport.photo2 = uploadedPhotos[1];
+    if (uploadedPhotos[2]) newReport.photo3 = uploadedPhotos[2];
 
     await this.reportRepository.update(newReport);
 
