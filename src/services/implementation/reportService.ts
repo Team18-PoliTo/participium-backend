@@ -41,11 +41,14 @@ class ReportService {
       
     const uploadedPhotos: { [key: string]: string } = {};
 
+    const toBuffer = (payload: string | Buffer): Buffer =>
+      Buffer.isBuffer(payload) ? payload : Buffer.from(payload, "base64");
+
     if (data.binaryPhoto1) {
       const objectKey1 = `${pathPrefix}${uuidv4()}-${data.binaryPhoto1.filename}`;
       uploadedPhotos.photo1 = await MinIoService.uploadFile(
         objectKey1,
-        data.binaryPhoto1.data,
+        toBuffer(data.binaryPhoto1.data),
         data.binaryPhoto1.mimetype
       );
     }
@@ -54,7 +57,7 @@ class ReportService {
       const objectKey2 = `${pathPrefix}${uuidv4()}-${data.binaryPhoto2.filename}`;
       uploadedPhotos.photo2 = await MinIoService.uploadFile(
         objectKey2,
-        data.binaryPhoto2.data,
+        toBuffer(data.binaryPhoto2.data),
         data.binaryPhoto2.mimetype
       );
     }
@@ -63,7 +66,7 @@ class ReportService {
       const objectKey3 = `${pathPrefix}${uuidv4()}-${data.binaryPhoto3.filename}`;
       uploadedPhotos.photo3 = await MinIoService.uploadFile(
         objectKey3,
-        data.binaryPhoto3.data,
+        toBuffer(data.binaryPhoto3.data),
         data.binaryPhoto3.mimetype
       );
     }
