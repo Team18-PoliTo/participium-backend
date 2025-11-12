@@ -39,11 +39,12 @@ export async function initializeDatabase() {
         // first add roles
         const rolesRepository = AppDataSource.getRepository(RoleDAO);
         const rolesToAdd = [
-          { id: 0, role: "TBD" },
-          { id: 1, role: "Municipal Administrator" }, //municipal administrator 
-          { id: 2, role: "Public Relations Officer"}, //public relations officer
-          { id: 3, role: "Technical Office Staff"}, //technical office staff
-          { id: 4, role: "Environmental Technician"}, //enviromental technician 
+          { id: 0, role: "Unassigned" },
+          { id: 1, role: "ADMIN" }, //ADMIN
+          { id: 2, role: "Municipal Administrator" }, //municipal administrator 
+          { id: 3, role: "Municipal Public Relations Officer"}, // municipal public relations officer
+          { id: 4, role: "Technical Office Staff"}, //technical office staff
+          // { id: 4, role: "Environmental Technician"}, //enviromental technician 
           {}
           // Other roles can be added here
         ];
