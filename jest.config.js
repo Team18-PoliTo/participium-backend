@@ -11,7 +11,7 @@ module.exports = {
     ...tsJestTransformCfg,
   },
   testMatch: [
-    "**/?(*.)+(test|spec|int.test|e2e.test).ts"
+    "**/?(*.)+(test|spec|int.test|e2e.test|e2e.spec).ts"
   ],
   moduleFileExtensions: ["ts", "js", "json"],
   clearMocks: true,
