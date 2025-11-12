@@ -55,21 +55,6 @@ export const requireAuth = (
   }
 };
 
-/**
- * requireAuthenticated:
- * Ensures that `req.auth` exists and authentication was performed.
- */
-export const requireAuthenticated = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  if (!req.auth) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-  next();
-};
 
 /**
  * requireRole:

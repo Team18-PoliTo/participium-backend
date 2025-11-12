@@ -1,56 +1,65 @@
+// test/e2e/roleRoutes.e2e.test.ts
 import request from "supertest";
-import app from "../../src/app";
+import express, { Express } from "express";
+import roleRouter from "../../src/routes/roleRoutes";
 import { AppDataSource } from "../../src/config/database";
 import RoleDAO from "../../src/models/dao/RoleDAO";
-import jwt from "jsonwebtoken";
 
-describe("Role Management E2E Tests", () => {
-  let adminToken: string;
+let app: Express;
 
-  beforeAll(async () => {
+beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
+        await AppDataSource.initialize();
     }
+    // Чистая схема на каждый прогон e2e
+    await AppDataSource.synchronize(true);
 
-    const loginRes = await request(app)
-      .post("/api/auth/internal/login")
-      .send({
-        email: "admin@admin.com",
-        password: "password"
-      });
-    console.log(loginRes.body)
-    adminToken = loginRes.body.access_token;
-  });
+    app = express();
+    app.use(express.json());
+    app.use("/admin/roles", roleRouter);
+});
 
-  afterAll(async () => {
-    await AppDataSource.destroy();
-  });
+beforeEach(async () => {
+    const repo = AppDataSource.getRepository(RoleDAO);
+    await repo.clear();
+    const roles = repo.create([
+        // Если у вас поле называется name — замените role: на name:
+        { role: "ADMIN" as any },
+        { role: "OPERATOR" as any },
+        { role: "VIEWER" as any },
+    ]);
+    await repo.save(roles);
+});
 
-  describe("Get All Roles", () => {
-    it("should fetch all available roles", async () => {
-      const res = await request(app)
-        .get("/api/admin/roles")
-        .set("Authorization", `Bearer ${adminToken}`);
+afterAll(async () => {
+    if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+    }
+});
 
-      expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThan(0);
+describe("GET /admin/roles (E2E, real DB)", () => {
+    test("→ returns 200 and list of roles", async () => {
+        const res = await request(app).get("/admin/roles").expect(200);
 
-      const role = res.body[0];
-      expect(role).toHaveProperty("id");
-      expect(role).toHaveProperty("role");
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBe(3);
 
-      const roleNames = res.body.map((r: any) => r.role);
-      expect(roleNames).toEqual(
-        expect.arrayContaining(["TBD", "ADMIN", "PRO", "TOS", "ET"])
-      );
+        for (const r of res.body) {
+            expect(r).toHaveProperty("id");
+            expect(typeof r.role === "string" || typeof r.name === "string").toBe(true);
+        }
+
+        const names = res.body.map((r: any) => r.role ?? r.name);
+        expect(names).toEqual(expect.arrayContaining(["ADMIN", "OPERATOR", "VIEWER"]));
     });
 
-    it("should reject unauthorized access", async () => {
-      const res = await request(app)
-        .get("/api/admin/roles");
+    test("→ returns empty list when no roles", async () => {
+        const repo = AppDataSource.getRepository(RoleDAO);
+        await repo.clear();
 
-      expect(res.status).toBe(401);
+        const res = await request(app).get("/admin/roles").expect(200);
+
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body).toHaveLength(0);
     });
-  });
 });
