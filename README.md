@@ -22,6 +22,12 @@ Create a `.env` file based on `.env.example`
 cp .env.example .env
 ```
 
+## Docker Desktop  
+
+```bash
+docker-compose up -d
+```
+
 ## Run
 
 ```bash
@@ -34,6 +40,15 @@ npm run build
 # Production mode (requires build first)
 npm start
 ```
+
+## MinIO Client
+
+http://localhost:9001/
+
+user: minioadmin
+pass: minioadmin
+
+
 
 ## Architecture
 

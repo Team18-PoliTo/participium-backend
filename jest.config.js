@@ -11,11 +11,14 @@ module.exports = {
     ...tsJestTransformCfg,
   },
   testMatch: [
-    "**/?(*.)+(test|spec|int.test).ts"
+    "**/?(*.)+(test|spec|int.test|e2e.test|e2e.spec).ts"
   ],
   moduleFileExtensions: ["ts", "js", "json"],
   clearMocks: true,
-  setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],
+  setupFilesAfterEnv: [
+    "<rootDir>/test/setup.ts",
+    "<rootDir>/jest.setup.js"  
+  ],
   collectCoverageFrom: [
     "src/**/*.ts",
     "!src/data/migrations/**",  // Exclude migrations from coverage
