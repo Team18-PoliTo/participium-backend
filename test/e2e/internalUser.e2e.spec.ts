@@ -10,72 +10,73 @@ describe("Internal User Management E2E Tests", () => {
   let adminToken: string;
   let adminId: number;
   let proRoleId: number;
-  let tosRoleId: number;
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
+    await AppDataSource.synchronize(true);
 
     const roleRepo = AppDataSource.getRepository(RoleDAO);
-    const userRepo = AppDataSource.getRepository(InternalUserDAO);
-
-    // 1) ensure roles exist (idempotent)
-    for (const name of ["ADMIN", "PRO", "TOS"] as const) {
-      const found = await roleRepo.findOne({ where: { role: name as any } });
-      if (!found) {
-        await roleRepo.save(roleRepo.create({ role: name as any }));
+    const roles = [
+      { id: 0, role: "Unassigned" },
+      { id: 1, role: "ADMIN" },
+      { id: 2, role: "Municipal Administrator" },
+      { id: 3, role: "Municipal Public Relations Officer" },
+      { id: 4, role: "Technical Office Staff" },
+    ];
+    for (const role of roles) {
+      const exists = await roleRepo.findOne({ where: { id: role.id } });
+      if (!exists) {
+        await roleRepo.save(role);
       }
     }
 
-    // 2) fetch roles we need
-    const adminRole = await roleRepo.findOne({ where: { role: "ADMIN" as any } });
-    const proRole   = await roleRepo.findOne({ where: { role: "PRO"   as any } });
-    const tosRole   = await roleRepo.findOne({ where: { role: "TOS"   as any } });
-    if (!adminRole || !proRole || !tosRole) {
-      throw new Error("Failed to seed roles ADMIN/PRO/TOS");
+    proRoleId = 2;
+
+    const userRepo = AppDataSource.getRepository(InternalUserDAO);
+    const adminRole = await roleRepo.findOne({ where: { id: 1 } });
+    if (!adminRole) {
+      throw new Error("Admin role not found");
     }
-    proRoleId = proRole.id;
-    tosRoleId = tosRole.id;
 
-    // 3) ensure admin user exists and is ADMIN
-    let adminUser = await userRepo.findOne({
-      where: { email: "admin@admin.com" },
-      relations: ["role"],
-    });
+    const existingAdmin = await userRepo.findOne({ where: { email: "admin@admin.com" }, relations: ["role"] });
+    if (!existingAdmin) {
+      const adminUser = userRepo.create({
+        firstName: "AdminFirstName",
+        lastName: "AdminLastName",
+        email: "admin@admin.com",
+        password: await bcrypt.hash("password", 10),
+        role: adminRole,
+        status: "ACTIVE",
+      });
+      const savedAdmin = await userRepo.save(adminUser);
+      adminId = savedAdmin.id;
+    } else {
+      adminId = existingAdmin.id;
+    }
 
+    const adminUser = await userRepo.findOne({ where: { id: adminId }, relations: ["role"] });
     if (!adminUser) {
-      adminUser = await userRepo.save(
-          Object.assign(new InternalUserDAO(), {
-            firstName: "Admin",
-            lastName: "User",
-            email: "admin@admin.com",
-            password: await bcrypt.hash("admin123", 10),
-            role: adminRole,
-            status: "ACTIVE",
-          })
-      );
-    } else if (!adminUser.role || adminUser.role.id !== adminRole.id) {
-      adminUser.role = adminRole;
-      await userRepo.save(adminUser);
+      throw new Error("Admin user not found after creation");
     }
 
-    adminId = adminUser.id;
-
-    // 4) sign token exactly as middleware expects (role: 'ADMIN')
-    const secret = process.env.JWT_SECRET || "dev-secret";
     adminToken = jwt.sign(
-        {
-          sub: adminId,
-          kind: "internal",
-          email: adminUser.email,
-          role: "ADMIN", // <— ключевая правка
-        },
-        secret,
-        { expiresIn: "1h" }
+      {
+        sub: adminUser.id,
+        kind: "internal",
+        email: adminUser.email,
+        role: adminUser.role.role,
+      },
+      process.env.JWT_SECRET || "dev-secret",
+      { expiresIn: "1h" }
     );
 
-    // console.log('payload:', jwt.decode(adminToken));
+    console.log("Created admin token for user:", {
+      id: adminUser.id,
+      email: adminUser.email,
+      role: adminUser.role.role,
+    });
   });
 
   beforeEach(async () => {
@@ -94,33 +95,54 @@ describe("Internal User Management E2E Tests", () => {
   });
 
   describe("Create Internal User", () => {
+    it("should create new internal user with valid data", async () => {
+      const userData = {
+        firstName: "Test",
+        lastName: "User", 
+        email: "testuser@example.com",
+        password: "password123",
+        roleId: proRoleId
+      };
+
+      const res = await request(app)
+        .post("/api/admin/internal-users")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send(userData);
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty("id");
+      expect(res.body.email).toBe("testuser@example.com");
+      expect(res.body.firstName).toBe("Test");
+      expect(res.body.lastName).toBe("User");
+    });
 
     it("should reject duplicate email", async () => {
       const userData = {
         firstName: "Test",
         lastName: "User",
-        email: "admin@admin.com",
-        password: "password123",
-        roleId: proRoleId,
+        email: "admin@admin.com", 
+        password: "password123", 
+        roleId: proRoleId
       };
 
       const res = await request(app)
-          .post("/api/admin/internal-users")
-          .set("Authorization", `Bearer ${adminToken}`)
-          .send(userData);
+        .post("/api/admin/internal-users")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send(userData);
 
       expect(res.status).toBe(409);
-      expect(res.body).toHaveProperty(
-          "error",
-          "InternalUser with this email already exists"
-      );
+      expect(res.body).toHaveProperty("error", "InternalUser with this email already exists");
     });
 
     it("should validate required fields", async () => {
+      const invalidData = {
+        firstName: "Test",
+      };
+
       const res = await request(app)
-          .post("/api/admin/internal-users")
-          .set("Authorization", `Bearer ${adminToken}`)
-          .send({ firstName: "Test" });
+        .post("/api/admin/internal-users")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send(invalidData);
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty("error");
@@ -133,15 +155,18 @@ describe("Internal User Management E2E Tests", () => {
     beforeEach(async () => {
       const userRepo = AppDataSource.getRepository(InternalUserDAO);
       const roleRepo = AppDataSource.getRepository(RoleDAO);
-      const proRole = await roleRepo.findOne({ where: { id: proRoleId } });
-      if (!proRole) throw new Error("PRO role not found");
+      const unassignedRole = await roleRepo.findOne({ where: { id: 0 } });
+
+      if (!unassignedRole) {
+        throw new Error("Unassigned role not found");
+      }
 
       const testUser = new InternalUserDAO();
       testUser.firstName = "Original";
       testUser.lastName = "User";
       testUser.email = "testuser@example.com";
       testUser.password = await bcrypt.hash("password123", 10);
-      testUser.role = proRole;
+      testUser.role = unassignedRole;
       testUser.status = "ACTIVE";
 
       const savedUser = await userRepo.save(testUser);
@@ -149,41 +174,81 @@ describe("Internal User Management E2E Tests", () => {
     });
 
     it("should update user with valid data", async () => {
+      const updateData = {
+        newFirstName: "Updated",
+        newLastName: "Name",
+        newEmail: "updated@example.com",
+        newRoleId: proRoleId
+      };
+
       const res = await request(app)
-          .put(`/api/admin/internal-users/${testUserId}`)
-          .set("Authorization", `Bearer ${adminToken}`)
-          .send({
-            newFirstName: "Updated",
-            newLastName: "Name",
-            newEmail: "updated@example.com",
-            roleId: tosRoleId,
-          });
+        .put(`/api/admin/internal-users/${testUserId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send(updateData);
 
       expect(res.status).toBe(200);
       expect(res.body.firstName).toBe("Updated");
       expect(res.body.lastName).toBe("Name");
       expect(res.body.email).toBe("updated@example.com");
+      expect(res.body.role).toBe("Municipal Administrator");
     });
+
 
     it("should reject invalid user ID", async () => {
       const res = await request(app)
-          .put("/api/admin/internal-users/invalid-id")
-          .set("Authorization", `Bearer ${adminToken}`)
-          .send({ firstName: "Test" });
+        .put("/api/admin/internal-users/invalid-id")
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ firstName: "Test" });
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty("error", "Invalid ID format");
+    });
+
+    it("should reject assigning role when user already has non-placeholder role", async () => {
+      const roleRepo = AppDataSource.getRepository(RoleDAO);
+      const assignedRole = await roleRepo.findOne({ where: { id: proRoleId } });
+      if (!assignedRole) throw new Error("Test role not found");
+
+      const userRepo = AppDataSource.getRepository(InternalUserDAO);
+      const existingUser = await userRepo.save({
+        firstName: "Assigned",
+        lastName: "User",
+        email: "assigned-role@example.com",
+        password: await bcrypt.hash("password123", 10),
+        role: assignedRole,
+        status: "ACTIVE",
+      } as any);
+
+      const res = await request(app)
+        .put(`/api/admin/internal-users/${existingUser.id}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ newRoleId: 4 });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toHaveProperty("error", "Role already assigned");
+    });
+
+    it("should reject assigning unknown role id", async () => {
+      const res = await request(app)
+        .put(`/api/admin/internal-users/${testUserId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ newRoleId: 9999 });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toHaveProperty("error", "Role not found");
     });
   });
 
   describe("Fetch Internal Users", () => {
     it("should fetch all internal users", async () => {
       const res = await request(app)
-          .get("/api/admin/internal-users")
-          .set("Authorization", `Bearer ${adminToken}`);
+        .get("/api/admin/internal-users")
+        .set("Authorization", `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
+      
+      // Should at least have the admin user
       expect(res.body.length).toBeGreaterThan(0);
       expect(res.body[0]).toHaveProperty("email");
       expect(res.body[0]).toHaveProperty("firstName");
@@ -198,7 +263,10 @@ describe("Internal User Management E2E Tests", () => {
       const userRepo = AppDataSource.getRepository(InternalUserDAO);
       const roleRepo = AppDataSource.getRepository(RoleDAO);
       const proRole = await roleRepo.findOne({ where: { id: proRoleId } });
-      if (!proRole) throw new Error("PRO role not found");
+      
+      if (!proRole) {
+        throw new Error("PRO role not found");
+      }
 
       const testUser = new InternalUserDAO();
       testUser.firstName = "ToDelete";
@@ -214,35 +282,32 @@ describe("Internal User Management E2E Tests", () => {
 
     it("should disable user by ID", async () => {
       const res = await request(app)
-          .delete(`/api/admin/internal-users/${testUserId}`)
-          .set("Authorization", `Bearer ${adminToken}`);
+        .delete(`/api/admin/internal-users/${testUserId}`)
+        .set("Authorization", `Bearer ${adminToken}`);
 
       expect(res.status).toBe(204);
 
       const userRepo = AppDataSource.getRepository(InternalUserDAO);
-      const disabledUser = await userRepo.findOne({
+      const disabledUser = await userRepo.findOne({ 
         where: { id: testUserId },
-        relations: ["role"],
+        relations: ["role"]
       });
       expect(disabledUser?.status).toBe("DEACTIVATED");
     });
 
     it("should reject deleting own account", async () => {
       const res = await request(app)
-          .delete(`/api/admin/internal-users/${adminId}`)
-          .set("Authorization", `Bearer ${adminToken}`);
+        .delete(`/api/admin/internal-users/${adminId}`)
+        .set("Authorization", `Bearer ${adminToken}`);
 
       expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty(
-          "message",
-          "You cannot delete your own account"
-      );
+      expect(res.body).toHaveProperty("message", "You cannot delete your own account");
     });
 
     it("should handle non-existent user", async () => {
       const res = await request(app)
-          .delete("/api/admin/internal-users/99999")
-          .set("Authorization", `Bearer ${adminToken}`);
+        .delete("/api/admin/internal-users/99999")
+        .set("Authorization", `Bearer ${adminToken}`);
 
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty("message", "Internal user not found");
@@ -250,14 +315,11 @@ describe("Internal User Management E2E Tests", () => {
 
     it("should reject invalid user ID", async () => {
       const res = await request(app)
-          .delete("/api/admin/internal-users/invalid")
-          .set("Authorization", `Bearer ${adminToken}`);
+        .delete("/api/admin/internal-users/invalid")
+        .set("Authorization", `Bearer ${adminToken}`);
 
       expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty(
-          "message",
-          "Invalid internal user id"
-      );
+      expect(res.body).toHaveProperty("message", "Invalid internal user id");
     });
   });
 });

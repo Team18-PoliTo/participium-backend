@@ -16,7 +16,7 @@ beforeAll(async () => {
   const roleRepo = AppDataSource.getRepository(RoleDAO);
   await roleRepo.save({
     id: 0, 
-    role: "EMPLOYEE",
+    role: "Unassigned",
   });
 
   app = express();

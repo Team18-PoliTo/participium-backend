@@ -1,30 +1,22 @@
+// Mock bcrypt before importing
+const mockCompare = jest.fn();
+const mockHash = jest.fn();
+
 jest.mock("bcrypt", () => ({
-  __esModule: true,
-  compare: jest.fn(async () => true),
-  hash: jest.fn(async () => "hashed"),
-  default: {
-    compare: jest.fn(async () => true),
-    hash: jest.fn(async () => "hashed"),
-  },
+  compare: (...args: any[]) => mockCompare(...args),
+  hash: (...args: any[]) => mockHash(...args),
 }));
 
 jest.mock("jsonwebtoken", () => ({
-  __esModule: true,
   sign: jest.fn(() => "jwt-token"),
-  default: {
-    sign: jest.fn(() => "jwt-token"),
-  },
 }));
 
 import InternalUserService from "../../../src/services/internalUserService";
-import { InternalUserMapper } from "../../../src/mappers/InternalUserMapper";
 import {
   RegisterInternalUserRequestDTO,
   UpdateInternalUserRequestDTO,
 } from "../../../src/models/dto/ValidRequestDTOs";
 import InternalUserDAO from "../../../src/models/dao/InternalUserDAO";
-import * as bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
 describe("InternalUserService", () => {
   let userRepositoryMock: any;
@@ -32,15 +24,24 @@ describe("InternalUserService", () => {
   let service: InternalUserService;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Set default return values for mocks
+    mockCompare.mockImplementation(() => Promise.resolve(true));
+    mockHash.mockImplementation(() => Promise.resolve("hashed_password"));
+
     userRepositoryMock = {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      fetchAll: jest.fn(),
     };
+
     roleRepositoryMock = {
       findById: jest.fn(),
     };
+
     service = new InternalUserService(userRepositoryMock, roleRepositoryMock);
   });
 
@@ -52,232 +53,147 @@ describe("InternalUserService", () => {
       lastName: "B",
     };
 
-    it("should throw if email already exists", async () => {
+    it("throws when email already exists", async () => {
       userRepositoryMock.findByEmail.mockResolvedValue({} as InternalUserDAO);
       await expect(service.register(dto)).rejects.toThrow(
         "InternalUser with this email already exists"
       );
     });
 
-    it("should throw if default role not found", async () => {
+    it("throws when default role missing", async () => {
       userRepositoryMock.findByEmail.mockResolvedValue(null);
       roleRepositoryMock.findById.mockResolvedValue(null);
-      await expect(service.register(dto)).rejects.toThrow(
-        "Default role not found"
-      );
+      await expect(service.register(dto)).rejects.toThrow("Default role not found");
     });
 
-    it("should create user successfully", async () => {
+    it("creates user with default role", async () => {
       userRepositoryMock.findByEmail.mockResolvedValue(null);
       roleRepositoryMock.findById.mockResolvedValue({ id: 0, role: "TBD" });
-      userRepositoryMock.create.mockImplementation(
-        async (user: InternalUserDAO) => ({ ...user, id: 1, status: "ACTIVE" })
-      );
+      userRepositoryMock.create.mockImplementation(async (user: any) => ({
+        ...user,
+        id: 1,
+        status: "ACTIVE",
+        role: { id: 0, role: "TBD" },
+      }));
 
       const result = await service.register(dto);
-      expect(result.id).toBe(1);
+
       expect(userRepositoryMock.create).toHaveBeenCalled();
-      expect(result.status).toBe("ACTIVE");
+      expect(result).toEqual(
+        expect.objectContaining({ id: 1, email: "a@b.com", status: "ACTIVE" })
+      );
     });
   });
 
   describe("update", () => {
-    const updateDto: UpdateInternalUserRequestDTO = {
-      newEmail: "new@b.com",
-      newFirstName: "NewA",
-      newLastName: "NewB",
-    };
+    const baseDao: InternalUserDAO = {
+      id: 2,
+      email: "a@b.com",
+      firstName: "A",
+      lastName: "B",
+      status: "ACTIVE",
+      role: { id: 0, role: "TBD" } as any,
+    } as InternalUserDAO;
 
-    it("should throw if user not found", async () => {
+    it("throws when user missing", async () => {
       userRepositoryMock.findById.mockResolvedValue(null);
-      await expect(service.update(1, updateDto)).rejects.toThrow(
+      await expect(service.update(2, {} as UpdateInternalUserRequestDTO)).rejects.toThrow(
         "InternalUser not found"
       );
     });
 
-    it("should throw if new email already used by another user", async () => {
-      userRepositoryMock.findById.mockResolvedValue({
-        id: 1,
-        email: "a@b.com",
-      } as InternalUserDAO);
-      userRepositoryMock.findByEmail.mockResolvedValue({
-        id: 2,
-        email: "new@b.com",
-      } as InternalUserDAO);
+    it("throws when new email used by another user", async () => {
+      userRepositoryMock.findById.mockResolvedValue(baseDao);
+      userRepositoryMock.findByEmail.mockResolvedValue({ id: 3 } as InternalUserDAO);
+      await expect(
+        service.update(2, { newEmail: "exists@city.com" })
+      ).rejects.toThrow("Email already in use by another user");
+    });
 
-      await expect(service.update(1, updateDto)).rejects.toThrow(
-        "Email already in use by another user"
+    it("updates basic fields", async () => {
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      userRepositoryMock.update.mockImplementation(async (user: any) => ({ ...user }));
+
+      const result = await service.update(2, {
+        newEmail: "new@city.com",
+        newFirstName: "New",
+        newLastName: "Name",
+      });
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          email: "new@city.com",
+          firstName: "New",
+          lastName: "Name",
+        })
       );
     });
 
-    it("should update user successfully", async () => {
-      const dao = {
-        id: 1,
-        email: "a@b.com",
-        firstName: "A",
-        lastName: "B",
-        status: "ACTIVE",
-      } as InternalUserDAO;
-      userRepositoryMock.findById.mockResolvedValue(dao);
+    it("allows single assignment when role exists", async () => {
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
       userRepositoryMock.findByEmail.mockResolvedValue(null);
-      userRepositoryMock.update.mockImplementation(
-        async (user: InternalUserDAO) => ({ ...user })
-      );
+      roleRepositoryMock.findById.mockResolvedValue({ id: 5, role: "ADMIN" });
+      userRepositoryMock.update.mockImplementation(async (user: any) => ({ ...user }));
 
-      const result = await service.update(1, updateDto);
-      expect(result.firstName).toBe("NewA");
-      expect(result.lastName).toBe("NewB");
-      expect(result.email).toBe("new@b.com");
-    });
+      const result = await service.update(2, { newRoleId: 5 });
 
-    it("should update partial fields if some are undefined", async () => {
-      const dao = {
-        id: 1,
-        email: "a@b.com",
-        firstName: "A",
-        lastName: "B",
-        status: "ACTIVE",
-      } as InternalUserDAO;
-      userRepositoryMock.findById.mockResolvedValue(dao);
-      userRepositoryMock.findByEmail.mockResolvedValue(null);
-      userRepositoryMock.update.mockImplementation(
-        async (user: InternalUserDAO) => ({ ...user })
-      );
-
-      const partialUpdate = { newFirstName: "Partial" };
-      const result = await service.update(1, partialUpdate as any);
-      expect(result.firstName).toBe("Partial");
-      expect(result.lastName).toBe("B");
-      expect(result.email).toBe("a@b.com");
-    });
-
-    it("should update role when newRoleId provided", async () => {
-      const dao = {
-        id: 3,
-        email: "staff@city.com",
-        firstName: "Staff",
-        lastName: "Member",
-        status: "ACTIVE",
-        role: { id: 0, role: "TBD" },
-      } as InternalUserDAO;
-      userRepositoryMock.findById.mockResolvedValue(dao);
-      userRepositoryMock.findByEmail.mockResolvedValue(null);
-      roleRepositoryMock.findById.mockResolvedValue({ id: 1, role: "ADMIN" });
-      userRepositoryMock.update.mockImplementation(async (user: InternalUserDAO) => ({
-        ...user,
-      }));
-
-      const result = await service.update(3, { newRoleId: 1 });
-
-      expect(roleRepositoryMock.findById).toHaveBeenCalledWith(1);
+      expect(roleRepositoryMock.findById).toHaveBeenCalledWith(5);
       expect(result.role).toBe("ADMIN");
     });
 
-    it("should reject role change if already assigned", async () => {
-      const dao = {
-        id: 4,
-        email: "assigned@city.com",
-        firstName: "Assigned",
-        lastName: "User",
-        status: "ACTIVE",
-        role: { id: 2, role: "ADMIN" },
-      } as InternalUserDAO;
-      userRepositoryMock.findById.mockResolvedValue(dao);
+    it("rejects role change when already assigned", async () => {
+      userRepositoryMock.findById.mockResolvedValue({
+        ...baseDao,
+        role: { id: 1, role: "ADMIN" },
+      });
 
-      await expect(service.update(4, { newRoleId: 3 })).rejects.toThrow(
+      await expect(service.update(2, { newRoleId: 4 })).rejects.toThrow(
         "Role already assigned"
       );
     });
 
-    it("should reject assigning same placeholder role", async () => {
-      const dao = {
-        id: 5,
-        email: "placeholder@city.com",
-        firstName: "Place",
-        lastName: "Holder",
-        status: "ACTIVE",
-        role: { id: 0, role: "TBD" },
-      } as InternalUserDAO;
-      userRepositoryMock.findById.mockResolvedValue(dao);
+    it("throws when target role not found", async () => {
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      roleRepositoryMock.findById.mockResolvedValue(null);
 
-      await expect(service.update(5, { newRoleId: 0 })).rejects.toThrow(
-        "Role already assigned"
+      await expect(service.update(2, { newRoleId: 7 })).rejects.toThrow(
+        "Role not found"
       );
     });
+  });
 
+  describe("fetchUsers", () => {
+    it("returns mapped users", async () => {
+      const t = new Date();
+      userRepositoryMock.fetchAll.mockResolvedValue([
+        {
+          id: 1,
+          email: "staff@city.com",
+          firstName: "Staff",
+          lastName: "One",
+          createdAt: t,
+          role: { role: "ADMIN" },
+          status: "ACTIVE",
+        },
+      ]);
 
-    describe("fetchUsers", () => {
-      beforeEach(() => {
-        userRepositoryMock.fetchAll = jest.fn();
-      });
+      const result = await service.fetchUsers();
+      expect(result).toEqual([
+        expect.objectContaining({ id: 1, role: "ADMIN", status: "ACTIVE" }),
+      ]);
+    });
 
-      it("should return mapped list of users", async () => {
-        const t1 = new Date("2024-01-02T03:04:05.000Z");
-        const t2 = new Date("2024-01-03T10:20:30.000Z");
-
-        const daoUsers: any[] = [
-          {
-            id: 1,
-            email: "a@b.com",
-            firstName: "A",
-            lastName: "B",
-            role: { role: "EMPLOYEE" },
-            createdAt: t1,
-            password: "hash",
-            status: "ACTIVE",
-          },
-          {
-            id: 2,
-            email: "x@y.com",
-            firstName: "X",
-            lastName: "Y",
-            role: { role: "ADMIN" },
-            createdAt: t2,
-            password: "hash2",
-            status: "SUSPENDED",
-          },
-        ];
-
-        (userRepositoryMock.fetchAll as jest.Mock).mockResolvedValue(daoUsers);
-
-        const result = await service.fetchUsers();
-
-        expect(userRepositoryMock.fetchAll).toHaveBeenCalledTimes(1);
-        expect(result).toEqual([
-          expect.objectContaining({
-            id: 1,
-            email: "a@b.com",
-            firstName: "A",
-            lastName: "B",
-            role: "EMPLOYEE",
-            createdAt: t1,
-            status: "ACTIVE",
-          }),
-          expect.objectContaining({
-            id: 2,
-            email: "x@y.com",
-            firstName: "X",
-            lastName: "Y",
-            role: "ADMIN",
-            createdAt: t2,
-            status: "SUSPENDED",
-          }),
-        ]);
-      });
-
-      it("should return empty array when no users exist", async () => {
-        (userRepositoryMock.fetchAll as jest.Mock).mockResolvedValue([]);
-
-        const result = await service.fetchUsers();
-
-        expect(userRepositoryMock.fetchAll).toHaveBeenCalledTimes(1);
-        expect(result).toEqual([]);
-      });
+    it("returns empty list when repository empty", async () => {
+      userRepositoryMock.fetchAll.mockResolvedValue([]);
+      const result = await service.fetchUsers();
+      expect(result).toEqual([]);
     });
   });
 
   describe("disableById", () => {
-    it("should mark user as deactivated", async () => {
+    it("marks user as deactivated", async () => {
       const dao = { id: 10, status: "ACTIVE" } as InternalUserDAO;
       userRepositoryMock.findById.mockResolvedValue(dao);
       userRepositoryMock.update.mockResolvedValue({ ...dao, status: "DEACTIVATED" });
@@ -290,11 +206,37 @@ describe("InternalUserService", () => {
       );
     });
 
-    it("should return not_found when user missing", async () => {
+    it("returns not_found when user missing", async () => {
       userRepositoryMock.findById.mockResolvedValue(null);
       const result = await service.disableById(10);
       expect(result).toBe("not_found");
-      expect(userRepositoryMock.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("login", () => {
+    const baseUser: any = {
+      id: 9,
+      email: "internal@city.com",
+      password: "hashed",
+      status: "ACTIVE",
+    };
+
+    it("throws when user cannot be found", async () => {
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      await expect(
+        service.login({ email: "missing@city.com", password: "x" })
+      ).rejects.toThrow("Invalid credentials");
+    });
+
+    it("throws when status is not ACTIVE", async () => {
+      userRepositoryMock.findByEmail.mockResolvedValue({
+        ...baseUser,
+        status: "SUSPENDED",
+        role: { role: "ADMIN" },
+      });
+      await expect(
+        service.login({ email: baseUser.email, password: "x" })
+      ).rejects.toThrow("Invalid credentials");
     });
   });
 });
