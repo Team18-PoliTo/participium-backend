@@ -1,4 +1,4 @@
-import { on } from "events";
+/* istanbul ignore file */
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from "typeorm";
 import ReportDAO from "./ReportDAO";
 

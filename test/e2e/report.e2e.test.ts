@@ -176,7 +176,6 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
       .set("Content-Type", "application/json")
       .send(reportData);
 
-    console.log(res.body);
     expect(res.status).toBe(201);
     const body = res.body;
 
@@ -184,5 +183,46 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
     expect(fileBuffer).toBeDefined();
     await MinIoService.deleteFile(body.photos[0]);
     await expect(MinIoService.getFile(body.photos[0])).rejects.toThrow();
+  });
+
+  it("should reject creation without authorization", async () => {
+    const res = await request(app)
+      .post("/api/citizens/reports")
+      .send({});
+
+    expect(res.status).toBe(401);
+    expect(res.body).toHaveProperty("message");
+  });
+
+  it("should validate report payload", async () => {
+    const res = await request(app)
+      .post("/api/citizens/reports")
+      .set("Authorization", `Bearer ${token}`)
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("should return 404 when citizen does not exist", async () => {
+    const res = await request(app)
+      .post("/api/citizens/reports")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title: "Ghost report",
+        description: "No citizen",
+        citizenId: citizenId + 999,
+        category: "Test",
+        location: { latitude: 1, longitude: 2 },
+        binaryPhoto1: {
+          filename: "photo.png",
+          mimetype: "image/png",
+          size: photo1.length,
+          data: photo1Base64,
+        },
+      });
+
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty("error", "Citizen not found");
   });
 });

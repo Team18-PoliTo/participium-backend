@@ -9,41 +9,64 @@ import RoleDAO from "../../src/models/dao/RoleDAO";
 describe("Authentication E2E Tests", () => {
   let citizenId: number;
   let internalUserId: number;
+  let roleRepo = AppDataSource.getRepository(RoleDAO);
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
       await AppDataSource.initialize();
     }
+    await AppDataSource.synchronize(true);
+
+    roleRepo = AppDataSource.getRepository(RoleDAO);
+    const baseRoles = [
+      { id: 0, role: "Unassigned" },
+      { id: 1, role: "ADMIN" },
+      { id: 2, role: "Municipal Administrator" },
+      { id: 3, role: "Municipal Public Relations Officer" },
+      { id: 4, role: "Technical Office Staff" },
+      { id: 99, role: "Test Internal Role" },
+    ];
+    for (const role of baseRoles) {
+      const exists = await roleRepo.findOne({ where: { id: role.id } });
+      if (!exists) {
+        await roleRepo.save(role);
+      }
+    }
   });
 
   beforeEach(async () => {
-  const citizenRepo = AppDataSource.getRepository(CitizenDAO);
-  const citizen = await citizenRepo.save({
-    email: "testcitizen@example.com",
-    username: "testcitizen",
-    password: await bcrypt.hash("password123", 10),
-    firstName: "Test",
-    lastName: "Citizen"
-  });
-  citizenId = citizen.id;
+    const citizenRepo = AppDataSource.getRepository(CitizenDAO);
+    const internalRepo = AppDataSource.getRepository(InternalUserDAO);
 
-  const roleRepo = AppDataSource.getRepository(RoleDAO);
-  let proRole = await roleRepo.findOne({ where: { role: "PRO" } });
-  if (!proRole) {
-    proRole = await roleRepo.save({ role: "PRO", description: "Professional Role" });
-  }
+    await citizenRepo.clear();
+    await internalRepo.clear();
 
-  const internalRepo = AppDataSource.getRepository(InternalUserDAO);
-  const internalUser = await internalRepo.save({
-    email: "testinternal@example.com",
-    firstName: "Test",
-    lastName: "Internal",
-    password: await bcrypt.hash("password123", 10),
-    status: "ACTIVE",
-    role: proRole
+    const citizen = await citizenRepo.save({
+      email: "testcitizen@example.com",
+      username: "testcitizen",
+      password: await bcrypt.hash("password123", 10),
+      firstName: "Test",
+      lastName: "Citizen",
+      status: "ACTIVE",
+    });
+    citizenId = citizen.id;
+
+    const testRole = await roleRepo.findOne({ where: { id: 99 } });
+    if (!testRole) {
+      throw new Error("Required test role not found");
+    }
+
+    const internalUser = await internalRepo.save({
+      email: "testinternal@example.com",
+      firstName: "Test",
+      lastName: "Internal",
+      password: await bcrypt.hash("password123", 10),
+      status: "ACTIVE",
+      role: testRole,
+    });
+    internalUserId = internalUser.id;
   });
-  internalUserId = internalUser.id;
-});
+
   afterEach(async () => {
     const citizenRepo = AppDataSource.getRepository(CitizenDAO);
     const internalRepo = AppDataSource.getRepository(InternalUserDAO);
@@ -102,7 +125,6 @@ describe("Authentication E2E Tests", () => {
           email: "testinternal@example.com",
           password: "password123"
         });
-    console.log(res.body)
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty("access_token");
     });

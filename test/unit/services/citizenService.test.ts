@@ -106,6 +106,43 @@ describe('CitizenService — stable nuclear mode', () => {
         ).rejects.toThrow('Citizen with this username already exists');
     });
 
+    it('register: creates citizen when email and username are free', async () => {
+        repo.findByEmail.mockResolvedValueOnce(null);
+        repo.findByUsername.mockResolvedValueOnce(null);
+        const created = {
+            ...citizenBase,
+            email: 'fresh@polito.it',
+            username: 'freshuser',
+            id: 77,
+        };
+        repo.create.mockResolvedValueOnce(created);
+
+        const dto = await service.register({
+            email: 'fresh@polito.it',
+            username: 'FreshUser',
+            password: 'strong',
+            firstName: 'Fresh',
+            lastName: 'User',
+        });
+
+        expect(repo.create).toHaveBeenCalledWith({
+            email: 'fresh@polito.it',
+            username: 'freshuser',
+            firstName: 'Fresh',
+            lastName: 'User',
+            password: 'hashed-pass',
+            status: 'ACTIVE',
+        });
+        expect(dto).toEqual(
+            expect.objectContaining({
+                id: 77,
+                email: 'fresh@polito.it',
+                username: 'freshuser',
+                status: 'ACTIVE',
+            })
+        );
+    });
+
     // ---------- LOGIN TESTS ----------
 
     it('login: success — returns token and DTO, resets failed attempts', async () => {
@@ -132,6 +169,28 @@ describe('CitizenService — stable nuclear mode', () => {
         expect(result).toEqual({ access_token: 'token-123', token_type: 'bearer' });
     });
 
+    it('login: treats missing status as ACTIVE and resets counters', async () => {
+        repo.findByEmail.mockResolvedValueOnce({
+            ...citizenBase,
+            status: undefined,
+            failedLoginAttempts: undefined,
+            password: 'hashed-pass',
+        });
+        (bcrypt as any).compare = jest.fn(async () => true);
+        (jwt as any).sign = jest.fn(() => 'token-abc');
+
+        const result = await service.login({
+            email: citizenBase.email,
+            password: 'pass123',
+        } as LoginRequestDTO);
+
+        expect(repo.update).toHaveBeenCalledWith(citizenBase.id, {
+            failedLoginAttempts: 0,
+            lastLoginAt: expect.any(Date),
+        });
+        expect(result).toEqual({ access_token: 'token-abc', token_type: 'bearer' });
+    });
+
     it('login: throws when email not found', async () => {
         repo.findByEmail.mockResolvedValueOnce(null);
 
@@ -156,6 +215,22 @@ describe('CitizenService — stable nuclear mode', () => {
         ).rejects.toThrow('Invalid credentials');
 
         expect(repo.update).toHaveBeenCalledWith(citizenBase.id, { failedLoginAttempts: 2 });
+    });
+
+    it('login: wrong password defaults failed attempts to 0 when missing', async () => {
+        repo.findByEmail.mockResolvedValueOnce({
+            ...citizenBase,
+            failedLoginAttempts: undefined,
+            password: 'hashed-pass',
+        });
+
+        (bcrypt as any).compare = jest.fn(async () => false);
+
+        await expect(
+            service.login({ email: citizenBase.email, password: 'oops' }),
+        ).rejects.toThrow('Invalid credentials');
+
+        expect(repo.update).toHaveBeenCalledWith(citizenBase.id, { failedLoginAttempts: 1 });
     });
 
     it('login: throws when status is not ACTIVE', async () => {

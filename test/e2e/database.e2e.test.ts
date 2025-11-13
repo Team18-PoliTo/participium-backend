@@ -24,7 +24,13 @@ describe("Database E2E Tests", () => {
     
     expect(roles.length).toBeGreaterThan(0);
     expect(roles.map(r => r.role)).toEqual(
-      expect.arrayContaining(["TBD", "ADMIN", "PRO", "TOS", "ET"])
+      expect.arrayContaining([
+        "Unassigned",
+        "ADMIN",
+        "Municipal Administrator",
+        "Municipal Public Relations Officer",
+        "Technical Office Staff",
+      ])
     );
   });
 
@@ -47,13 +53,14 @@ describe("Database E2E Tests", () => {
   });
 
   it("should not create duplicate admin user on re-initialization", async () => {
-    const userRepo = AppDataSource.getRepository(InternalUserDAO);
-    const beforeCount = await userRepo.count();
-    
-    // Try to initialize again
+    const userRepoBefore = AppDataSource.getRepository(InternalUserDAO);
+    const beforeCount = await userRepoBefore.count();
+
+    await closeDatabase();
     await initializeDatabase();
-    
-    const afterCount = await userRepo.count();
-    expect(afterCount).toBe(beforeCount); // No new users should be created
+
+    const userRepoAfter = AppDataSource.getRepository(InternalUserDAO);
+    const afterCount = await userRepoAfter.count();
+    expect(afterCount).toBe(beforeCount);
   });
 });
