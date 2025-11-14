@@ -109,7 +109,8 @@ More time was allocated to the tests and less was given to risks.
 
 ### What lessons did you learn (both positive and negative) in this sprint?
 Positive point: Never give up in a sprint, even if there is less time left than expected for some tasks, teamwork can save the sprint.
-Negative: It is necessary to add and monitor intermediate deadlines for each story.
+We did the front-end tests too this time(including test cases), and we complete all e2e test and eachive almost 100 percent of coverage.
+Negative: It is necessary to add and monitor intermediate deadlines for each story. 
 
 ### Which improvement goals set in the previous retrospective were you able to achieve?
 We didn't add task for bug fixing but we include time into the task estimation.
