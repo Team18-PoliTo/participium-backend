@@ -30,7 +30,7 @@ Index:
 ##### Our definition of DONE
 
 - Unit Tests passing
-- Code review completed, aprroval from at least one other team member
+- Code review completed, approval from at least one other team member
 - Code present on GitHub
 - End-to-End tests performed 
 - Manual testing for frontend
@@ -117,11 +117,12 @@ We didn't add task for bug fixing but we include time into the task estimation.
 
 ### Which ones you were not able to achieve? Why?
 
-We started later then had to. 
+YouTrack chart looks more accurate(didn't achieve) -> We started later then had to because of our schedules missmatching.
 
 ### Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
 Set and monitor intermediate deadlines. 
+Consider having less strict roles in the team.
 
 ### One thing you are proud of as a Team!!
 
