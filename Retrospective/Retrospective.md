@@ -100,15 +100,28 @@ Index:
 ## ASSESSMENT
 
 ### What did go wrong in the sprint?
+In the first test sprint, we divided into two groups: front-end and back-end, and this model worked perfectly. In this sprint, we used the same model, but realized that it did not work as well as it should have, since the front-end team had more work to do, and this affected productivity.
+We also quickly began development, but there were aspects of the technical specifications that were not fully understood and had to be changed during development.
 
 ### What caused your errors in estimation (if any)?
 
+More time was allocated to the tests and less was given to risks.
+
 ### What lessons did you learn (both positive and negative) in this sprint?
+Positive point: Never give up in a sprint, even if there is less time left than expected for some tasks, teamwork can save the sprint.
+Negative: It is necessary to add and monitor intermediate deadlines for each story.
 
 ### Which improvement goals set in the previous retrospective were you able to achieve?
+We didn't add task for bug fixing but we include time into the task estimation.
 
 ### Which ones you were not able to achieve? Why?
 
+We started later then had to. 
+
 ### Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
+Set and monitor intermediate deadlines. 
+
 ### One thing you are proud of as a Team!!
+
+Our teamwork didn't let us down, and we successfully completed all the stories we added during this sprint.
