@@ -2,13 +2,15 @@ import { Router } from "express";
 import InternalUserController from "../controllers/InternalUserController";
 import InternalUserService from "../services/internalUserService";
 import InternalUserRepository from "../repositories/InternalUserRepository";
+import ReportService from "../services/implementation/reportService";
 
 const router = Router();
 
 // Dependency Injection Setup
 const internalUserRepository = new InternalUserRepository();
 const internalUserService = new InternalUserService(internalUserRepository);
-const internalUserController = new InternalUserController(internalUserService);
+const reportService = new ReportService();
+const internalUserController = new InternalUserController(internalUserService, reportService);
 
 // DTOs
 /**
@@ -178,5 +180,37 @@ router.put("/:id", internalUserController.update.bind(internalUserController));
  *         description: Internal user not found
  */
 router.delete("/:id", internalUserController.delete.bind(internalUserController));
+
+/**
+ * @swagger
+ * /admin/internal-users/reports:
+ *   get:
+ *     summary: Get reports for review (pending approval by default)
+ *     description: Retrieves reports for internal users to review and approve/reject. Defaults to pending approval reports.
+ *     tags: [Reports]
+ *     security:
+ *       - internalPassword: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [Pending Approval, Assigned, In Progress, Suspended, Rejected, Resolved]
+ *         description: Filter reports by status (defaults to Pending Approval)
+ *     responses:
+ *       200:
+ *         description: List of reports matching the status filter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportDTO'
+ *       400:
+ *         description: Error retrieving reports
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/reports", internalUserController.getReports.bind(internalUserController));
 
 export default router;

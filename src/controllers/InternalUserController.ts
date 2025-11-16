@@ -4,8 +4,11 @@ import {
   UpdateInternalUserRequestDTO,
 } from "../models/dto/ValidRequestDTOs";
 import { InternalUserDTO } from "../models/dto/InternalUserDTO";
+import { ReportDTO } from "../models/dto/ReportDTO";
 import { validate } from "class-validator";
 import { plainToClass } from "class-transformer";
+import { IReportService } from "../services/IReportService";
+import { ReportStatus } from "../constants/ReportStatus";
 
 interface IInternalUserService {
   register(data: RegisterInternalUserRequestDTO): Promise<InternalUserDTO>;
@@ -18,7 +21,10 @@ interface IInternalUserService {
 }
 
 class InternalUserController {
-  constructor(private internalUserService: IInternalUserService) {}
+  constructor(
+    private internalUserService: IInternalUserService,
+    private reportService?: IReportService
+  ) {}
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -121,6 +127,27 @@ class InternalUserController {
       res.status(204).send();
     } catch (err) {
       next(err);
+    }
+  }
+
+  async getReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      // Default to pending reports or use query param if provided
+      const status = (req.query.status as string) || ReportStatus.PENDING_APPROVAL;
+
+      const reports: ReportDTO[] = await this.reportService.getReportsByStatus(status);
+      res.status(200).json(reports);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
     }
   }
 }

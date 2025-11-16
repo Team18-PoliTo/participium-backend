@@ -13,6 +13,7 @@ export class ReportMapper {
       binaryPhotos: [],
       createdAt: reportDAO.createdAt,
       location: JSON.parse(reportDAO.location),
+      status: reportDAO.status,
     };
   } 
 }

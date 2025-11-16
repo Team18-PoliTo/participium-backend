@@ -5,4 +5,6 @@ export interface IReportRepository {
   create(reportDAO: Partial<ReportDAO>): Promise<ReportDAO>;
   findById(id: number): Promise<ReportDAO | null>;
   update(reportDAO: Partial<ReportDAO>): Promise<ReportDAO>;
+  findByStatus(status: string): Promise<ReportDAO[]>;
+  findAll(): Promise<ReportDAO[]>;
 }

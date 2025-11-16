@@ -18,4 +18,5 @@ export class ReportDTO {
     latitude: number;
     longitude: number;
   };
+  status: string;
 }

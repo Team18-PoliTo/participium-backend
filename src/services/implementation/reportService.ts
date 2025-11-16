@@ -7,14 +7,16 @@ import CitizenRepository from "../../repositories/implementation/CitizenReposito
 import { ICitizenRepository } from "../../repositories/ICitizenRepository";
 import MinIoService from "../MinIoService";
 import { v4 as uuidv4 } from "uuid";
-class ReportService {
+import { IReportService } from "../IReportService";
+import { ReportStatus } from "../../constants/ReportStatus";
+class ReportService implements IReportService {
   constructor(
     private reportRepository: IReportRepository = new ReportRepository(),
     private citizenRepository: ICitizenRepository = new CitizenRepository()
   ) {}
 
-  async create(data: CreateReportRequestDTO): Promise<ReportDTO> {
-    const citizen = await this.citizenRepository.findById(data.citizenId);
+  async create(data: CreateReportRequestDTO, citizenId: number): Promise<ReportDTO> {
+    const citizen = await this.citizenRepository.findById(citizenId);
     if (!citizen) {
       throw new Error("Citizen not found");
     }
@@ -27,6 +29,7 @@ class ReportService {
       category: data.category,
       createdAt: new Date(),
       location: JSON.stringify(data.location),
+      status: ReportStatus.PENDING_APPROVAL,
     });
     // Creates the ObjectKey to be used in minIO
     const pathPrefix = `citizens/${citizen.id}/reports/${newReport.id}/`;
@@ -78,6 +81,11 @@ class ReportService {
     await this.reportRepository.update(newReport);
 
     return ReportMapper.toDTO(newReport);
+  }
+
+  async getReportsByStatus(status: string): Promise<ReportDTO[]> {
+    const reports = await this.reportRepository.findByStatus(status);
+    return reports.map((report) => ReportMapper.toDTO(report));
   }
 }
 export const reportService = new ReportService();

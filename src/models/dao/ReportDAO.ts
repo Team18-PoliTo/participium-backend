@@ -7,6 +7,7 @@ import {
   ManyToOne,
 } from "typeorm";
 import CitizenDAO from "./CitizenDAO";
+import { ReportStatus } from "../../constants/ReportStatus";
 
 @Entity("reports")
 class ReportDAO {
@@ -44,6 +45,9 @@ class ReportDAO {
 
   @Column({ nullable: false })
   location: string;
+
+  @Column({ nullable: false, default: ReportStatus.PENDING_APPROVAL })
+  status: string;
 }
 
 export default ReportDAO;
