@@ -5,12 +5,25 @@ export class BinaryFileDTO {
   data: Buffer; // binary content
 }
 
+export class AssignedOfficerDTO {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export class CategoryDTO {
+  id: number;
+  name: string;
+  description?: string;
+}
+
 export class ReportDTO {
   id: number;
   citizenId: number;
   title: string;
   description: string;
-  category: string;
+  category: CategoryDTO;
   photos: string[];
   binaryPhotos: BinaryFileDTO[];
   createdAt: Date;
@@ -19,4 +32,6 @@ export class ReportDTO {
     longitude: number;
   };
   status: string;
+  explanation?: string | null;
+  assignedTo?: AssignedOfficerDTO | null;
 }

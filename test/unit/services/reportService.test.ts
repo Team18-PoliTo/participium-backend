@@ -8,12 +8,13 @@ import { v4 as uuidv4 } from "uuid";
 
 describe("ReportService", () => {
   const citizen = { id: 10 } as any;
+  const category = { id: 1, name: "Road", description: "Road issues" } as any;
   const baseReport = {
     id: 42,
     citizen,
     title: "Initial",
     description: "Initial desc",
-    category: "Road",
+    category: category,
     createdAt: new Date("2025-01-01T00:00:00Z"),
     location: JSON.stringify({ latitude: 0, longitude: 0 }),
     photo1: undefined,
@@ -29,10 +30,14 @@ describe("ReportService", () => {
     const citizenRepository = {
       findById: jest.fn().mockResolvedValue(citizen),
     };
+    const categoryRepository = {
+      findByName: jest.fn().mockResolvedValue(category),
+    };
     return {
-      service: new ReportService(reportRepository as any, citizenRepository as any),
+      service: new ReportService(reportRepository as any, citizenRepository as any, categoryRepository as any),
       reportRepository,
       citizenRepository,
+      categoryRepository,
     };
   };
 
@@ -60,7 +65,6 @@ describe("ReportService", () => {
       title: "Broken light",
       description: "Lamp not working",
       category: "Infrastructure",
-      citizenId: citizen.id,
       location: { latitude: 45, longitude: 9 },
       binaryPhoto1: {
         filename: "photo1.png",
@@ -80,7 +84,7 @@ describe("ReportService", () => {
         size: 6,
         mimetype: "image/png",
       },
-    } as any);
+    } as any, citizen.id);
 
     expect(citizenRepository.findById).toHaveBeenCalledWith(citizen.id);
     expect(reportRepository.create).toHaveBeenCalled();
@@ -114,7 +118,6 @@ describe("ReportService", () => {
       title: "Pothole",
       description: "Huge one",
       category: "Road",
-      citizenId: citizen.id,
       location: { latitude: 1, longitude: 2 },
       binaryPhoto1: {
         filename: "p1.png",
@@ -124,7 +127,7 @@ describe("ReportService", () => {
       },
     } as any;
 
-    await service.create(payload);
+    await service.create(payload, citizen.id);
 
     const bufferArg = uploadSpy.mock.calls[0][1] as Buffer;
     expect(Buffer.isBuffer(bufferArg)).toBe(true);
@@ -137,7 +140,7 @@ describe("ReportService", () => {
     citizenRepository.findById.mockResolvedValue(null);
 
     await expect(
-      service.create({ citizenId: 999, binaryPhoto1: { filename: "a", data: "Zm9v", size: 1, mimetype: "image/png" } } as any)
+      service.create({ binaryPhoto1: { filename: "a", data: "Zm9v", size: 1, mimetype: "image/png" } } as any, 999)
     ).rejects.toThrow("Citizen not found");
   });
 });

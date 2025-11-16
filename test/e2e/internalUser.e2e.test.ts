@@ -1,7 +1,7 @@
 import request from "supertest";
 import express, { Express } from "express";
 import { AppDataSource } from "../../src/config/database";
-import internalUserRouter from "../../src/routes/internalUserRoutes";
+import adminRouter from "../../src/routes/adminRoutes";
 import InternalUserDAO from "../../src/models/dao/InternalUserDAO";
 import RoleDAO from "../../src/models/dao/RoleDAO";
 
@@ -21,7 +21,7 @@ beforeAll(async () => {
 
   app = express();
   app.use(express.json());
-  app.use("/", internalUserRouter);
+  app.use("/", adminRouter);
 });
 
 beforeEach(async () => {

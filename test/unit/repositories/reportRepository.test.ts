@@ -42,7 +42,7 @@ describe("ReportRepository", () => {
 
     expect(findOne).toHaveBeenCalledWith({
       where: { id: 10 },
-      relations: ["citizen"],
+      relations: ["citizen", "category", "assignedTo"],
     });
     expect(result).toEqual({ id: 10 });
   });

@@ -31,12 +31,12 @@ describe('ReportController', () => {
       body: {
         title: 'Issue',
         description: 'Desc',
-        citizenId: 1,
         category: 'Road',
         binaryPhoto1: { filename: 'p1.png', data: 'Zm9v', size: 10, mimetype: 'image/png' },
         location: { latitude: 1, longitude: 2 },
       },
-    } as Request;
+      auth: { sub: 1, kind: 'citizen' },
+    } as any;
     const res = mockRes();
     const dto = { id: 5 };
     reportService.create.mockResolvedValue(dto);
@@ -50,7 +50,7 @@ describe('ReportController', () => {
 
   it('create returns 400 on validation errors', async () => {
     const { controller, reportService } = buildController();
-    const req = { body: {} } as Request;
+    const req = { body: {}, auth: { sub: 1, kind: 'citizen' } } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);
@@ -67,7 +67,7 @@ describe('ReportController', () => {
       { constraints: undefined } as any,
     ]);
     const { controller, reportService } = buildController();
-    const req = { body: {} } as Request;
+    const req = { body: {}, auth: { sub: 1, kind: 'citizen' } } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);
@@ -88,12 +88,12 @@ describe('ReportController', () => {
       body: {
         title: 'Issue',
         description: 'Desc',
-        citizenId: 1,
         category: 'Road',
         binaryPhoto1: { filename: 'a.png', data: 'Zm9v', size: 1, mimetype: 'image/png' },
         location: { latitude: 1, longitude: 2 },
       },
-    } as Request;
+      auth: { sub: 1, kind: 'citizen' },
+    } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);
@@ -112,12 +112,12 @@ describe('ReportController', () => {
       body: {
         title: 'Issue',
         description: 'Desc',
-        citizenId: 1,
         category: 'Road',
         binaryPhoto1: { filename: 'a.png', data: 'Zm9v', size: 1, mimetype: 'image/png' },
         location: { latitude: 1, longitude: 2 },
       },
-    } as Request;
+      auth: { sub: 1, kind: 'citizen' },
+    } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);

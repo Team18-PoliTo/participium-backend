@@ -63,7 +63,7 @@ const reportController = new ReportController(reportService);
  *           example: Large pothole near my house
  *         category:
  *           type: string
- *           example: Road Issue
+ *           example: Roads and Urban Furnishings
  *         photos:
  *           type: array
  *           items:
@@ -155,7 +155,7 @@ const reportController = new ReportController(reportService);
  *                 example: Large pothole near my house
  *               category:
  *                 type: string
- *                 example: Road Issue
+ *                 example: Roads and Urban Furnishings
  *               binaryPhoto1:
  *                 $ref: '#/components/schemas/BinaryFileDTO'
  *               binaryPhoto2:

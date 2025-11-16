@@ -4,7 +4,7 @@ import ReportDAO from "./ReportDAO";
 
 export type CitizenStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
-@Entity("users")
+@Entity("citizens")
 class CitizenDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
   id: number;

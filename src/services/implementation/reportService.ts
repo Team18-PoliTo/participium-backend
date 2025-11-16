@@ -1,10 +1,13 @@
 import { ReportMapper } from "../../mappers/ReportMapper";
 import { ReportDTO } from "../../models/dto/ReportDTO";
-import { CreateReportRequestDTO } from "../../models/dto/ValidRequestDTOs";
+import { CreateReportRequestDTO, UpdateReportRequestDTO } from "../../models/dto/ValidRequestDTOs";
 import { IReportRepository } from "../../repositories/IReportRepository";
 import { ReportRepository } from "../../repositories/implementation/ReportRepository";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
 import { ICitizenRepository } from "../../repositories/ICitizenRepository";
+import { CategoryRoleRepository } from "../../repositories/implementation/CategoryRoleRepository";
+import { CategoryRepository } from "../../repositories/implementation/CategoryRepository";
+import InternalUserRepository from "../../repositories/InternalUserRepository";
 import MinIoService from "../MinIoService";
 import { v4 as uuidv4 } from "uuid";
 import { IReportService } from "../IReportService";
@@ -12,8 +15,27 @@ import { ReportStatus } from "../../constants/ReportStatus";
 class ReportService implements IReportService {
   constructor(
     private reportRepository: IReportRepository = new ReportRepository(),
-    private citizenRepository: ICitizenRepository = new CitizenRepository()
+    private citizenRepository: ICitizenRepository = new CitizenRepository(),
+    private categoryRepository: CategoryRepository = new CategoryRepository(),
+    private categoryRoleRepository: CategoryRoleRepository = new CategoryRoleRepository(),
+    private internalUserRepository: InternalUserRepository = new InternalUserRepository()
   ) {}
+
+  /**
+   * Randomly select an officer with the given role
+   * TODO: Will be updated by selection of the 
+   *       officer with the least reports
+   */
+  private async selectOfficerByRole(roleId: number) {
+    const officersWithRole = await this.internalUserRepository.findByRoleId(roleId);
+    if (officersWithRole.length === 0) {
+      throw new Error(`No officers found with role ID ${roleId}`);
+    }
+    
+    // Randomly select one officer
+    const randomIndex = Math.floor(Math.random() * officersWithRole.length);
+    return officersWithRole[randomIndex];
+  }
 
   async create(data: CreateReportRequestDTO, citizenId: number): Promise<ReportDTO> {
     const citizen = await this.citizenRepository.findById(citizenId);
@@ -21,12 +43,18 @@ class ReportService implements IReportService {
       throw new Error("Citizen not found");
     }
 
+    // Find category by name
+    const category = await this.categoryRepository.findByName(data.category);
+    if (!category) {
+      throw new Error(`Category not found: ${data.category}`);
+    }
+
     // Create report
     const newReport = await this.reportRepository.create({
       citizen: citizen,
       title: data.title,
       description: data.description,
-      category: data.category,
+      category: category,
       createdAt: new Date(),
       location: JSON.stringify(data.location),
       status: ReportStatus.PENDING_APPROVAL,
@@ -86,6 +114,73 @@ class ReportService implements IReportService {
   async getReportsByStatus(status: string): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByStatus(status);
     return reports.map((report) => ReportMapper.toDTO(report));
+  }
+
+  async updateReport(reportId: number, data: UpdateReportRequestDTO, userRole?: string): Promise<ReportDTO> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+
+    // Authorization: PR Officers can only update reports in PENDING_APPROVAL status
+    if (userRole === "Public Relations Officer" || userRole?.includes("Public Relations Officer")) {
+      if (report.status !== ReportStatus.PENDING_APPROVAL) {
+        throw new Error(`PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`);
+      }
+    }
+
+    // Determine the category name to use (use provided category or existing one)
+    const categoryNameToUse = data.category || report.category.name;
+
+    // If status is "Assigned", validate officer availability BEFORE making any changes
+    if (data.status === ReportStatus.ASSIGNED) {
+      // Find role that handles this category
+      const categoryRoleMapping = await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+      if (!categoryRoleMapping) {
+        throw new Error(`No role found for category: ${categoryNameToUse}`);
+      }
+
+      // Check if officers are available for this role (before updating report)
+      const officersWithRole = await this.internalUserRepository.findByRoleId(categoryRoleMapping.role.id);
+      if (officersWithRole.length === 0) {
+        throw new Error(`No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`);
+      }
+    }
+
+    // Now that validation is complete, proceed with updates
+    // Update category if provided (if it was wrong)
+    if (data.category) {
+      const newCategory = await this.categoryRepository.findByName(data.category);
+      if (!newCategory) {
+        throw new Error(`Category not found: ${data.category}`);
+      }
+      report.category = newCategory;
+    }
+
+    // Update status
+    report.status = data.status;
+
+    // If status is "Assigned", auto-assign to an officer based on category
+    if (data.status === ReportStatus.ASSIGNED) {
+      // Find role that handles this category
+      const categoryRoleMapping = await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+      // We already validated this exists in the validation phase above
+      if (categoryRoleMapping) {
+        // Randomly select an officer with that role
+        const selectedOfficer = await this.selectOfficerByRole(categoryRoleMapping.role.id);
+        report.assignedTo = selectedOfficer;
+      }
+    }
+
+    // Save report with updated status, category, and assignment, along with explanation
+    const updatedReport = await this.reportRepository.updateStatus(
+      reportId,
+      data.status,
+      data.explanation,
+      report.assignedTo
+    );
+
+    return ReportMapper.toDTO(updatedReport);
   }
 }
 export const reportService = new ReportService();

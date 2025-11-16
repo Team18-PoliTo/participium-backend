@@ -19,7 +19,7 @@ export class ReportRepository implements IReportRepository {
   async findById(id: number): Promise<ReportDAO | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ["citizen"],
+      relations: ["citizen", "category", "assignedTo"],
     });
   }
 
@@ -38,8 +38,18 @@ export class ReportRepository implements IReportRepository {
 
   async findAll(): Promise<ReportDAO[]> {
     return await this.repo.find({
-      relations: ["citizen"],
+      relations: ["citizen", "explanation"],
       order: { createdAt: "DESC" },
     });
+  }
+
+  async updateStatus(
+    id: number,
+    status: string,
+    explanation?: string,
+    assignedTo?: any
+  ): Promise<ReportDAO> {
+    await this.repo.update(id, { status, explanation, assignedTo });
+    return (await this.findById(id)) as ReportDAO;
   }
 }

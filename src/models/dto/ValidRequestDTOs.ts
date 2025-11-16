@@ -114,3 +114,17 @@ export class CreateReportRequestDTO {
     longitude: number;
   };
 }
+
+export class UpdateReportRequestDTO {
+  @IsString({ message: "Status must be a string" })
+  @IsNotEmpty({ message: "Status is required" })
+  status: string;
+
+  @IsOptional()
+  @IsString({ message: "Category must be a string" })
+  category?: string;
+
+  @IsString({ message: "Explanation must be a string" })
+  @IsNotEmpty({ message: "Explanation is required" })
+  explanation: string;
+}

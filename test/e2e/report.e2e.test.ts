@@ -6,7 +6,8 @@ import { minioClient, MINIO_BUCKET } from "../../src/config/minioClient";
 import jwt from "jsonwebtoken";
 import { AppDataSource } from "../../src/config/database";
 import CitizenDAO from "../../src/models/dao/CitizenDAO";
-import ReportDAO from "../../src/models/dao/ReportDAO"; 
+import ReportDAO from "../../src/models/dao/ReportDAO";
+import CategoryDAO from "../../src/models/dao/CategoryDAO"; 
 
 describe("Report E2E Tests (real DB + MinIO)", () => {
   let citizenId: number;
@@ -25,6 +26,21 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) await AppDataSource.initialize();
     await initMinio();
+    
+    // Seed required categories for tests
+    const categoryRepo = AppDataSource.getRepository(CategoryDAO);
+    const categories = [
+      { name: "Roads and Urban Furnishings", description: "Strade e Arredi Urbani" },
+      { name: "Waste", description: "Rifiuti" },
+      { name: "Public Lighting", description: "Illuminazione Pubblica" }
+    ];
+    
+    for (const cat of categories) {
+      const existing = await categoryRepo.findOne({ where: { name: cat.name } });
+      if (!existing) {
+        await categoryRepo.save(cat);
+      }
+    }
   });
 
   beforeEach(async () => {
@@ -70,8 +86,7 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
     const reportData = {
       title: "Pothole",
       description: "Big pothole on main street", 
-      citizenId: citizenId,
-      category: "Road Issue",
+      category: "Roads and Urban Furnishings",
       location: {
         latitude: 45.4642,
         longitude: 9.1900
@@ -116,8 +131,7 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
     const reportData = {
       title: "Test Photo",
       description: "Testing retrieval",
-      citizenId: citizenId, 
-      category: "Test",
+      category: "Waste",
       location: {
         latitude: 45.0,
         longitude: 9.0
@@ -156,8 +170,7 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
     const reportData = {
       title: "Delete Test", 
       description: "Testing delete",
-      citizenId: citizenId,
-      category: "Test",
+      category: "Public Lighting",
       location: {
         latitude: 45.0,
         longitude: 9.0
@@ -204,15 +217,14 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
     expect(res.body).toHaveProperty("error");
   });
 
-  it("should return 404 when citizen does not exist", async () => {
+  it("should return 400 when category does not exist", async () => {
     const res = await request(app)
       .post("/api/citizens/reports")
       .set("Authorization", `Bearer ${token}`)
       .send({
         title: "Ghost report",
-        description: "No citizen",
-        citizenId: citizenId + 999,
-        category: "Test",
+        description: "Invalid category",
+        category: "NonExistentCategory",
         location: { latitude: 1, longitude: 2 },
         binaryPhoto1: {
           filename: "photo.png",
@@ -222,7 +234,8 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
         },
       });
 
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty("error", "Citizen not found");
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+    expect(res.body.error).toContain("Category not found");
   });
 });
