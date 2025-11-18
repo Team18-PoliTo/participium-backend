@@ -11,17 +11,10 @@ const roleController = new RoleController(roleService);
 
 /**
  * @swagger
- * tags:
- *   name: Roles
- *   description: Administrative role management
- */
-
-/**
- * @swagger
  * /admin/roles:
  *   get:
  *     summary: Fetch all internal user roles
- *     tags: [Roles]
+ *     tags: [Admin]
  *     security:
  *       - internalPassword: []
  *     responses:

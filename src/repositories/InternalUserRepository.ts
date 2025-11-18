@@ -8,6 +8,7 @@ interface IInternalUserRepository {
   findById(id: number): Promise<InternalUserDAO | null>;
   update(user: InternalUserDAO): Promise<InternalUserDAO>;
   fetchAll(): Promise<InternalUserDAO []>;
+  findByRoleId(roleId: number): Promise<InternalUserDAO[]>;
 }
 
 export class InternalUserRepository implements IInternalUserRepository {
@@ -41,6 +42,13 @@ export class InternalUserRepository implements IInternalUserRepository {
   }
   async fetchAll(): Promise<InternalUserDAO []> {
     return await this.repo.find({ relations: ["role"] }); 
+  }
+
+  async findByRoleId(roleId: number): Promise<InternalUserDAO[]> {
+    return await this.repo.find({
+      where: { role: { id: roleId } },
+      relations: ["role"],
+    });
   }
 }
 

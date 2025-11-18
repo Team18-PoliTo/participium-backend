@@ -2,117 +2,55 @@ import { Router } from "express";
 import InternalUserController from "../controllers/InternalUserController";
 import InternalUserService from "../services/internalUserService";
 import InternalUserRepository from "../repositories/InternalUserRepository";
+import ReportService from "../services/implementation/reportService";
 
 const router = Router();
 
 // Dependency Injection Setup
 const internalUserRepository = new InternalUserRepository();
 const internalUserService = new InternalUserService(internalUserRepository);
-const internalUserController = new InternalUserController(internalUserService);
-
-// DTOs
-/**
- * @swagger
- * components:
- *   schemas:
- *     RegisterInternalUserRequestDTO:
- *       type: object
- *       required:
- *         - email
- *         - firstName
- *         - lastName
- *         - password
- *       properties:
- *         email:
- *           type: string
- *         firstName:
- *           type: string
- *         lastName:
- *           type: string
- *         password:
- *           type: string
- *           minLength: 6
- *         roleId:
- *           type: integer
- *           description: Optional role identifier (defaults to 0)
- *     InternalUserDTO:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *         email:
- *           type: string
- *         firstName:
- *           type: string
- *         lastName:
- *           type: string
- *         role:
- *           type: string
- *         createdAt:
- *           type: string
- *           format: date-time
- *         status:
- *           type: string
- *           enum: [ACTIVE, SUSPENDED, DEACTIVATED]
- */
+const reportService = new ReportService();
+const internalUserController = new InternalUserController(internalUserService, reportService);
 
 /**
  * @swagger
- * /admin/internal-users:
+ * /internal/reports:
  *   get:
- *     summary: Fetch all internal users
- *     description: Retrieves all internal users from the database.
- *     tags: [Internal Users]
+ *     summary: Get reports for review
+ *     description: Retrieve reports for review. PR Officers can only retrieve pending approval reports. Future - Technical officers will see reports assigned to them.
+ *     tags: [Internal]
  *     security:
  *       - internalPassword: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: Filter by report status (PR officers can only retrieve pending reports)
+ *         example: "Pending Approval"
  *     responses:
  *       200:
- *         description: List of internal users
+ *         description: List of reports matching the status filter
  *         content:
  *           application/json:
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/InternalUserDTO'
+ *                 $ref: '#/components/schemas/ReportDTO'
  *       400:
- *         description: Failed to retrieve internal users
+ *         description: Error retrieving reports
+ *       401:
+ *         description: Unauthorized
  */
-router.get("/", internalUserController.fetch.bind(internalUserController));
+router.get("/reports", internalUserController.getReports.bind(internalUserController));
 
 /**
  * @swagger
- * /admin/internal-users:
- *   post:
- *     summary: Add a new internal user
- *     tags: [Internal Users]
- *     security:
- *       - internalPassword: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/RegisterInternalUserRequestDTO'
- *     responses:
- *       201:
- *         description: Internal user created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/InternalUserDTO'
- *       400:
- *         description: Validation error
- *       409:
- *         description: Email already exists
- */
-router.post("/", internalUserController.create.bind(internalUserController));
-
-/**
- * @swagger
- * /admin/internal-users/{id}:
- *   put:
- *     summary: Update an internal user
- *     tags: [Internal Users]
+ * /internal/reports/{id}:
+ *   patch:
+ *     summary: Review and update report (approve/reject/change category)
+ *     description: Allows PR officers to review reports, approve/reject them, optionally correct category, and provide explanation. If approved (Assigned status), system auto-assigns to an available officer with the appropriate role for that category.
+ *     tags: [Internal]
  *     security:
  *       - internalPassword: []
  *     parameters:
@@ -121,62 +59,42 @@ router.post("/", internalUserController.create.bind(internalUserController));
  *         schema:
  *           type: integer
  *         required: true
- *         description: Internal user ID
+ *         description: Report ID
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - status
+ *               - explanation
  *             properties:
- *               newEmail:
+ *               status:
  *                 type: string
- *               newFirstName:
+ *                 enum: [Pending Approval, Assigned, In Progress, Suspended, Rejected, Resolved]
+ *                 example: "Assigned"
+ *               category:
  *                 type: string
- *               newLastName:
+ *                 description: Optional - correct category if citizen chose the wrong one
+ *                 example: "Roads and Urban Furnishings"
+ *               explanation:
  *                 type: string
- *               newRoleId:
- *                 type: integer
- *                 description: Optional new role identifier
+ *                 example: "Report approved and assigned for processing."
  *     responses:
  *       200:
- *         description: Internal user updated
+ *         description: Report updated successfully with assignment details if approved
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/InternalUserDTO'
+ *               $ref: '#/components/schemas/ReportDTO'
  *       400:
- *         description: Invalid ID or validation error
- *       409:
- *         description: Email already in use
- */
-router.put("/:id", internalUserController.update.bind(internalUserController));
-
-/**
- * @swagger
- * /admin/internal-users/{id}:
- *   delete:
- *     summary: Disable an internal user
- *     tags: [Internal Users]
- *     security:
- *       - internalPassword: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: integer
- *         required: true
- *         description: Internal user ID
- *     responses:
- *       204:
- *         description: Internal user disabled successfully
- *       400:
- *         description: Invalid ID
- *       403:
- *         description: Attempted to delete own account
+ *         description: Validation error or missing fields
+ *       401:
+ *         description: Unauthorized
  *       404:
- *         description: Internal user not found
+ *         description: Report not found
  */
-router.delete("/:id", internalUserController.delete.bind(internalUserController));
+router.patch("/reports/:id", internalUserController.updateReportStatus.bind(internalUserController));
 
 export default router;

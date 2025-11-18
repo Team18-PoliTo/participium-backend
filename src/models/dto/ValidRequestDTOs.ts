@@ -78,10 +78,6 @@ export class CreateReportRequestDTO {
   @IsString({message: "Description must be a string"})
   @IsNotEmpty({ message: "Description is required" })
   description: string;
-  
-  @IsInt({ message: "citizenId must be a number" })
-  @Min(1)
-  citizenId: number;
 
   @IsString({message: "Category must be a string"})
   @IsNotEmpty({ message: "Category is required" })
@@ -117,4 +113,18 @@ export class CreateReportRequestDTO {
     latitude: number;
     longitude: number;
   };
+}
+
+export class UpdateReportRequestDTO {
+  @IsString({ message: "Status must be a string" })
+  @IsNotEmpty({ message: "Status is required" })
+  status: string;
+
+  @IsOptional()
+  @IsString({ message: "Category must be a string" })
+  category?: string;
+
+  @IsString({ message: "Explanation must be a string" })
+  @IsNotEmpty({ message: "Explanation is required" })
+  explanation: string;
 }

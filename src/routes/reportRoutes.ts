@@ -63,7 +63,7 @@ const reportController = new ReportController(reportService);
  *           example: Large pothole near my house
  *         category:
  *           type: string
- *           example: Road Issue
+ *           example: Roads and Urban Furnishings
  *         photos:
  *           type: array
  *           items:
@@ -91,7 +91,6 @@ const reportController = new ReportController(reportService);
  *       required:
  *         - title
  *         - description
- *         - citizenId
  *         - category
  *         - binaryPhoto1
  *         - location
@@ -102,9 +101,6 @@ const reportController = new ReportController(reportService);
  *         description:
  *           type: string
  *           example: "The streetlight in front of my house has been out for 3 days"
- *         citizenId:
- *           type: integer
- *           example: 123
  *         category:
  *           type: string
  *           example: "Infrastructure"
@@ -147,7 +143,6 @@ const reportController = new ReportController(reportService);
  *             required:
  *               - title
  *               - description
- *               - citizenId
  *               - category
  *               - binaryPhoto1
  *               - location
@@ -158,12 +153,9 @@ const reportController = new ReportController(reportService);
  *               description:
  *                 type: string
  *                 example: Large pothole near my house
- *               citizenId:
- *                 type: integer
- *                 example: 123
  *               category:
  *                 type: string
- *                 example: Road Issue
+ *                 example: Roads and Urban Furnishings
  *               binaryPhoto1:
  *                 $ref: '#/components/schemas/BinaryFileDTO'
  *               binaryPhoto2:
