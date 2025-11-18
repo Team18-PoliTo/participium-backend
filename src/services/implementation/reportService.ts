@@ -28,7 +28,7 @@ class ReportService implements IReportService {
    * Selects an internal officer with the least number of active tasks for a given role ID.
    * If multiple officers have the same minimum number of active tasks, one is selected randomly.
    */
-  private async selectOfficerByRole(roleId: number) {
+  private async selectUnoccupiedOfficerByRole(roleId: number) {
     const officersWithRole = await this.internalUserRepository.findByRoleId(
       roleId
     );
@@ -50,10 +50,12 @@ class ReportService implements IReportService {
       throw new Error(`No officers available for role ID ${roleId}`);
     } else if (filteredOfficers.length === 1) {
       // Only one officer with the least active tasks
+      this.internalUserRepository.incrementActiveTasks(filteredOfficers[0].id);
       return filteredOfficers[0];
     } else {
       // Multiple officers with the least active tasks, selects randomly
       const randomIndex = Math.floor(Math.random() * filteredOfficers.length);
+      this.internalUserRepository.incrementActiveTasks(filteredOfficers[randomIndex].id);
       return filteredOfficers[randomIndex];
     }
   }
@@ -214,7 +216,7 @@ class ReportService implements IReportService {
       // We already validated this exists in the validation phase above
       if (categoryRoleMapping) {
         // Randomly select an officer with that role
-        const selectedOfficer = await this.selectOfficerByRole(
+        const selectedOfficer = await this.selectUnoccupiedOfficerByRole(
           categoryRoleMapping.role.id
         );
         report.assignedTo = selectedOfficer;

@@ -9,6 +9,8 @@ interface IInternalUserRepository {
   update(user: InternalUserDAO): Promise<InternalUserDAO>;
   fetchAll(): Promise<InternalUserDAO []>;
   findByRoleId(roleId: number): Promise<InternalUserDAO[]>;
+  incrementActiveTasks(userId: number): Promise<void>;
+  decrementActiveTasks(userId: number): Promise<void>;
 }
 
 export class InternalUserRepository implements IInternalUserRepository {
@@ -49,6 +51,23 @@ export class InternalUserRepository implements IInternalUserRepository {
       where: { role: { id: roleId } },
       relations: ["role"],
     });
+  }
+
+  async incrementActiveTasks(userId: number): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(InternalUserDAO)
+      .set({ activeTasks: () => "activeTasks + 1" })
+      .where("id = :id", { id: userId })
+      .execute();
+  }
+  async decrementActiveTasks(userId: number): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(InternalUserDAO)
+      .set({ activeTasks: () => "GREATEST(activeTasks - 1, 0)" })
+      .where("id = :id", { id: userId })
+      .execute();
   }
 }
 
