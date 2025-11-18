@@ -51,6 +51,7 @@ class InternalUserService {
       password: hashedPassword,
       role: role,
       status: "ACTIVE",
+      activeTasks: 0,
     });
 
     return InternalUserMapper.toDTO(newInternalUser);
