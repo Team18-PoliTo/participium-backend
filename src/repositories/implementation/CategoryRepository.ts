@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../../config/database";
 import CategoryDAO from "../../models/dao/CategoryDAO";
+import CitizenRepository from "./CitizenRepository";
 
 export class CategoryRepository {
   private repo: Repository<CategoryDAO>;
@@ -9,8 +10,18 @@ export class CategoryRepository {
     this.repo = AppDataSource.getRepository(CategoryDAO);
   }
 
+  async findAllSimple(): Promise<CategoryDAO[]> {
+    return await this.repo.find({
+      select: ["id", "name", "description"],
+      order: { id: "ASC" },
+    });
+  }
+
   async findAll(): Promise<CategoryDAO[]> {
-    return await this.repo.find({ relations: ["categoryRoles", "categoryRoles.role"] });
+    return await this.repo.find({
+      relations: ["categoryRoles", "categoryRoles.role"],
+      order: { id: "ASC" },
+    });
   }
 
   async findById(id: number): Promise<CategoryDAO | null> {
@@ -33,3 +44,4 @@ export class CategoryRepository {
   }
 }
 
+export default CategoryRepository;

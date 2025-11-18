@@ -16,6 +16,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import reportRoutes from './routes/reportRoutes';
 import { initMinio } from "./config/initMinio";
+import categoryRoutes from "./routes/categoryRoutes";
 
 const app = express();
 
@@ -43,6 +44,9 @@ app.use('/api/auth', authRoutes);
 // Public (citizen) routes
 app.use('/api/citizens', citizenRoutes);
 app.use('/api/citizens/reports', requireAuth, requireCitizen, reportRoutes);
+
+// Categories
+app.use('/api/categories', categoryRoutes);
 
 // Protected internal user routes (for PR officers, technical officers, etc. - internal user report operations)
 app.use('/api/internal', requireAuth, requireInternalUser, internalUserRoutes);
