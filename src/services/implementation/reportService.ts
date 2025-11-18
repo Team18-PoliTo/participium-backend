@@ -1,6 +1,9 @@
 import { ReportMapper } from "../../mappers/ReportMapper";
 import { ReportDTO } from "../../models/dto/ReportDTO";
-import { CreateReportRequestDTO, UpdateReportRequestDTO } from "../../models/dto/ValidRequestDTOs";
+import {
+  CreateReportRequestDTO,
+  UpdateReportRequestDTO,
+} from "../../models/dto/ValidRequestDTOs";
 import { IReportRepository } from "../../repositories/IReportRepository";
 import { ReportRepository } from "../../repositories/implementation/ReportRepository";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
@@ -22,22 +25,45 @@ class ReportService implements IReportService {
   ) {}
 
   /**
-   * Randomly select an officer with the given role
-   * TODO: Will be updated by selection of the 
-   *       officer with the least reports
+   * Selects an internal officer with the least number of active tasks for a given role ID.
+   * If multiple officers have the same minimum number of active tasks, one is selected randomly.
    */
-  private async selectOfficerByRole(roleId: number) {
-    const officersWithRole = await this.internalUserRepository.findByRoleId(roleId);
+  private async selectUnoccupiedOfficerByRole(roleId: number) {
+    const officersWithRole = await this.internalUserRepository.findByRoleId(
+      roleId
+    );
     if (officersWithRole.length === 0) {
       throw new Error(`No officers found with role ID ${roleId}`);
     }
-    
-    // Randomly select one officer
-    const randomIndex = Math.floor(Math.random() * officersWithRole.length);
-    return officersWithRole[randomIndex];
+    const officers = officersWithRole.sort(
+      (a, b) => a.activeTasks - b.activeTasks
+    );
+    const minActiveTasks = officers[0].activeTasks;
+    // Officers who have the minimum active tasks
+    const filteredOfficers = officers.filter(
+      (officer) => officer.activeTasks === minActiveTasks
+    );
+    console.log(`Officers with the least active tasks (${minActiveTasks}):`);
+
+    // Randomly selects one officer from those with the least active tasks, if more than one
+    if (filteredOfficers.length === 0) {
+      throw new Error(`No officers available for role ID ${roleId}`);
+    } else if (filteredOfficers.length === 1) {
+      // Only one officer with the least active tasks
+      this.internalUserRepository.incrementActiveTasks(filteredOfficers[0].id);
+      return filteredOfficers[0];
+    } else {
+      // Multiple officers with the least active tasks, selects randomly
+      const randomIndex = Math.floor(Math.random() * filteredOfficers.length);
+      this.internalUserRepository.incrementActiveTasks(filteredOfficers[randomIndex].id);
+      return filteredOfficers[randomIndex];
+    }
   }
 
-  async create(data: CreateReportRequestDTO, citizenId: number): Promise<ReportDTO> {
+  async create(
+    data: CreateReportRequestDTO,
+    citizenId: number
+  ): Promise<ReportDTO> {
     const citizen = await this.citizenRepository.findById(citizenId);
     if (!citizen) {
       throw new Error("Citizen not found");
@@ -69,14 +95,16 @@ class ReportService implements IReportService {
     if (data.binaryPhoto3) {
       newReport.photo3 = pathPrefix + data.binaryPhoto3.filename;
     }
-      
+
     const uploadedPhotos: { [key: string]: string } = {};
 
     const toBuffer = (payload: string | Buffer): Buffer =>
       Buffer.isBuffer(payload) ? payload : Buffer.from(payload, "base64");
 
     if (data.binaryPhoto1) {
-      const objectKey1 = `${pathPrefix}${uuidv4()}-${data.binaryPhoto1.filename}`;
+      const objectKey1 = `${pathPrefix}${uuidv4()}-${
+        data.binaryPhoto1.filename
+      }`;
       uploadedPhotos.photo1 = await MinIoService.uploadFile(
         objectKey1,
         toBuffer(data.binaryPhoto1.data),
@@ -85,7 +113,9 @@ class ReportService implements IReportService {
     }
 
     if (data.binaryPhoto2) {
-      const objectKey2 = `${pathPrefix}${uuidv4()}-${data.binaryPhoto2.filename}`;
+      const objectKey2 = `${pathPrefix}${uuidv4()}-${
+        data.binaryPhoto2.filename
+      }`;
       uploadedPhotos.photo2 = await MinIoService.uploadFile(
         objectKey2,
         toBuffer(data.binaryPhoto2.data),
@@ -94,7 +124,9 @@ class ReportService implements IReportService {
     }
 
     if (data.binaryPhoto3) {
-      const objectKey3 = `${pathPrefix}${uuidv4()}-${data.binaryPhoto3.filename}`;
+      const objectKey3 = `${pathPrefix}${uuidv4()}-${
+        data.binaryPhoto3.filename
+      }`;
       uploadedPhotos.photo3 = await MinIoService.uploadFile(
         objectKey3,
         toBuffer(data.binaryPhoto3.data),
@@ -116,16 +148,25 @@ class ReportService implements IReportService {
     return reports.map((report) => ReportMapper.toDTO(report));
   }
 
-  async updateReport(reportId: number, data: UpdateReportRequestDTO, userRole?: string): Promise<ReportDTO> {
+  async updateReport(
+    reportId: number,
+    data: UpdateReportRequestDTO,
+    userRole?: string
+  ): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
       throw new Error("Report not found");
     }
 
     // Authorization: PR Officers can only update reports in PENDING_APPROVAL status
-    if (userRole === "Public Relations Officer" || userRole?.includes("Public Relations Officer")) {
+    if (
+      userRole === "Public Relations Officer" ||
+      userRole?.includes("Public Relations Officer")
+    ) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
-        throw new Error(`PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`);
+        throw new Error(
+          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
+        );
       }
     }
 
@@ -135,22 +176,29 @@ class ReportService implements IReportService {
     // If status is "Assigned", validate officer availability BEFORE making any changes
     if (data.status === ReportStatus.ASSIGNED) {
       // Find role that handles this category
-      const categoryRoleMapping = await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+      const categoryRoleMapping =
+        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
       if (!categoryRoleMapping) {
         throw new Error(`No role found for category: ${categoryNameToUse}`);
       }
 
       // Check if officers are available for this role (before updating report)
-      const officersWithRole = await this.internalUserRepository.findByRoleId(categoryRoleMapping.role.id);
+      const officersWithRole = await this.internalUserRepository.findByRoleId(
+        categoryRoleMapping.role.id
+      );
       if (officersWithRole.length === 0) {
-        throw new Error(`No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`);
+        throw new Error(
+          `No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`
+        );
       }
     }
 
     // Now that validation is complete, proceed with updates
     // Update category if provided (if it was wrong)
     if (data.category) {
-      const newCategory = await this.categoryRepository.findByName(data.category);
+      const newCategory = await this.categoryRepository.findByName(
+        data.category
+      );
       if (!newCategory) {
         throw new Error(`Category not found: ${data.category}`);
       }
@@ -163,11 +211,14 @@ class ReportService implements IReportService {
     // If status is "Assigned", auto-assign to an officer based on category
     if (data.status === ReportStatus.ASSIGNED) {
       // Find role that handles this category
-      const categoryRoleMapping = await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+      const categoryRoleMapping =
+        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
       // We already validated this exists in the validation phase above
       if (categoryRoleMapping) {
         // Randomly select an officer with that role
-        const selectedOfficer = await this.selectOfficerByRole(categoryRoleMapping.role.id);
+        const selectedOfficer = await this.selectUnoccupiedOfficerByRole(
+          categoryRoleMapping.role.id
+        );
         report.assignedTo = selectedOfficer;
       }
     }
