@@ -31,7 +31,7 @@
     "swagger-autogen": "^2.23.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.27",
+    "typeorm": "^0.3.17",
     "winston": "^3.18.3"
   },
   "devDependencies": {
