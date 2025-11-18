@@ -1,7 +1,6 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../../config/database";
 import CategoryDAO from "../../models/dao/CategoryDAO";
-import CitizenRepository from "./CitizenRepository";
 
 export class CategoryRepository {
   private repo: Repository<CategoryDAO>;
