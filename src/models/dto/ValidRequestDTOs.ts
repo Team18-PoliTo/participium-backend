@@ -7,8 +7,10 @@ import {
   IsInt,
   Min,
   ValidateNested,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from "class-validator";
-import { BinaryFileDTO } from "./ReportDTO";
 import { Type } from "class-transformer";
 
 export class RegisterCitizenRequestDTO {
@@ -79,34 +81,15 @@ export class CreateReportRequestDTO {
   @IsNotEmpty({ message: "Description is required" })
   description: string;
 
-  @IsString({message: "Category must be a string"})
+  @IsInt({message: "Category ID must be a number"})
   @IsNotEmpty({ message: "Category is required" })
-  category: string;
+  categoryId: number;
 
-
-  @IsNotEmpty({ message: "At least one photo is required" })
-  binaryPhoto1:{
-    filename: string;
-    data: Buffer;
-    size: number;
-    mimetype: string;
-  };
-
-  @IsOptional()
-  binaryPhoto2?: {
-    filename: string;
-    data: Buffer;
-    size: number;
-    mimetype: string;
-  };
-
-  @IsOptional()
-  binaryPhoto3?: {
-    filename: string;
-    data: Buffer;
-    size: number;
-    mimetype: string;
-  };
+  @IsArray({ message: "Photo IDs must be an array" })
+  @ArrayMinSize(1, { message: "At least one photo is required" })
+  @ArrayMaxSize(3, { message: "Maximum 3 photos allowed" })
+  @IsString({ each: true, message: "Each photo ID must be a string" })
+  photoIds: string[];
 
   @IsNotEmpty({ message: "Location is required" })
   location: {
@@ -121,8 +104,8 @@ export class UpdateReportRequestDTO {
   status: string;
 
   @IsOptional()
-  @IsString({ message: "Category must be a string" })
-  category?: string;
+  @IsInt({ message: "Category ID must be a number" })
+  categoryId?: number;
 
   @IsString({ message: "Explanation must be a string" })
   @IsNotEmpty({ message: "Explanation is required" })

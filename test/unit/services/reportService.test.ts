@@ -1,10 +1,35 @@
+// Clear module cache before setting up mocks
+jest.resetModules();
+
+// Mock modules BEFORE any imports - Jest hoists these automatically
 jest.mock("uuid", () => ({
   v4: jest.fn()
 }));
 
+// Mock FileService BEFORE ReportService imports it
+// CRITICAL: Mock must be set up before any module that imports FileService is loaded
+jest.mock("../../../src/services/FileService", () => {
+  // Return a mock object that matches the FileService interface
+  const mockValidateTempFiles = jest.fn();
+  const mockMoveMultipleToPermanent = jest.fn();
+  
+  return {
+    __esModule: true,
+    default: {
+      validateTempFiles: mockValidateTempFiles,
+      moveMultipleToPermanent: mockMoveMultipleToPermanent,
+      uploadTemp: jest.fn(),
+      deleteTempFile: jest.fn(),
+      cleanupExpiredTempFiles: jest.fn(),
+    },
+  };
+});
+
+// Now import modules - the mocks will be used
+import { v4 as uuidv4 } from "uuid";
+import FileService from "../../../src/services/FileService";
 import ReportService from "../../../src/services/implementation/reportService";
 import MinIoService from "../../../src/services/MinIoService";
-import { v4 as uuidv4 } from "uuid";
 
 describe("ReportService", () => {
   const citizen = { id: 10 } as any;
@@ -31,7 +56,7 @@ describe("ReportService", () => {
       findById: jest.fn().mockResolvedValue(citizen),
     };
     const categoryRepository = {
-      findByName: jest.fn().mockResolvedValue(category),
+      findById: jest.fn().mockResolvedValue(category),
     };
     return {
       service: new ReportService(reportRepository as any, citizenRepository as any, categoryRepository as any),
@@ -41,60 +66,54 @@ describe("ReportService", () => {
     };
   };
 
-  let uploadSpy: jest.SpyInstance;
+  let presignedUrlSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    uploadSpy = jest.spyOn(MinIoService, "uploadFile").mockResolvedValue(undefined as any);
+    presignedUrlSpy = jest.spyOn(MinIoService, "getPresignedUrl").mockImplementation((key: string) => 
+      Promise.resolve(`https://minio.example.com/${key}?signature=mock`)
+    );
     (uuidv4 as jest.Mock).mockImplementation(() => "uuid");
+    
+    // Configure FileService mock methods - access directly from mocked FileService
+    (FileService.validateTempFiles as jest.Mock).mockResolvedValue([
+      { id: 1, fileId: "file1", originalName: "photo1.png", tempPath: "temp/file1/photo1.png" },
+      { id: 2, fileId: "file2", originalName: "photo2.png", tempPath: "temp/file2/photo2.png" },
+      { id: 3, fileId: "file3", originalName: "photo3.png", tempPath: "temp/file3/photo3.png" },
+    ]);
+    
+    (FileService.moveMultipleToPermanent as jest.Mock).mockResolvedValue([
+      "reports/42/photo1_uuid.png",
+      "reports/42/photo2_uuid.png",
+      "reports/42/photo3_uuid.png",
+    ]);
   });
 
   afterEach(() => {
-    uploadSpy.mockRestore();
+    presignedUrlSpy.mockRestore();
   });
 
   it("creates report, uploads provided photos, and returns DTO", async () => {
-    uploadSpy
-      .mockResolvedValueOnce("object/photo1.png" as any)
-      .mockResolvedValueOnce("object/photo2.png" as any)
-      .mockResolvedValueOnce("object/photo3.png" as any);
-
     const { service, reportRepository, citizenRepository } = buildService();
 
     const result = await service.create({
       title: "Broken light",
       description: "Lamp not working",
-      category: "Infrastructure",
+      categoryId: 1,
       location: { latitude: 45, longitude: 9 },
-      binaryPhoto1: {
-        filename: "photo1.png",
-        data: Buffer.from("primary"),
-        size: 10,
-        mimetype: "image/png",
-      },
-      binaryPhoto2: {
-        filename: "photo2.png",
-        data: Buffer.from("secondary"),
-        size: 8,
-        mimetype: "image/png",
-      },
-      binaryPhoto3: {
-        filename: "photo3.png",
-        data: Buffer.from("tertiary"),
-        size: 6,
-        mimetype: "image/png",
-      },
+      photoIds: ["file1", "file2", "file3"],
     } as any, citizen.id);
 
     expect(citizenRepository.findById).toHaveBeenCalledWith(citizen.id);
+    expect(FileService.validateTempFiles).toHaveBeenCalledWith(["file1", "file2", "file3"]);
     expect(reportRepository.create).toHaveBeenCalled();
-    expect(uploadSpy).toHaveBeenCalledTimes(3);
+    expect(FileService.moveMultipleToPermanent).toHaveBeenCalled();
     expect(reportRepository.update).toHaveBeenCalled();
 
     const updatedReport = (reportRepository.update as jest.Mock).mock.calls[0][0];
-    expect(updatedReport.photo1).toBe("object/photo1.png");
-    expect(updatedReport.photo2).toBe("object/photo2.png");
-    expect(updatedReport.photo3).toBe("object/photo3.png");
+    expect(updatedReport.photo1).toBe("reports/42/photo1_uuid.png");
+    expect(updatedReport.photo2).toBe("reports/42/photo2_uuid.png");
+    expect(updatedReport.photo3).toBe("reports/42/photo3_uuid.png");
 
     expect(result).toMatchObject({
       id: baseReport.id,
@@ -103,36 +122,42 @@ describe("ReportService", () => {
       category: baseReport.category,
       location: { latitude: 0, longitude: 0 },
     });
-    expect(result.photos).toEqual([
-      "object/photo1.png",
-      "object/photo2.png",
-      "object/photo3.png",
-    ]);
+    // Photos are now presigned URLs
+    expect(result.photos.length).toBe(3);
+    result.photos.forEach((url: string) => {
+      expect(url).toContain("https://minio.example.com/");
+    });
   });
 
-  it("handles optional photos and converts base64 payloads", async () => {
-    uploadSpy.mockResolvedValue("object/photo1.png" as any);
+  it("handles single photo upload", async () => {
+    (FileService.validateTempFiles as jest.Mock).mockResolvedValueOnce([
+      { id: 1, fileId: "file1", originalName: "p1.png", tempPath: "temp/file1/p1.png" },
+    ]);
+    
+    (FileService.moveMultipleToPermanent as jest.Mock).mockResolvedValueOnce([
+      "reports/42/photo1_uuid.png",
+    ]);
+    
     const { service, reportRepository } = buildService();
 
     const payload = {
       title: "Pothole",
       description: "Huge one",
-      category: "Road",
+      categoryId: 1,
       location: { latitude: 1, longitude: 2 },
-      binaryPhoto1: {
-        filename: "p1.png",
-        data: "Zm9v",
-        size: 4,
-        mimetype: "image/png",
-      },
+      photoIds: ["file1"],
     } as any;
 
     await service.create(payload, citizen.id);
 
-    const bufferArg = uploadSpy.mock.calls[0][1] as Buffer;
-    expect(Buffer.isBuffer(bufferArg)).toBe(true);
-    expect(bufferArg.toString("base64")).toBe(payload.binaryPhoto1.data);
+    expect(FileService.validateTempFiles).toHaveBeenCalledWith(["file1"]);
+    expect(FileService.moveMultipleToPermanent).toHaveBeenCalled();
     expect(reportRepository.update).toHaveBeenCalled();
+    
+    const updatedReport = (reportRepository.update as jest.Mock).mock.calls[0][0];
+    expect(updatedReport.photo1).toBe("reports/42/photo1_uuid.png");
+    expect(updatedReport.photo2).toBeUndefined();
+    expect(updatedReport.photo3).toBeUndefined();
   });
 
   it("throws when citizen cannot be located", async () => {
@@ -140,7 +165,13 @@ describe("ReportService", () => {
     citizenRepository.findById.mockResolvedValue(null);
 
     await expect(
-      service.create({ binaryPhoto1: { filename: "a", data: "Zm9v", size: 1, mimetype: "image/png" } } as any, 999)
+      service.create({ 
+        title: "Test",
+        description: "Test",
+        categoryId: 1,
+        location: { latitude: 0, longitude: 0 },
+        photoIds: ["file1"]
+      } as any, 999)
     ).rejects.toThrow("Citizen not found");
   });
 });
