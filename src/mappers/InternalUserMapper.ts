@@ -9,6 +9,7 @@ export class InternalUserMapper {
       firstName: userDAO.firstName,
       lastName: userDAO.lastName,
       createdAt: userDAO.createdAt,
+      activeTasks: userDAO.activeTasks,
       role:
         userDAO.role && (userDAO.role as any).role !== undefined
           ? (userDAO.role as any).role
