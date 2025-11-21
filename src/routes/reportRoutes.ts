@@ -191,4 +191,7 @@ const reportController = new ReportController(reportService);
 
 router.post("/", reportController.create.bind(reportController));
 
+
+router.get("/reports", reportController.getMyReports.bind(reportController));
+
 export default router;

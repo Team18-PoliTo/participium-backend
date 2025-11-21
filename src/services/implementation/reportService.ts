@@ -233,6 +233,13 @@ class ReportService implements IReportService {
 
     return ReportMapper.toDTO(updatedReport);
   }
+
+
+  async getReportsByUser(citizenId:number): Promise<ReportDTO[]>{
+    const reports = await this.reportRepository.findByUser(citizenId)
+    return reports.map((report) => ReportMapper.toDTO(report));
+  }
+
 }
 export const reportService = new ReportService();
 export default ReportService;
