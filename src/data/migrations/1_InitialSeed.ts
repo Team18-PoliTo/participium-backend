@@ -52,7 +52,8 @@ export class InitialSeed1000000000001 implements MigrationInterface {
                     (5, 'Waste', 'Rifiuti'),
                     (6, 'Road Signs and Traffic Lights', 'Segnaletica Stradale e Semafori'),
                     (7, 'Roads and Urban Furnishings', 'Strade e Arredi Urbani'),
-                    (8, 'Public Green Areas and Playgrounds', 'Aree Verdi Pubbliche e Parchi Giochi')`
+                    (8, 'Public Green Areas and Playgrounds', 'Aree Verdi Pubbliche e Parchi Giochi')
+                    (9, 'Other', 'Other type of category')`
         );
 
         // Insert Category-Role relationships (one-to-many)
