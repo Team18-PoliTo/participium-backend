@@ -1,4 +1,4 @@
-import RoleController from '../../../src/controllers/RoleController';
+import RoleController from '../../../src/controllers/roleController';
 import { Request, Response, NextFunction } from 'express';
 
 describe('RoleController', () => {

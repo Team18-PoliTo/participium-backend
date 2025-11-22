@@ -222,6 +222,36 @@ class InternalUserController {
       next(error);
     }
   }
+
+  async getReportsForTechnicalOfficer(
+      req: Request,
+      res: Response,
+      next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const staffId = (req as any).auth?.sub;
+      if (!staffId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const reports = await this.reportService.getReportsForStaff(staffId);
+
+      res.status(200).json(reports);
+
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
 }
 
 export default InternalUserController;

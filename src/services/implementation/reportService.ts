@@ -223,6 +223,15 @@ class ReportService implements IReportService {
     );
   }
 
+  async getReportsForStaff(staffId: number): Promise<ReportDTO[]> {
+    const reports = await this.reportRepository.findByAssignedStaff(staffId);
+
+    return await Promise.all(
+        reports.map(report => ReportMapper.toDTO(report))
+    );
+  }
+
+
 }
 export const reportService = new ReportService();
 export default ReportService;

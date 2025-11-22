@@ -53,16 +53,7 @@ export class InitialSeed1000000000001 implements MigrationInterface {
       (6, 'Road Signs and Traffic Lights', 'Segnaletica Stradale e Semafori'),
       (7, 'Roads and Urban Furnishings', 'Strade e Arredi Urbani'),
       (8, 'Public Green Areas and Playgrounds', 'Aree Verdi Pubbliche e Parchi Giochi'),
-      (9, 'Illegal Dumping', 'Rifiuti abbandonati illegalmente'),
-      (10, 'Road Potholes', 'Buche e dissesti sulla carreggiata'),
-      (11, 'Street Cleaning', 'Problemi di pulizia stradale'),
-      (12, 'Air Quality Issues', 'Problemi di qualità dell’aria'),
-      (13, 'Noise Disturbance', 'Rumori molesti o eccessivi'),
-      (14, 'Broken Street Furniture', 'Danni ad arredi urbani'),
-      (15, 'Water Leakage', 'Perdita o dispersione d’acqua'),
-      (16, 'Traffic Congestion', 'Congestione o problemi di traffico'),
-      (17, 'Flooding or Drainage Issues', 'Allagamenti o scarso drenaggio'),
-      (18, 'Public Park Damage', 'Danni in aree verdi o parchi')`
+      (9, 'Illegal Dumping', 'Rifiuti abbandonati illegalmente'),`
     );
 
     // Insert Category-Role relationships (one-to-many)
@@ -115,8 +106,8 @@ export class InitialSeed1000000000001 implements MigrationInterface {
 
     // Insert Example Citizen
     await queryRunner.query(
-      `INSERT INTO citizens (username, email, firstName, lastName, password, status) VALUES 
-      ('yusaerguven', 'yusaerguven@gmail.com', 'Yusa', 'Erguven', '${hashedPassword}', 'ACTIVE')`
+      `INSERT INTO citizens (username, email, firstName, lastName, password, status)
+       VALUES ('yusaerguven', 'yusaerguven@gmail.com', 'Yusa', 'Erguven', '${hashedPassword}', 'ACTIVE')`
     );
   }
 

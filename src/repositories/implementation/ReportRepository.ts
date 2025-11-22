@@ -1,8 +1,6 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../../config/database";
 import ReportDAO from "../../models/dao/ReportDAO";
-import CitizenDAO from "../../models/dao/CitizenDAO";
-import { ReportDTO } from "../../models/dto/ReportDTO";
 import { IReportRepository } from "../IReportRepository";
 
 export class ReportRepository implements IReportRepository {
@@ -60,6 +58,13 @@ export class ReportRepository implements IReportRepository {
       },
     });
   }
-
-
+  async findByAssignedStaff(staffId: number): Promise<ReportDAO[]> {
+    return this.repo.find({
+      where: {
+        assignedTo: { id: staffId },
+      },
+      relations: ["assignedTo", "category"],
+      order: { createdAt: "DESC" },
+    });
+  }
 }

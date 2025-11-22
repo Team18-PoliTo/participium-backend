@@ -97,4 +97,34 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  */
 router.patch("/reports/:id", internalUserController.updateReportStatus.bind(internalUserController));
 
+/**
+ * @swagger
+ * /internal/reports/assigned:
+ *   get:
+ *     summary: Get reports assigned to the authenticated technical staff officer
+ *     description:
+ *       Returns only the reports assigned to the internal technical officer who is making the request.
+ *       PR officers cannot use this endpoint.
+ *     tags: [Internal]
+ *     security:
+ *       - internalPassword: []
+ *     responses:
+ *       200:
+ *         description: List of reports assigned to this officer
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportDTO'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+    "/reports/assigned",
+    internalUserController.getReportsForTechnicalOfficer.bind(internalUserController)
+);
+
 export default router;
