@@ -52,4 +52,14 @@ export class ReportRepository implements IReportRepository {
     await this.repo.update(id, { status, explanation, assignedTo });
     return (await this.findById(id)) as ReportDAO;
   }
+
+  async findByUser(citizenId: number): Promise<ReportDAO[]> {
+    return this.repo.find({
+      where: {
+        citizen: { id: citizenId },
+      },
+    });
+  }
+
+
 }
