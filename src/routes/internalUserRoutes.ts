@@ -97,4 +97,64 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  */
 router.patch("/reports/:id", internalUserController.updateReportStatus.bind(internalUserController));
 
+/**
+ * @swagger
+ * /internal/reports/assigned:
+ *   get:
+ *     summary: Get reports assigned to the authenticated technical staff officer
+ *     description:
+ *       Returns only the reports assigned to the internal technical officer who is making the request.
+ *       PR officers cannot use this endpoint.
+ *     tags: [Internal]
+ *     security:
+ *       - internalPassword: []
+ *     responses:
+ *       200:
+ *         description: List of reports assigned to this officer
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportDTO'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get(
+    "/reports/assigned",
+    internalUserController.getReportsForTechnicalOfficer.bind(internalUserController)
+);
+
+/**
+ * @swagger
+ * /internal/reports/by-office:
+ *   get:
+ *     summary: Get all reports related to the internal user's office
+ *     description:
+ *       Returns all reports whose categories belong to the office of the authenticated internal staff member.
+ *       PR Officers cannot use this endpoint.
+ *     tags: [Internal]
+ *     security:
+ *       - internalPassword: []
+ *     responses:
+ *       200:
+ *         description: List of reports for the user's office
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportDTO'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (PR Officers cannot access)
+ */
+router.get(
+    "/reports/by-office",
+    internalUserController.getReportsByOffice.bind(internalUserController)
+);
+
 export default router;

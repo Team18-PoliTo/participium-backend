@@ -1,6 +1,6 @@
 import { Repository } from "typeorm";
-import { AppDataSource } from "../config/database";
-import RoleDAO from "../models/dao/RoleDAO";
+import { AppDataSource } from "../../config/database";
+import RoleDAO from "../../models/dao/RoleDAO";
 
 interface IRoleRepository {
   create(role: RoleDAO): Promise<RoleDAO>;

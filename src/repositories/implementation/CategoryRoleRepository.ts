@@ -34,4 +34,15 @@ export class CategoryRoleRepository {
     const entity = this.repo.create(payload);
     return this.repo.save(entity);
   }
+
+  async findCategoriesByOffice(officeId: number) {
+    return this.repo.find({
+      where: {
+        role: {
+          office: { id: officeId },
+        },
+      },
+      relations: ["category", "role", "role.office"],
+    }).then(results => results.map(cr => cr.category));
+  }
 }

@@ -134,26 +134,14 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         );
     }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        // Delete data in reverse order
-        await queryRunner.query(`DELETE
-                                 FROM category_roles`);
-        await queryRunner.query(`DELETE
-                                 FROM categories`);
-        await queryRunner.query(`DELETE
-                                 FROM citizens
-                                 WHERE email = 'yusaerguven@gmail.com'`);
-        await queryRunner.query(`DELETE
-                                 FROM "internal-users"
-                                 WHERE roleId IN (1, 10, 11, 12, 13, 14, 15, 16, 17)`);
-        await queryRunner.query(`DELETE
-                                 FROM roles
-                                 WHERE id NOT IN (0, 1)`);
-        await queryRunner.query(`DELETE
-                                 FROM roles
-                                 WHERE id IN (0, 1)`);
-        await queryRunner.query(`DELETE
-                                 FROM offices`);
-    }
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // Delete data in reverse order
+    await queryRunner.query(`DELETE FROM category_roles`);
+    await queryRunner.query(`DELETE FROM categories`);
+    await queryRunner.query(`DELETE FROM citizens WHERE email = 'yusaerguven@gmail.com'`);
+    await queryRunner.query(`DELETE FROM "internal-users" WHERE roleId IN (1, 10, 11, 12, 13, 14, 15, 16, 17)`);
+    await queryRunner.query(`DELETE FROM roles WHERE id NOT IN (0, 1)`);
+    await queryRunner.query(`DELETE FROM roles WHERE id IN (0, 1)`);
+    await queryRunner.query(`DELETE FROM offices`);
+  }
 }
-
