@@ -26,6 +26,59 @@ class MinioService {
   async deleteFile(objectKey: string): Promise<void> {
     await minioClient.removeObject(MINIO_BUCKET, objectKey);
   }
+
+  /**
+   * Copy a file from one location to another within the same bucket
+   * @param sourcePath - Source object key
+   * @param destPath - Destination object key
+   */
+  async copyFile(sourcePath: string, destPath: string): Promise<void> {
+    // Read file from source
+    const sourceBuffer = await this.getFile(sourcePath);
+    
+    // Get metadata from source file to preserve content type
+    let contentType = "application/octet-stream";
+    try {
+      const stat = await minioClient.statObject(MINIO_BUCKET, sourcePath);
+      contentType = stat.metaData?.["content-type"] || stat.metaData?.["Content-Type"] || "application/octet-stream";
+    } catch (error) {
+      // If stat fails, use default content type
+      console.warn(`Could not get metadata for ${sourcePath}, using default content type`);
+    }
+    
+    // Write file to destination
+    await minioClient.putObject(
+      MINIO_BUCKET,
+      destPath,
+      sourceBuffer,
+      sourceBuffer.length,
+      { "Content-Type": contentType }
+    );
+  }
+
+  /**
+   * Check if a file exists in MinIO
+   * @param objectKey - The MinIO object key
+   * @returns True if file exists, false otherwise
+   */
+  async fileExists(objectKey: string): Promise<boolean> {
+    try {
+      await minioClient.statObject(MINIO_BUCKET, objectKey);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Generate a pre-signed URL for accessing a file
+   * @param objectKey - The MinIO object key
+   * @param expirySeconds - URL expiry time in seconds (default: 7 days)
+   * @returns Pre-signed URL
+   */
+  async getPresignedUrl(objectKey: string, expirySeconds: number = 7 * 24 * 60 * 60): Promise<string> {
+    return await minioClient.presignedGetObject(MINIO_BUCKET, objectKey, expirySeconds);
+  }
 }
 
 export default new MinioService();

@@ -29,7 +29,17 @@ export class InitialSeed1000000000001 implements MigrationInterface {
       (14, 'Urban Mobility Operator', 5),
       (15, 'Green Spaces Operator', 6),
       (16, 'Water Infrastructure Operator', 7),
-      (17, 'Accessibility Officer', 8)`
+      (17, 'Accessibility Officer', 8),
+      (18, 'Environmental Surveillance Officer', 4),
+      (19, 'Road Safety Inspector', 2),
+      (20, 'Public Lighting Technician', 3),
+      (21, 'Urban Mobility Planner', 5),
+      (22, 'Green Maintenance Technician', 6),
+      (23, 'Water Quality Inspector', 7),
+      (24, 'Accessibility Inspector', 8),
+      (25, 'Digital Services Technician', 1),
+      (26, 'Emergency Response Liaison', 1),
+      (27, 'Noise and Air Quality Technician', 7)`
     );
 
     // Insert Categories (Categorie)
@@ -42,7 +52,17 @@ export class InitialSeed1000000000001 implements MigrationInterface {
       (5, 'Waste', 'Rifiuti'),
       (6, 'Road Signs and Traffic Lights', 'Segnaletica Stradale e Semafori'),
       (7, 'Roads and Urban Furnishings', 'Strade e Arredi Urbani'),
-      (8, 'Public Green Areas and Playgrounds', 'Aree Verdi Pubbliche e Parchi Giochi')`
+      (8, 'Public Green Areas and Playgrounds', 'Aree Verdi Pubbliche e Parchi Giochi'),
+      (9, 'Illegal Dumping', 'Rifiuti abbandonati illegalmente'),
+      (10, 'Road Potholes', 'Buche e dissesti sulla carreggiata'),
+      (11, 'Street Cleaning', 'Problemi di pulizia stradale'),
+      (12, 'Air Quality Issues', 'Problemi di qualità dell’aria'),
+      (13, 'Noise Disturbance', 'Rumori molesti o eccessivi'),
+      (14, 'Broken Street Furniture', 'Danni ad arredi urbani'),
+      (15, 'Water Leakage', 'Perdita o dispersione d’acqua'),
+      (16, 'Traffic Congestion', 'Congestione o problemi di traffico'),
+      (17, 'Flooding or Drainage Issues', 'Allagamenti o scarso drenaggio'),
+      (18, 'Public Park Damage', 'Danni in aree verdi o parchi')`
     );
 
     // Insert Category-Role relationships (one-to-many)
@@ -57,7 +77,18 @@ export class InitialSeed1000000000001 implements MigrationInterface {
       (5, 5, 13),
       (6, 6, 14),
       (7, 7, 11),
-      (8, 8, 15)`
+      (8, 8, 15),
+      (9, 9, 18),
+      (10, 10, 19),
+      (11, 11, 11),  
+      (12, 11, 18),  
+      (13, 12, 27),
+      (14, 13, 27),
+      (15, 14, 11),
+      (16, 15, 23),
+      (17, 16, 21),
+      (18, 17, 23),
+      (19, 18, 22)`
     );
 
     // Insert Initial Admin User and Internal Users for each technical role

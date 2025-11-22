@@ -54,6 +54,35 @@ class ReportController {
     }
   }
 
+
+  async getMyReports(req: Request, res:Response, next: NextFunction): Promise<void>{
+    try {
+      const citizenId = (req as any).auth?.sub;
+      if (!citizenId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }    
+
+      const reports = await this.reportService.getReportsByUser(citizenId)
+      res.status(200).json(reports)
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message === "Citizen not found") {
+          res.status(404).json({ error: error.message });
+          return;
+        } else if (error.message.includes("Category not found")) {
+          res.status(400).json({ error: error.message });
+          return;
+        } else {
+          res.status(500).json({ error: "Internal Server Error" });
+          next(error);
+          return;
+        }
+      
+      }
+    }
+  }
+
   async getById(
     req: Request,
     res: Response,

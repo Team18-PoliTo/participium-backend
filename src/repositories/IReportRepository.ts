@@ -1,4 +1,3 @@
-import { ReportDTO } from "../models/dto/ReportDTO";
 import ReportDAO from "../models/dao/ReportDAO";
 
 export interface IReportRepository {
@@ -7,6 +6,12 @@ export interface IReportRepository {
   update(reportDAO: Partial<ReportDAO>): Promise<ReportDAO>;
   findByStatus(status: string): Promise<ReportDAO[]>;
   findAll(): Promise<ReportDAO[]>;
-  updateStatus(id: number, status: string, explanation?: string, assignedTo?: any): Promise<ReportDAO>;
+  updateStatus(
+    id: number,
+    status: string,
+    explanation?: string,
+    assignedTo?: any
+  ): Promise<ReportDAO>;
   findAllAssigned(): Promise<ReportDAO[]>;
+  findByUser(citizenId: number): Promise<ReportDAO[]>;
 }
