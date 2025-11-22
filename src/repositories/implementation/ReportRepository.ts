@@ -4,6 +4,7 @@ import ReportDAO from "../../models/dao/ReportDAO";
 import CitizenDAO from "../../models/dao/CitizenDAO";
 import { ReportDTO } from "../../models/dto/ReportDTO";
 import { IReportRepository } from "../IReportRepository";
+import { ReportStatus } from "../../constants/ReportStatus";
 
 export class ReportRepository implements IReportRepository {
   private repo: Repository<ReportDAO>;
@@ -39,6 +40,14 @@ export class ReportRepository implements IReportRepository {
   async findAll(): Promise<ReportDAO[]> {
     return await this.repo.find({
       relations: ["citizen", "explanation"],
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  async findAllAssigned(): Promise<ReportDAO[]> {
+    return await this.repo.find({
+      where: { status: ReportStatus.ASSIGNED },
+      relations: ["citizen"],
       order: { createdAt: "DESC" },
     });
   }

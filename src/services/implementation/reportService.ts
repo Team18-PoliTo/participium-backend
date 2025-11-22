@@ -55,7 +55,9 @@ class ReportService implements IReportService {
     } else {
       // Multiple officers with the least active tasks, selects randomly
       const randomIndex = Math.floor(Math.random() * filteredOfficers.length);
-      this.internalUserRepository.incrementActiveTasks(filteredOfficers[randomIndex].id);
+      this.internalUserRepository.incrementActiveTasks(
+        filteredOfficers[randomIndex].id
+      );
       return filteredOfficers[randomIndex];
     }
   }
@@ -146,6 +148,49 @@ class ReportService implements IReportService {
   async getReportsByStatus(status: string): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByStatus(status);
     return reports.map((report) => ReportMapper.toDTO(report));
+  }
+
+  async getAssignedReportsInMap(
+    corners: Object[]
+  ): Promise<Partial<ReportDTO>[]> {
+    const reports = await this.reportRepository.findAllAssigned();
+    const [corner1, corner2] = corners as {
+      latitude: number;
+      longitude: number;
+    }[];
+    const minLat = Math.min(
+      corner1.latitude,
+      corner2.latitude
+    );
+    const minLong = Math.min(
+      corner1.longitude,
+      corner2.longitude
+    );
+    const maxLong = Math.max(
+      corner1.longitude,
+      corner2.longitude
+    );
+    const maxLat = Math.max(
+      corner1.latitude,
+      corner2.latitude
+    );
+    const filtered = reports.filter((report) => {
+      const location = JSON.parse(report.location);
+      return (
+        location.latitude >= minLat &&
+        location.latitude <= maxLat &&
+        location.longitude >= minLong &&
+        location.longitude <= maxLong
+      );
+    });
+    return filtered.map((report) => ReportMapper.toDTOforMap(report));
+  }
+  async getReportById(reportId: number): Promise<ReportDTO> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+    return ReportMapper.toDTO(report);
   }
 
   async updateReport(

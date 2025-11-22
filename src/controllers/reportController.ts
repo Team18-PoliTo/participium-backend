@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { CreateReportRequestDTO } from "../models/dto/ValidRequestDTOs";
-import { ReportDTO } from "../models/dto/ReportDTO";
+import {
+  CreateReportRequestDTO,
+  GetAssignedReportsForMapRequestDTO,
+} from "../models/dto/ValidRequestDTOs";
 import { validate } from "class-validator";
 import { plainToClass } from "class-transformer";
 
@@ -28,7 +30,10 @@ class ReportController {
         res.status(400).json({ error: errorMessages });
         return;
       }
-      const report = await this.reportService.create(createReportDTO, citizenId);
+      const report = await this.reportService.create(
+        createReportDTO,
+        citizenId
+      );
       res.status(201).json(report);
     } catch (error) {
       if (error instanceof Error) {
@@ -45,6 +50,62 @@ class ReportController {
         }
       }
       res.status(500).json({ error: "Internal Server Error" });
+      next(error);
+    }
+  }
+
+  async getById(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const reportId = parseInt(req.params.id, 10);
+      if (Number.isNaN(reportId)) {
+        res.status(400).json({ error: "Invalid report ID" });
+        return;
+      }
+      const report = await this.reportService.getReportById(reportId);
+      res.status(200).json(report);
+    } catch (error) {
+      if (error instanceof Error && error.message === "Report not found") {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async getAssignedReportsInMap(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const getReportsDTO = plainToClass(
+        GetAssignedReportsForMapRequestDTO,
+        req.body
+      );
+      const errors = await validate(getReportsDTO);
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((err) => Object.values(err.constraints || {}).join(", "))
+          .join("; ");
+        res.status(400).json({ error: errorMessages });
+        return;
+      }
+      if (getReportsDTO.corners.length !== 2) {
+        res.status(400).json({ error: "Exactly 2 corners are required" });
+        return;
+      }
+      const reports = await this.reportService.getAssignedReportsInMap(
+        getReportsDTO.corners
+      );
+      res.status(200).json(reports);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      }
       next(error);
     }
   }
