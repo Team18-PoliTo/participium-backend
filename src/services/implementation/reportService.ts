@@ -215,9 +215,12 @@ class ReportService implements IReportService {
   }
 
 
-  async getReportsByUser(citizenId:number): Promise<ReportDTO[]>{
-    const reports = await this.reportRepository.findByUser(citizenId)
-    return reports.map((report) => ReportMapper.toDTO(report));
+  async getReportsByUser(citizenId: number): Promise<ReportDTO[]> {
+    const reports = await this.reportRepository.findByUser(citizenId);
+
+    return await Promise.all(
+        reports.map(report => ReportMapper.toDTO(report))
+    );
   }
 
 }
