@@ -31,8 +31,8 @@ describe('ReportController', () => {
       body: {
         title: 'Issue',
         description: 'Desc',
-        category: 'Road',
-        binaryPhoto1: { filename: 'p1.png', data: 'Zm9v', size: 10, mimetype: 'image/png' },
+        categoryId: 1,
+        photoIds: ['file1', 'file2'],
         location: { latitude: 1, longitude: 2 },
       },
       auth: { sub: 1, kind: 'citizen' },
@@ -88,8 +88,8 @@ describe('ReportController', () => {
       body: {
         title: 'Issue',
         description: 'Desc',
-        category: 'Road',
-        binaryPhoto1: { filename: 'a.png', data: 'Zm9v', size: 1, mimetype: 'image/png' },
+        categoryId: 1,
+        photoIds: ['file1'],
         location: { latitude: 1, longitude: 2 },
       },
       auth: { sub: 1, kind: 'citizen' },
@@ -112,8 +112,8 @@ describe('ReportController', () => {
       body: {
         title: 'Issue',
         description: 'Desc',
-        category: 'Road',
-        binaryPhoto1: { filename: 'a.png', data: 'Zm9v', size: 1, mimetype: 'image/png' },
+        categoryId: 1,
+        photoIds: ['file1'],
         location: { latitude: 1, longitude: 2 },
       },
       auth: { sub: 1, kind: 'citizen' },

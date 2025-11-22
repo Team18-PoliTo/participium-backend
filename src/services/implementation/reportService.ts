@@ -12,6 +12,7 @@ import { CategoryRoleRepository } from "../../repositories/implementation/Catego
 import { CategoryRepository } from "../../repositories/implementation/CategoryRepository";
 import InternalUserRepository from "../../repositories/InternalUserRepository";
 import MinIoService from "../MinIoService";
+import FileService from "../FileService";
 import { v4 as uuidv4 } from "uuid";
 import { IReportService } from "../IReportService";
 import { ReportStatus } from "../../constants/ReportStatus";
@@ -69,13 +70,16 @@ class ReportService implements IReportService {
       throw new Error("Citizen not found");
     }
 
-    // Find category by name
-    const category = await this.categoryRepository.findByName(data.category);
+    // Find category by ID
+    const category = await this.categoryRepository.findById(data.categoryId);
     if (!category) {
-      throw new Error(`Category not found: ${data.category}`);
+      throw new Error(`Category not found with ID: ${data.categoryId}`);
     }
 
-    // Create report
+    // Validate that all temp files exist and are not expired
+    const tempFiles = await FileService.validateTempFiles(data.photoIds);
+
+    // Create report in database (without photo paths initially)
     const newReport = await this.reportRepository.create({
       citizen: citizen,
       title: data.title,
@@ -85,67 +89,41 @@ class ReportService implements IReportService {
       location: JSON.stringify(data.location),
       status: ReportStatus.PENDING_APPROVAL,
     });
-    // Creates the ObjectKey to be used in minIO
-    const pathPrefix = `citizens/${citizen.id}/reports/${newReport.id}/`;
 
-    newReport.photo1 = pathPrefix + data.binaryPhoto1.filename;
-    if (data.binaryPhoto2) {
-      newReport.photo2 = pathPrefix + data.binaryPhoto2.filename;
-    }
-    if (data.binaryPhoto3) {
-      newReport.photo3 = pathPrefix + data.binaryPhoto3.filename;
-    }
+    // Prepare permanent paths for photos
+    const moves = tempFiles.map((tempFile, index) => {
+      const extension = tempFile.originalName.split('.').pop();
+      const permanentPath = `reports/${newReport.id}/photo${index + 1}_${uuidv4()}.${extension}`;
+      return {
+        fileId: tempFile.fileId,
+        permanentPath,
+      };
+    });
 
-    const uploadedPhotos: { [key: string]: string } = {};
+    try {
+      // Move all files from temp to permanent (with rollback on failure)
+      const permanentPaths = await FileService.moveMultipleToPermanent(moves);
 
-    const toBuffer = (payload: string | Buffer): Buffer =>
-      Buffer.isBuffer(payload) ? payload : Buffer.from(payload, "base64");
-
-    if (data.binaryPhoto1) {
-      const objectKey1 = `${pathPrefix}${uuidv4()}-${
-        data.binaryPhoto1.filename
-      }`;
-      uploadedPhotos.photo1 = await MinIoService.uploadFile(
-        objectKey1,
-        toBuffer(data.binaryPhoto1.data),
-        data.binaryPhoto1.mimetype
-      );
-    }
-
-    if (data.binaryPhoto2) {
-      const objectKey2 = `${pathPrefix}${uuidv4()}-${
-        data.binaryPhoto2.filename
-      }`;
-      uploadedPhotos.photo2 = await MinIoService.uploadFile(
-        objectKey2,
-        toBuffer(data.binaryPhoto2.data),
-        data.binaryPhoto2.mimetype
-      );
-    }
-
-    if (data.binaryPhoto3) {
-      const objectKey3 = `${pathPrefix}${uuidv4()}-${
-        data.binaryPhoto3.filename
-      }`;
-      uploadedPhotos.photo3 = await MinIoService.uploadFile(
-        objectKey3,
-        toBuffer(data.binaryPhoto3.data),
-        data.binaryPhoto3.mimetype
-      );
-    }
-
-    if (uploadedPhotos.photo1) newReport.photo1 = uploadedPhotos.photo1;
-    if (uploadedPhotos.photo2) newReport.photo2 = uploadedPhotos.photo2;
-    if (uploadedPhotos.photo3) newReport.photo3 = uploadedPhotos.photo3;
+      // Update report with permanent photo paths
+      newReport.photo1 = permanentPaths[0];
+      if (permanentPaths[1]) newReport.photo2 = permanentPaths[1];
+      if (permanentPaths[2]) newReport.photo3 = permanentPaths[2];
 
     await this.reportRepository.update(newReport);
 
-    return ReportMapper.toDTO(newReport);
+    return await ReportMapper.toDTO(newReport);
+    } catch (error) {
+      // If file moving fails, throw error
+      // Report exists in DB without photos (degraded state)
+      // Could be enhanced with a retry mechanism or status flag
+      console.error("Failed to move photos for report", newReport.id, error);
+      throw new Error("Failed to process photo uploads. Please try again.");
+    }
   }
 
   async getReportsByStatus(status: string): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByStatus(status);
-    return reports.map((report) => ReportMapper.toDTO(report));
+    return await Promise.all(reports.map((report) => ReportMapper.toDTO(report)));
   }
 
   async updateReport(
@@ -170,8 +148,16 @@ class ReportService implements IReportService {
       }
     }
 
-    // Determine the category name to use (use provided category or existing one)
-    const categoryNameToUse = data.category || report.category.name;
+    // Determine the category to use (use provided categoryId or existing one)
+    const categoryToUse = data.categoryId 
+      ? await this.categoryRepository.findById(data.categoryId)
+      : report.category;
+    
+    if (data.categoryId && !categoryToUse) {
+      throw new Error(`Category not found with ID: ${data.categoryId}`);
+    }
+    
+    const categoryNameToUse = categoryToUse!.name;
 
     // If status is "Assigned", validate officer availability BEFORE making any changes
     if (data.status === ReportStatus.ASSIGNED) {
@@ -195,14 +181,8 @@ class ReportService implements IReportService {
 
     // Now that validation is complete, proceed with updates
     // Update category if provided (if it was wrong)
-    if (data.category) {
-      const newCategory = await this.categoryRepository.findByName(
-        data.category
-      );
-      if (!newCategory) {
-        throw new Error(`Category not found: ${data.category}`);
-      }
-      report.category = newCategory;
+    if (data.categoryId && categoryToUse) {
+      report.category = categoryToUse;
     }
 
     // Update status
@@ -231,7 +211,7 @@ class ReportService implements IReportService {
       report.assignedTo
     );
 
-    return ReportMapper.toDTO(updatedReport);
+    return await ReportMapper.toDTO(updatedReport);
   }
 
 
