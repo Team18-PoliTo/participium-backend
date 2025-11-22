@@ -42,4 +42,14 @@ export class ReportMapper {
       assignedTo,
     };
   } 
+
+  static toDTOforMap(reportDAO: ReportDAO): Partial<ReportDTO> {
+    return { 
+      id: reportDAO.id, 
+      citizenId: reportDAO.citizen.id,
+      title: reportDAO.title,
+      description: reportDAO.description, 
+      location: JSON.parse(reportDAO.location),
+    };
+  }
 }
