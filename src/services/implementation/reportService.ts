@@ -231,6 +231,29 @@ class ReportService implements IReportService {
     );
   }
 
+  async getReportsByOffice(staffId: number): Promise<ReportDTO[]> {
+
+    const staff = await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
+    if (!staff) {
+      throw new Error("Internal user not found");
+    }
+
+    const officeId = staff.role.office?.id;
+    if (!officeId) {
+      return [];
+    }
+
+    const categories = await this.categoryRoleRepository.findCategoriesByOffice(officeId);
+    const categoryIds = categories.map(c => c.id);
+
+    if (categoryIds.length === 0) {
+      return [];
+    }
+
+    const reports = await this.reportRepository.findByCategoryIds(categoryIds);
+
+    return Promise.all(reports.map(r => ReportMapper.toDTO(r)));
+  }
 
 }
 export const reportService = new ReportService();

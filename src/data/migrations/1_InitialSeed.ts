@@ -144,4 +144,3 @@ export class InitialSeed1000000000001 implements MigrationInterface {
     await queryRunner.query(`DELETE FROM offices`);
   }
 }
-

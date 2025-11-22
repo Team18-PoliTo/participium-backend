@@ -127,4 +127,34 @@ router.get(
     internalUserController.getReportsForTechnicalOfficer.bind(internalUserController)
 );
 
+/**
+ * @swagger
+ * /internal/reports/by-office:
+ *   get:
+ *     summary: Get all reports related to the internal user's office
+ *     description:
+ *       Returns all reports whose categories belong to the office of the authenticated internal staff member.
+ *       PR Officers cannot use this endpoint.
+ *     tags: [Internal]
+ *     security:
+ *       - internalPassword: []
+ *     responses:
+ *       200:
+ *         description: List of reports for the user's office
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportDTO'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (PR Officers cannot access)
+ */
+router.get(
+    "/reports/by-office",
+    internalUserController.getReportsByOffice.bind(internalUserController)
+);
+
 export default router;

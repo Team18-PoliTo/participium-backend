@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import {In, Repository} from "typeorm";
 import { AppDataSource } from "../../config/database";
 import ReportDAO from "../../models/dao/ReportDAO";
 import { IReportRepository } from "../IReportRepository";
@@ -62,6 +62,15 @@ export class ReportRepository implements IReportRepository {
     return this.repo.find({
       where: {
         assignedTo: { id: staffId },
+      },
+      relations: ["assignedTo", "category"],
+      order: { createdAt: "DESC" },
+    });
+  }
+  async findByCategoryIds(categoryIds: number[]): Promise<ReportDAO[]> {
+    return this.repo.find({
+      where: {
+        category: { id: In(categoryIds) },
       },
       relations: ["assignedTo", "category"],
       order: { createdAt: "DESC" },

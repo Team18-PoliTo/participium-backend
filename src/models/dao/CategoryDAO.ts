@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import CategoryRoleDAO from "./CategoryRoleDAO";
 
