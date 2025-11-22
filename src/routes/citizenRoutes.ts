@@ -84,4 +84,6 @@ const citizenController = new CitizenController(citizenService);
 // POST /register - Register a new citizen
 router.post("/register", citizenController.register.bind(citizenController));
 
+
+
 export default router;

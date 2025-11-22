@@ -8,4 +8,6 @@ export interface IReportRepository {
   findByStatus(status: string): Promise<ReportDAO[]>;
   findAll(): Promise<ReportDAO[]>;
   updateStatus(id: number, status: string, explanation?: string, assignedTo?: any): Promise<ReportDAO>;
+  findByUser(citizenId: number): Promise<ReportDAO[]>;
+
 }
