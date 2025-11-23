@@ -235,6 +235,7 @@ class InternalUserController {
       }
 
       const staffId = (req as any).auth?.sub;
+
       if (!staffId) {
         res.status(401).json({ error: "Unauthorized" });
         return;
@@ -283,7 +284,6 @@ class InternalUserController {
       next(error);
     }
   }
-
 }
 
 export default InternalUserController;

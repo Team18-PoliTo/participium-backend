@@ -22,13 +22,13 @@ export class ReportMapper {
 
     // Get photo object keys (MinIO paths)
     const photoKeys = [reportDAO.photo1, reportDAO.photo2, reportDAO.photo3].filter(Boolean) as string[];
-    
+
     // Generate pre-signed URLs for each photo (valid for 7 days)
     const photoUrls = await Promise.all(
       photoKeys.map(key => MinIoService.getPresignedUrl(key))
     );
 
-    return { 
+    return {
       id: reportDAO.id,
       citizenId: reportDAO.citizen.id,
       title: reportDAO.title,
@@ -41,5 +41,5 @@ export class ReportMapper {
       explanation: reportDAO.explanation,
       assignedTo,
     };
-  } 
+  }
 }

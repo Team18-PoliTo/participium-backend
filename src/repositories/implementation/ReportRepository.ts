@@ -58,6 +58,7 @@ export class ReportRepository implements IReportRepository {
       },
     });
   }
+
   async findByAssignedStaff(staffId: number): Promise<ReportDAO[]> {
     return this.repo.find({
       where: {
@@ -67,6 +68,7 @@ export class ReportRepository implements IReportRepository {
       order: { createdAt: "DESC" },
     });
   }
+
   async findByCategoryIds(categoryIds: number[]): Promise<ReportDAO[]> {
     return this.repo.find({
       where: {

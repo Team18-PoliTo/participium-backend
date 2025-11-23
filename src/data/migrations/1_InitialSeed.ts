@@ -56,7 +56,6 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         (9, 'Other', 'Other type of category')`
         );
 
-
         // Insert Category-Role relationships (one-to-many)
        // Note: Public Relations Officer (roleId 10) does not handle specific categories
        // System roles 0 (Unassigned) and 1 (ADMIN) are not mapped to categories
@@ -127,11 +126,68 @@ export class InitialSeed1000000000001 implements MigrationInterface {
             );
         }
 
-        // Insert Example Citizen
-        await queryRunner.query(
-            `INSERT INTO citizens (username, email, firstName, lastName, password, status)
-             VALUES ('yusaerguven', 'yusaerguven@gmail.com', 'Yusa', 'Erguven', '${hashedPassword}', 'ACTIVE')`
-        );
+        // Insert Example Citizens
+    // NEW citizen with explicit ID = 1 (needed for all mock reports)
+        await queryRunner.query(`
+    INSERT INTO citizens (id, username, email, firstName, lastName, password, status)
+    VALUES 
+    (1, 'testcitizen', 'citizen@example.com', 'Test', 'Citizen', '${hashedPassword}', 'ACTIVE')
+    ON CONFLICT (id) DO NOTHING;
+     `);
+
+    // OLD citizen (your original mock)
+        await queryRunner.query(`
+    INSERT INTO citizens (username, email, firstName, lastName, password, status)
+    VALUES ('yusaerguven', 'yusaerguven@gmail.com', 'Yusa', 'Erguven', '${hashedPassword}', 'ACTIVE');
+`    );
+
+
+            await queryRunner.query(`
+    INSERT INTO reports 
+    (citizenId, title, description, categoryId, photo1, createdAt, location, status, explanation, "assignedToId")
+    VALUES
+    -- 4. Public Lighting (roleId 12 → userId 4)
+    (1, 'Streetlight Broken', 'Lamp not working near school', 4, NULL,
+     DATETIME('now', '-6 days'),
+     '{"latitude":45.061,"longitude":7.682}',
+     'Assigned', 'Assigned to lighting team', 4),
+
+    -- 7. Roads & Urban Furnishings (roleId 11 → userId 3)
+    (1, 'Huge pothole on the road', 'Very deep hole makes road unsafe', 8, NULL,
+     DATETIME('now', '-5 days'),
+     '{"latitude":45.063,"longitude":7.681}',
+     'Assigned', 'Sent to urban maintenance team', 3),
+
+    -- 5. Waste (roleId 13 → userId 5)
+    (1, 'Overflowing waste bins', 'Trash bins full for 3 days', 8, NULL,
+     DATETIME('now', '-4 days'),
+     '{"latitude":45.064,"longitude":7.685}',
+     'Assigned', 'Forwarded to waste department', 7),
+
+    -- 1. Water Supply (roleId 16 → userId 8)
+    (1, 'Water leakage', 'Leak near bus stop', 1, NULL,
+     DATETIME('now', '-3 days'),
+     '{"latitude":45.059,"longitude":7.676}',
+     'Assigned', 'Water technicians notified', 8),
+
+    -- 6. Traffic Signs (roleId 14 → userId 6)
+    (1, 'Missing road sign', 'Stop sign has fallen', 8, NULL,
+     DATETIME('now', '-2 days'),
+     '{"latitude":45.062,"longitude":7.678}',
+     'Assigned', 'Road sign team notified', 7),
+
+    -- 8. Green Areas (roleId 15 → userId 7)
+    (1, 'Playground damage', 'Broken swing in park', 8, NULL,
+     DATETIME('now', '-1 days'),
+     '{"latitude":45.065,"longitude":7.689}',
+     'Assigned', 'Park team dispatched', 7),
+
+    -- 2. Accessibility (roleId 17 → userId 9)
+    (1, 'Accessibility issue', 'Ramp for wheelchairs missing', 2, NULL,
+     DATETIME('now', '-12 hours'),
+     '{"latitude":45.067,"longitude":7.684}',
+     'Assigned', 'Accessibility team notified', 9)
+    `);
     }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
