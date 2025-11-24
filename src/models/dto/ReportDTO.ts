@@ -14,6 +14,8 @@ export class CategoryDTO {
 export class ReportDTO {
   id: number;
   citizenId: number;
+  citizenName: string;
+  citizenSurname: string;
   title: string;
   description: string;
   category: CategoryDTO;
@@ -27,3 +29,4 @@ export class ReportDTO {
   explanation?: string | null;
   assignedTo?: AssignedOfficerDTO | null;
 }
+

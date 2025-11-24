@@ -16,25 +16,32 @@ const options: swaggerJSDoc.Options = {
     components: {
       securitySchemes: {
         citizenPassword: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-          description: "JWT token for citizen",
+          type: "oauth2",
+          flows: {
+            password: {
+              tokenUrl: "/api/auth/citizens/login",
+              scopes: {},
+            },
+          },
+          description: "Log in as citizen using email/password",
         },
         internalPassword: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-          description: "JWT token for internal user",
+          type: "oauth2",
+          flows: {
+            password: {
+              tokenUrl: "/api/auth/internal/login",
+              scopes: {},
+            },
+          },
+          description: "Log in as internal user using email/password",
         },
       },
     },
   },
   apis: [
     "./src/routes/*.ts",
-    "./src/models/dto/*.ts",
+    "./src/models/dto/*.ts"
   ],
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
-

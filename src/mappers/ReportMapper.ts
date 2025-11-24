@@ -31,6 +31,8 @@ export class ReportMapper {
     return {
       id: reportDAO.id,
       citizenId: reportDAO.citizen.id,
+      citizenName: reportDAO.citizen.firstName,
+      citizenSurname: reportDAO.citizen.lastName,
       title: reportDAO.title,
       description: reportDAO.description,
       category: categoryDTO,
