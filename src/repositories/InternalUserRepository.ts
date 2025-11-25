@@ -11,6 +11,7 @@ interface IInternalUserRepository {
   findByRoleId(roleId: number): Promise<InternalUserDAO[]>;
   incrementActiveTasks(userId: number): Promise<void>;
   decrementActiveTasks(userId: number): Promise<void>;
+  findByIdWithRoleAndOffice(id: number): Promise<InternalUserDAO | null>;
 }
 
 export class InternalUserRepository implements IInternalUserRepository {
@@ -68,6 +69,13 @@ export class InternalUserRepository implements IInternalUserRepository {
       .set({ activeTasks: () => "GREATEST(activeTasks - 1, 0)" })
       .where("id = :id", { id: userId })
       .execute();
+  }
+
+  async findByIdWithRoleAndOffice(id: number): Promise<InternalUserDAO | null> {
+    return await this.repo.findOne({
+      where: { id },
+      relations: ["role", "role.office"],
+    });
   }
 }
 

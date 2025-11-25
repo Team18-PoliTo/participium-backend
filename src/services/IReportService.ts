@@ -6,5 +6,7 @@ export interface IReportService {
   getReportsByStatus(status: string): Promise<ReportDTO[]>;
   updateReport(reportId: number, data: UpdateReportRequestDTO, userRole?: string): Promise<ReportDTO>;
   getReportsByUser(citizenId:number): Promise<ReportDTO[]>;
+  getReportsForStaff(staffId: number): Promise<ReportDTO[]>;
+  getReportsByOffice(staffId: number): Promise<ReportDTO[]>;
 }
 

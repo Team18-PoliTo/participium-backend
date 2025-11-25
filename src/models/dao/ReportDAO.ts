@@ -1,10 +1,9 @@
-/* istanbul ignore file */
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  ManyToOne,
+  ManyToOne, JoinColumn,
 } from "typeorm";
 import CitizenDAO from "./CitizenDAO";
 import InternalUserDAO from "./InternalUserDAO";
@@ -16,10 +15,16 @@ class ReportDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
   id: number;
 
+
   @ManyToOne(() => CitizenDAO, (citizen) => citizen.reports, {
     nullable: false,
+    eager: true,
   })
+  @JoinColumn({ name: "citizenId" })
   citizen: CitizenDAO;
+
+  @Column({ nullable: false })
+  citizenId: number;
 
   @Column({ nullable: false })
   title: string;
@@ -33,15 +38,12 @@ class ReportDAO {
   })
   category: CategoryDAO;
 
-  // minIO ObjecKey
   @Column({ nullable: true })
   photo1: string;
 
-  // minIO ObjecKey
   @Column({ nullable: true })
   photo2: string;
 
-  // minIO ObjecKey
   @Column({ nullable: true })
   photo3: string;
 
@@ -59,8 +61,14 @@ class ReportDAO {
 
   @ManyToOne(() => InternalUserDAO, {
     nullable: true,
+    eager: true,
   })
+  @JoinColumn({ name: "assignedToId" })
   assignedTo: InternalUserDAO | null;
+
+  @Column({ nullable: true })
+  assignedToId: number | null;
 }
 
 export default ReportDAO;
+

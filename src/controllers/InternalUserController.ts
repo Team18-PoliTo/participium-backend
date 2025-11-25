@@ -222,6 +222,68 @@ class InternalUserController {
       next(error);
     }
   }
+
+  async getReportsForTechnicalOfficer(
+      req: Request,
+      res: Response,
+      next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const staffId = (req as any).auth?.sub;
+
+      if (!staffId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const reports = await this.reportService.getReportsForStaff(staffId);
+
+      res.status(200).json(reports);
+
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async getReportsByOffice(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const staffId = (req as any).auth?.sub;
+      const userRole = (req as any).auth?.role;
+
+      if (!staffId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      if (userRole === "Public Relations Officer" || userRole?.includes("Public Relations Officer")) {
+        res.status(403).json({ error: "PR Officers cannot filter by office" });
+        return;
+      }
+      const reports = await this.reportService.getReportsByOffice(staffId);
+
+      res.status(200).json(reports);
+
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
 }
 
 export default InternalUserController;
