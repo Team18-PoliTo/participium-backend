@@ -1,14 +1,18 @@
 # Backend Dockerfile
 FROM node:20-alpine
 
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
 # Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production=false
+# Install dependencies (ignore scripts for security)
+RUN npm ci --only=production=false --ignore-scripts
 
 # Copy source code
 COPY . .
@@ -17,7 +21,11 @@ COPY . .
 RUN npm run build
 
 # Create data directory for SQLite database (if needed)
-RUN mkdir -p /app/src/data
+RUN mkdir -p /app/src/data && \
+    chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
 
 # Expose port
 EXPOSE 3001
