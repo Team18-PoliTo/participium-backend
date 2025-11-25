@@ -15,7 +15,10 @@ COPY package*.json ./
 RUN npm ci --only=production=false --ignore-scripts
 
 # Copy source code
-COPY . .
+# Note: .dockerignore ensures sensitive files (.env, node_modules, etc.) are excluded
+COPY src/ ./src/
+COPY tsconfig.json ./
+COPY server.ts ./
 
 # Build TypeScript
 RUN npm run build
