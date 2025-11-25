@@ -1,13 +1,9 @@
-import  request  from "supertest"
-import  app  from "../src/app";
+import request from "supertest";
 
-beforeAll(async () => {
-  // await connectToDatabase();
-});
+jest.mock("../src/config/initMinio", () => ({
+  initMinio: jest.fn().mockResolvedValue(undefined),
+}));
 
-afterAll(async () => {
-  // await disconnectDatabase();
-});
+import app from "../src/app";
 
 export const api = request(app);
-
