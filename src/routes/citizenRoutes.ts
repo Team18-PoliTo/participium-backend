@@ -4,6 +4,8 @@ import CitizenService from "../services/implementation/citizenService";
 import CitizenRepository from "../repositories/implementation/CitizenRepository";
 
 const router = Router();
+import multer from "multer";
+const upload = multer();
 
 // Dependency Injection Setup
 const citizenRepository = new CitizenRepository();
@@ -84,6 +86,65 @@ const citizenController = new CitizenController(citizenService);
 // POST /register - Register a new citizen
 router.post("/register", citizenController.register.bind(citizenController));
 
-
+/**
+ * @swagger
+ * /citizens/{id}:
+ *   patch:
+ *     summary: Partially update citizen profile
+ *     tags: [Citizens]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "user@example.com"
+ *               username:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "newusername"
+ *               firstName:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "John"
+ *               lastName:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "Doe"
+ *               telegramUsername:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "mytelegram"
+ *               emailNotificationsEnabled:
+ *                 type: boolean
+ *                 example: true
+ *               accountPhoto:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Citizen updated successfully
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: Citizen not found
+ */
+router.patch(
+    "/:id",
+    upload.single("accountPhoto"),
+    citizenController.updateCitizen.bind(citizenController)
+);
 
 export default router;

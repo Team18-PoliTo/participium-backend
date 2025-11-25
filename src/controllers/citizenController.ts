@@ -37,6 +37,53 @@ class CitizenController {
       next(err);
     }
   }
+
+  async updateCitizen(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = Number(req.params.id);
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid citizen ID" });
+      }
+
+      const photoFile = req.file ?? null;
+
+      const {
+        email,
+        username,
+        firstName,
+        lastName,
+        telegramUsername,
+        emailNotificationsEnabled,
+      } = req.body;
+
+      const updated = await this.citizenService.updateCitizen(id, {
+        email: email ?? undefined,
+        username: username ?? undefined,
+        firstName: firstName ?? undefined,
+        lastName: lastName ?? undefined,
+        telegramUsername: telegramUsername ?? undefined,
+        emailNotificationsEnabled:
+            emailNotificationsEnabled !== undefined
+                ? emailNotificationsEnabled === "true" ||
+                emailNotificationsEnabled === true
+                : undefined,
+        photoFile,
+      });
+
+      return res.status(200).json(updated);
+
+    } catch (err: any) {
+      if (err instanceof Error && err.message === "Citizen not found") {
+        return res.status(404).json({ error: err.message });
+      }
+      if (err instanceof Error && err.message.startsWith("Invalid")) {
+        return res.status(400).json({ error: err.message });
+      }
+      return next(err);
+    }
+  }
+
 }
 
 export default CitizenController;
