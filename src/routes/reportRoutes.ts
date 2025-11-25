@@ -229,12 +229,18 @@ router.post("/", reportController.create.bind(reportController));
  *                   id:
  *                     type: integer
  *                     example: 1
- *                   citizenId:
- *                     type: integer
- *                     example: 123
+ *                   citizenName:
+ *                     type: string
+ *                     example: Marco
+ *                   citizenLastName:
+ *                     type: string
+ *                     example: Rossi
  *                   title:
  *                     type: string
  *                     example: Pothole in the street
+ *                   status:
+ *                    type: string
+ *                    example: In progress
  *                   description:
  *                     type: string
  *                     example: Large pothole near my house
