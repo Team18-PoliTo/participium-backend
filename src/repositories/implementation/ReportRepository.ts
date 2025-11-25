@@ -1,7 +1,8 @@
-import {In, Repository} from "typeorm";
+import { In, Repository } from "typeorm";
 import { AppDataSource } from "../../config/database";
 import ReportDAO from "../../models/dao/ReportDAO";
 import { IReportRepository } from "../IReportRepository";
+import { ReportStatus } from "../../constants/ReportStatus";
 
 export class ReportRepository implements IReportRepository {
   private repo: Repository<ReportDAO>;
@@ -37,6 +38,14 @@ export class ReportRepository implements IReportRepository {
   async findAll(): Promise<ReportDAO[]> {
     return await this.repo.find({
       relations: ["citizen", "explanation"],
+      order: { createdAt: "DESC" },
+    });
+  }
+
+  async findAllApproved(): Promise<ReportDAO[]> {
+    return await this.repo.find({
+      where: { status: In([ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS]) },
+      relations: ["citizen"],
       order: { createdAt: "DESC" },
     });
   }

@@ -6,12 +6,11 @@ import {
   IsOptional,
   IsInt,
   Min,
-  ValidateNested,
+  IsObject,
   IsArray,
   ArrayMinSize,
   ArrayMaxSize,
 } from "class-validator";
-import { Type } from "class-transformer";
 
 export class RegisterCitizenRequestDTO {
   @IsEmail({}, { message: "Invalid email format" })
@@ -110,4 +109,14 @@ export class UpdateReportRequestDTO {
   @IsString({ message: "Explanation must be a string" })
   @IsNotEmpty({ message: "Explanation is required" })
   explanation: string;
+}
+
+export class GetAssignedReportsForMapRequestDTO {
+  @IsNotEmpty({ message: "Corners are required" })
+  @IsObject({ each: true, message: "Each corner must be an object with longitude and latitude" })
+  @IsArray({ message: "Corners must be an array" })
+  corners: {
+    latitude: number;
+    longitude: number;
+  }[];
 }

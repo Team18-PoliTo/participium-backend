@@ -2,6 +2,7 @@ import { Router } from "express";
 import ReportController from "../controllers/reportController";
 import ReportService from "../services/implementation/reportService";
 import { ReportRepository } from "../repositories/implementation/ReportRepository";
+import CitizenController from "../controllers/citizenController";
 
 const router = Router();
 
@@ -111,6 +112,25 @@ const reportController = new ReportController(reportService);
  *             longitude:
  *               type: number
  *               example: 9.1900
+ *     GetAssignedReportsForMapRequestDTO:
+ *       type: object
+ *       required:
+ *         - corners
+ *       properties:
+ *         corners:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               latitude:
+ *                 type: number
+ *               longitude:
+ *                 type: number
+ *           example: [
+ *             { "latitude": 45.4650, "longitude": 9.1890 },
+ *             { "latitude": 20.463, "longitude": 15.1910 },
+ *           ]
+ *
  */
 
 /**
@@ -119,7 +139,7 @@ const reportController = new ReportController(reportService);
  *   post:
  *     summary: Create a new report
  *     tags: [Citizens]
- *     security:  
+ *     security:
  *        - citizenPassword: []
  *     requestBody:
  *       required: true
@@ -184,7 +204,107 @@ router.post("/", reportController.create.bind(reportController));
 
 /**
  * @swagger
- * /citizens/reports:
+ * /citizens/reports/map:
+ *   post:
+ *     summary: Get assigned summary of specific reports within specified map area
+ *     tags: [Citizens]
+ *     security:
+ *       - citizenPassword: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/GetAssignedReportsForMapRequestDTO'
+ *     responses:
+ *       200:
+ *         description: List of reports within the specified map area
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   citizenId:
+ *                     type: integer
+ *                     example: 123
+ *                   title:
+ *                     type: string
+ *                     example: Pothole in the street
+ *                   description:
+ *                     type: string
+ *                     example: Large pothole near my house
+ *                   location:
+ *                     type: object
+ *                     properties:
+ *                       latitude:
+ *                         type: number
+ *                         example: 45.4642
+ *                       longitude:
+ *                         type: number
+ *                         example: 9.1900
+ *             example:
+ *               - id: 1
+ *                 citizenId: 123
+ *                 title: Pothole in the street
+ *                 description: Large pothole near my house
+ *                 location:
+ *                   latitude: 45.4642
+ *                   longitude: 9.1900
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *
+ */
+router.post(
+  "/map",
+  reportController.getAssignedReportsInMap.bind(reportController)
+);
+
+/**
+ * @swagger
+ * /citizens/reports/{id}:
+ *   get:
+ *     summary: Get report by ID
+ *     tags: [Citizens]
+ *     security:
+ *       - citizenPassword: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: The report ID
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: Report retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReportDTO'
+ *       400:
+ *         description: Invalid report ID
+ *       404:
+ *         description: Report not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get("/:id", reportController.getById.bind(reportController));
+
+/**
+ * @swagger
+ * /citizens/reports/myReports:
  *   get:
  *     summary: Get all reports created by the authenticated citizen
  *     tags: [Citizens]
@@ -205,7 +325,7 @@ router.post("/", reportController.create.bind(reportController));
  *       403:
  *         description: Forbidden
  */
-router.get("/reports", reportController.getMyReports.bind(reportController));
+router.get("/myReports", reportController.getMyReports.bind(reportController));
 
 
 export default router;
