@@ -22,15 +22,19 @@ export class ReportMapper {
 
     // Get photo object keys (MinIO paths)
     const photoKeys = [reportDAO.photo1, reportDAO.photo2, reportDAO.photo3].filter(Boolean) as string[];
-    
+
     // Generate pre-signed URLs for each photo (valid for 7 days)
-    const photoUrls = await Promise.all(
+    const photoUrlsRaw = await Promise.all(
       photoKeys.map(key => MinIoService.getPresignedUrl(key))
     );
+    // Filter out empty/falsy URLs (MinIO might be unavailable or return an error fallback)
+    const photoUrls = photoUrlsRaw.filter(Boolean);
 
-    return { 
+    return {
       id: reportDAO.id,
       citizenId: reportDAO.citizen.id,
+      citizenName: reportDAO.citizen.firstName,
+      citizenSurname: reportDAO.citizen.lastName,
       title: reportDAO.title,
       description: reportDAO.description,
       category: categoryDTO,
@@ -43,11 +47,13 @@ export class ReportMapper {
     };
   } 
 
-  static toDTOforMap(reportDAO: ReportDAO): Partial<ReportDTO> {
+  static toDTOforMap(reportDAO: ReportDAO): Object {
     return { 
       id: reportDAO.id, 
-      citizenId: reportDAO.citizen.id,
+      citizenName: reportDAO.citizen.firstName,
+      citizenLastName: reportDAO.citizen.lastName,
       title: reportDAO.title,
+      status: reportDAO.status,
       description: reportDAO.description, 
       location: JSON.parse(reportDAO.location),
     };

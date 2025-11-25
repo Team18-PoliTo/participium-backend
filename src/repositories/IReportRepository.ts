@@ -12,6 +12,8 @@ export interface IReportRepository {
     explanation?: string,
     assignedTo?: any
   ): Promise<ReportDAO>;
-  findAllAssigned(): Promise<ReportDAO[]>;
+  findAllApproved(): Promise<ReportDAO[]>;
   findByUser(citizenId: number): Promise<ReportDAO[]>;
+  findByAssignedStaff(staffId: number): Promise<ReportDAO[]>;
+  findByCategoryIds(categoryIds: number[]): Promise<ReportDAO[]>;
 }

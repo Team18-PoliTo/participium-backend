@@ -7,7 +7,7 @@ import {
 import InternalUserDAO from "../models/dao/InternalUserDAO";
 import InternalUserRepository from "../repositories/InternalUserRepository";
 import * as bcrypt from "bcrypt";
-import RoleRepository from "../repositories/RoleRepository";
+import RoleRepository from "../repositories/implementation/RoleRepository";
 import jwt from "jsonwebtoken";
 import { LoginRequestDTO } from "../models/dto/LoginRequestDTO";
 

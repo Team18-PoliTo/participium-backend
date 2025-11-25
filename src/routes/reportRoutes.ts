@@ -302,7 +302,30 @@ router.post(
  */
 router.get("/:id", reportController.getById.bind(reportController));
 
-
+/**
+ * @swagger
+ * /citizens/reports/myReports:
+ *   get:
+ *     summary: Get all reports created by the authenticated citizen
+ *     tags: [Citizens]
+ *     security:
+ *       - citizenPassword: []
+ *     description: Returns a list of all reports created by the current citizen.
+ *     responses:
+ *       200:
+ *         description: List of citizen's reports
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ReportDTO'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.get("/myReports", reportController.getMyReports.bind(reportController));
+
 
 export default router;

@@ -1,4 +1,4 @@
-import { RoleRepository } from "../../../src/repositories/RoleRepository";
+import { RoleRepository } from "../../../src/repositories/implementation/RoleRepository";
 import RoleDAO from "../../../src/models/dao/RoleDAO";
 import { Repository } from "typeorm";
 

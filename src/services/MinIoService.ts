@@ -77,7 +77,13 @@ class MinioService {
    * @returns Pre-signed URL
    */
   async getPresignedUrl(objectKey: string, expirySeconds: number = 7 * 24 * 60 * 60): Promise<string> {
-    return await minioClient.presignedGetObject(MINIO_BUCKET, objectKey, expirySeconds);
+    try {
+      return await minioClient.presignedGetObject(MINIO_BUCKET, objectKey, expirySeconds);
+    } catch (error: any) {
+      console.warn(`[MinIO] Could not generate presigned URL for ${objectKey}:`, error && error.message ? error.message : error);
+      // return empty string as fallback so callers can filter falsy values
+      return "";
+    }
   }
 }
 
