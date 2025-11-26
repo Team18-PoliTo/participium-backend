@@ -13,7 +13,6 @@ describe("CategoryRoleRepository", () => {
             findOne: jest.fn(),
             create: jest.fn(),
             save: jest.fn(),
-            // ...other methods
         } as unknown as jest.Mocked<Repository<CategoryRoleDAO>>;
 
         repository = new CategoryRoleRepository(mockRepo);
@@ -23,7 +22,7 @@ describe("CategoryRoleRepository", () => {
         jest.resetAllMocks();
     });
 
-it("findByRoleId should call repo.find with role.id and relations", async () => {
+    it("findByRoleId should call repo.find with role.id and relations", async () => {
         const items = [
             { id: 1 } as CategoryRoleDAO,
             { id: 2 } as CategoryRoleDAO,
@@ -79,5 +78,29 @@ it("findByRoleId should call repo.find with role.id and relations", async () => 
         expect(mockRepo.create).toHaveBeenCalledWith(payload);
         expect(mockRepo.save).toHaveBeenCalledWith(created);
         expect(result).toBe(created);
+    });
+
+    it("findCategoriesByOffice should return mapped categories", async () => {
+        const category1 = { id: 1, name: "C1" };
+        const category2 = { id: 2, name: "C2" };
+        
+        const results = [
+            { category: category1 },
+            { category: category2 }
+        ] as CategoryRoleDAO[];
+
+        mockRepo.find.mockResolvedValue(results);
+
+        const categories = await repository.findCategoriesByOffice(99);
+
+        expect(mockRepo.find).toHaveBeenCalledWith({
+            where: {
+                role: {
+                    office: { id: 99 },
+                },
+            },
+            relations: ["category", "role", "role.office"],
+        });
+        expect(categories).toEqual([category1, category2]);
     });
 });

@@ -1,3 +1,4 @@
+// test/unit/services/citizenService.test.ts
 // --- Mock bcrypt and jwt BEFORE importing the service ---
 jest.mock('bcrypt', () => ({
     __esModule: true,
@@ -18,14 +19,14 @@ jest.mock('jsonwebtoken', () => {
 jest.mock('../../../src/services/MinIoService', () => ({
     __esModule: true,
     default: {
-        uploadUserProfilePhoto: jest.fn(async () => 'photos/user-42.jpg'),
+        uploadUserProfilePhoto: jest.fn(),
+        deleteFile: jest.fn(),
     },
 }));
 
 import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import MinIoService from '../../../src/services/MinIoService';
-
 import { LoginRequestDTO } from '../../../src/models/dto/LoginRequestDTO';
 
 // Mock CitizenMapper (named export)
@@ -384,26 +385,29 @@ describe('CitizenService — complete tests', () => {
             });
         });
 
-        it('should upload photo and update accountPhotoUrl', async () => {
-            repo.findById.mockResolvedValueOnce(citizenBase);
-            const photoFile = { 
-                originalname: 'profile.jpg',
-                buffer: Buffer.from('test')
-            } as Express.Multer.File;
-            const updated = { ...citizenBase, accountPhotoUrl: 'photos/user-42.jpg' };
+        it('should update accountPhotoUrl given a photo path, deleting old one', async () => {
+            // Setup citizen with an existing photo
+            const oldPhotoPath = 'photos/old.jpg';
+            const newPhotoPath = 'temp/new.jpg';
+            
+            const citizenWithPhoto = { ...citizenBase, accountPhotoUrl: oldPhotoPath };
+            
+            repo.findById.mockResolvedValueOnce(citizenWithPhoto);
+            const updated = { ...citizenBase, accountPhotoUrl: newPhotoPath };
             repo.findById.mockResolvedValueOnce(updated);
 
-            (MinIoService.uploadUserProfilePhoto as jest.Mock).mockResolvedValueOnce('photos/user-42.jpg');
-
             const result = await service.updateCitizen(42, {
-                photoFile,
+                photoPath: newPhotoPath,
             });
 
-            expect(MinIoService.uploadUserProfilePhoto).toHaveBeenCalledWith(42, photoFile);
+            // Should delete old photo
+            expect(MinIoService.deleteFile).toHaveBeenCalledWith('profile-photos', oldPhotoPath);
+            
+            // Should update with new path
             expect(repo.update).toHaveBeenCalledWith(42, {
-                accountPhotoUrl: 'photos/user-42.jpg',
+                accountPhotoUrl: newPhotoPath,
             });
-            expect(result.accountPhotoUrl).toBe('photos/user-42.jpg');
+            expect(result.accountPhotoUrl).toBe(newPhotoPath);
         });
 
         it('should update multiple fields at once', async () => {
