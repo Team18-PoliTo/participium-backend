@@ -35,9 +35,17 @@ class CitizenDAO {
   @CreateDateColumn({ type: "datetime" })
   createdAt: Date;
 
+  @Column({ type: "varchar", nullable: true })
+  telegramUsername?: string;
+
+  @Column({ type: "boolean", default: true })
+  emailNotificationsEnabled: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  accountPhotoUrl?: string;
+
   @OneToMany(() => ReportDAO, (report) => report.citizen, { nullable: true, onDelete: "CASCADE" })
   reports: ReportDAO[];
 }
 
 export default CitizenDAO;
-

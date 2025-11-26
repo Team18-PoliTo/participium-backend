@@ -11,7 +11,7 @@ export class CitizenMapper {
       lastName: citizenDAO.lastName,
       status: citizenDAO.status ?? "ACTIVE",
       createdAt: citizenDAO.createdAt,
+      accountPhotoUrl: citizenDAO.accountPhotoUrl
     };
   }
 }
-

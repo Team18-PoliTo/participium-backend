@@ -6,6 +6,7 @@ export class CitizenDTO {
   lastName: string;
   status: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
   createdAt: Date;
+  accountPhotoUrl?: string;
 }
 
 

@@ -1,5 +1,4 @@
-import { minioClient, MINIO_BUCKET } from "../config/minioClient";
-import { Readable } from "stream";
+import {minioClient, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
 
 class MinioService {
   async uploadFile(
@@ -77,6 +76,29 @@ class MinioService {
     } catch (error) {
       return false;
     }
+  }
+
+  async uploadUserProfilePhoto(userId: number, file: Express.Multer.File): Promise<string> {
+    if (!file) {
+      throw new Error("No file provided");
+    }
+    const extension = file.originalname.split(".").pop()?.toLowerCase() || "jpg";
+    const mimeType = file.mimetype || "application/octet-stream";
+    const objectKey = `citizens/${userId}/profile.${extension}`;
+    const PROFILE_BUCKET = process.env.MINIO_PROFILE_BUCKET || "profile-photos";
+    const exists = await minioClient.bucketExists(PROFILE_BUCKET);
+    if (!exists) {
+      await minioClient.makeBucket(PROFILE_BUCKET);
+    }
+    await minioClient.putObject(
+        PROFILE_BUCKET,
+        objectKey,
+        file.buffer,
+        file.buffer.length,
+        { "Content-Type": mimeType }
+    );
+
+    return objectKey;
   }
 
   /**

@@ -1,12 +1,13 @@
-import { CitizenMapper } from "../../mappers/CitizenMapper";
-import { CitizenDTO } from "../../models/dto/CitizenDTO";
-import { RegisterCitizenRequestDTO } from "../../models/dto/ValidRequestDTOs";
+import {CitizenMapper} from "../../mappers/CitizenMapper";
+import {CitizenDTO} from "../../models/dto/CitizenDTO";
+import {RegisterCitizenRequestDTO} from "../../models/dto/ValidRequestDTOs";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { ICitizenRepository } from "../../repositories/ICitizenRepository";
-import { ICitizenService } from "../ICitizenService";
-import { LoginRequestDTO } from "../../models/dto/LoginRequestDTO";
+import {ICitizenRepository} from "../../repositories/ICitizenRepository";
+import {ICitizenService} from "../ICitizenService";
+import {LoginRequestDTO} from "../../models/dto/LoginRequestDTO";
+import MinIoService from "../MinIoService";
 
 class CitizenService implements ICitizenService {
   constructor(
@@ -81,6 +82,69 @@ class CitizenService implements ICitizenService {
 
     return { access_token: token, token_type: "bearer" };
   }
+
+  async updateCitizen(
+      id: number,
+      data: {
+        email?: string | null;
+        username?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        telegramUsername?: string | null;
+        emailNotificationsEnabled?: boolean;
+        photoFile?: Express.Multer.File | null;
+      }
+  ): Promise<CitizenDTO> {
+
+    const citizen = await this.citizenRepository.findById(id);
+    if (!citizen) {
+      throw new Error("Citizen not found");
+    }
+
+    const normalize = (v: any) => {
+      if (v === undefined) return undefined;
+      if (v === "" || v === "null" || v === null) return null;
+      return v;
+    };
+
+    const updatePayload: any = {};
+
+    if (data.email !== undefined) {
+      const normalized = normalize(data.email);
+      updatePayload.email = normalized ? normalized.toLowerCase() : null;
+    }
+
+    if (data.username !== undefined) {
+      const normalized = normalize(data.username);
+      updatePayload.username = normalized ? normalized.toLowerCase() : null;
+    }
+
+    if (data.firstName !== undefined)
+      updatePayload.firstName = normalize(data.firstName);
+
+    if (data.lastName !== undefined)
+      updatePayload.lastName = normalize(data.lastName);
+
+    if (data.telegramUsername !== undefined)
+      updatePayload.telegramUsername = normalize(data.telegramUsername);
+
+    if (data.emailNotificationsEnabled !== undefined)
+      updatePayload.emailNotificationsEnabled = data.emailNotificationsEnabled;
+
+    if (data.photoFile) {
+      updatePayload.accountPhotoUrl = await MinIoService.uploadUserProfilePhoto(id, data.photoFile);
+    }
+
+    await this.citizenRepository.update(id, updatePayload);
+
+    const updatedCitizen = await this.citizenRepository.findById(id);
+    if (!updatedCitizen) {
+      throw new Error("Citizen not found after update");
+    }
+
+    return CitizenMapper.toDTO(updatedCitizen);
+  }
+
 }
 
 export const citizenService = new CitizenService();

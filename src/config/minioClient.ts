@@ -9,4 +9,5 @@ export const minioClient = new Client({
 });
 
 export const MINIO_BUCKET = process.env.MINIO_BUCKET || "reports";
+export const PROFILE_BUCKET = process.env.MINIO_PROFILE_BUCKET || "profile-photos";
 
