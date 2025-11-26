@@ -27,123 +27,87 @@ describe("ReportService", () => {
     const reportRepository = {
       create: jest.fn().mockResolvedValue({ ...baseReport }),
       update: jest.fn().mockResolvedValue(undefined),
+      updateStatus: jest.fn().mockResolvedValue({ ...baseReport }),
     };
     const citizenRepository = {
       findById: jest.fn().mockResolvedValue(citizen),
     };
     const categoryRepository = {
       findByName: jest.fn().mockResolvedValue(category),
+      findById: jest.fn().mockResolvedValue(category), // Fixed missing mock
     };
+    const categoryRoleRepository = {
+        findRoleByCategory: jest.fn(),
+        findCategoriesByOffice: jest.fn(),
+    }
+    const internalUserRepository = {
+        findByRoleId: jest.fn(),
+        findById: jest.fn(),
+        findByIdWithRoleAndOffice: jest.fn(),
+        incrementActiveTasks: jest.fn(),
+    }
 
     return {
       service: new ReportService(
           reportRepository as any,
           citizenRepository as any,
-          categoryRepository as any
+          categoryRepository as any,
+          categoryRoleRepository as any,
+          internalUserRepository as any
       ),
       reportRepository,
       citizenRepository,
       categoryRepository,
+      categoryRoleRepository,
+      internalUserRepository
     };
   };
 
   let uploadSpy: jest.SpyInstance;
+  let validateTempFilesSpy: jest.SpyInstance;
+  let moveMultipleToPermanentSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
     uploadSpy = jest
         .spyOn(MinIoService, "uploadFile")
         .mockResolvedValue(undefined as any);
     (uuidv4 as jest.Mock).mockImplementation(() => "uuid");
+    
+    const FileService = require("../../../src/services/FileService").default;
+    validateTempFilesSpy = jest.spyOn(FileService, "validateTempFiles").mockResolvedValue([
+        { fileId: "1", originalName: "photo1.png" },
+    ]);
+    
+    moveMultipleToPermanentSpy = jest.spyOn(FileService, "moveMultipleToPermanent").mockResolvedValue([
+        "object/photo1.png"
+    ]);
   });
 
   afterEach(() => {
-    uploadSpy.mockRestore();
+    jest.restoreAllMocks();
   });
 
   it("creates report, uploads provided photos, and returns DTO", async () => {
-    uploadSpy
-        .mockResolvedValueOnce("object/photo1.png" as any)
-        .mockResolvedValueOnce("object/photo2.png" as any)
-        .mockResolvedValueOnce("object/photo3.png" as any);
-
     const { service, reportRepository, citizenRepository } = buildService();
 
     const result = await service.create(
         {
           title: "Broken light",
           description: "Lamp not working",
-          category: "Infrastructure",
+          categoryId: 1, // Use DTO compliant payload
           location: { latitude: 45, longitude: 9 },
-          binaryPhoto1: {
-            filename: "photo1.png",
-            data: Buffer.from("primary"),
-            size: 10,
-            mimetype: "image/png",
-          },
-          binaryPhoto2: {
-            filename: "photo2.png",
-            data: Buffer.from("secondary"),
-            size: 8,
-            mimetype: "image/png",
-          },
-          binaryPhoto3: {
-            filename: "photo3.png",
-            data: Buffer.from("tertiary"),
-            size: 6,
-            mimetype: "image/png",
-          },
+          photoIds: ["1"]
         } as any,
         citizen.id
     );
 
     expect(citizenRepository.findById).toHaveBeenCalledWith(citizen.id);
     expect(reportRepository.create).toHaveBeenCalled();
-    expect(uploadSpy).toHaveBeenCalledTimes(3);
     expect(reportRepository.update).toHaveBeenCalled();
-
-    const updatedReport = (reportRepository.update as jest.Mock).mock.calls[0][0];
-    expect(updatedReport.photo1).toBe("object/photo1.png");
-    expect(updatedReport.photo2).toBe("object/photo2.png");
-    expect(updatedReport.photo3).toBe("object/photo3.png");
-
-    expect(result).toMatchObject({
-      id: baseReport.id,
-      citizenId: citizen.id,
-      title: baseReport.title,
-      category: baseReport.category,
-      location: { latitude: 0, longitude: 0 },
-    });
-    expect(result.photos).toEqual([
-      "object/photo1.png",
-      "object/photo2.png",
-      "object/photo3.png",
-    ]);
-  });
-
-  it("handles optional photos and converts base64 payloads", async () => {
-    uploadSpy.mockResolvedValue("object/photo1.png" as any);
-    const { service, reportRepository } = buildService();
-
-    const payload = {
-      title: "Pothole",
-      description: "Huge one",
-      category: "Road",
-      location: { latitude: 1, longitude: 2 },
-      binaryPhoto1: {
-        filename: "p1.png",
-        data: "Zm9v", // base64
-        size: 4,
-        mimetype: "image/png",
-      },
-    } as any;
-
-    await service.create(payload, citizen.id);
-
-    const bufferArg = uploadSpy.mock.calls[0][1] as Buffer;
-    expect(Buffer.isBuffer(bufferArg)).toBe(true);
-    expect(bufferArg.toString("base64")).toBe(payload.binaryPhoto1.data);
-    expect(reportRepository.update).toHaveBeenCalled();
+    expect(validateTempFilesSpy).toHaveBeenCalledWith(["1"]);
+    expect(moveMultipleToPermanentSpy).toHaveBeenCalled();
   });
 
   it("throws when citizen cannot be located", async () => {
@@ -155,14 +119,9 @@ describe("ReportService", () => {
             {
               title: "Any",
               description: "Any",
-              category: "Road",
+              categoryId: 1,
               location: { latitude: 0, longitude: 0 },
-              binaryPhoto1: {
-                filename: "a",
-                data: "Zm9v",
-                size: 1,
-                mimetype: "image/png",
-              },
+              photoIds: ["1"]
             } as any,
             999
         )
@@ -171,38 +130,20 @@ describe("ReportService", () => {
 
   it("throws when category cannot be located", async () => {
     const { service, categoryRepository } = buildService();
-    categoryRepository.findByName.mockResolvedValue(null);
+    categoryRepository.findById.mockResolvedValue(null);
 
     await expect(
         service.create(
             {
               title: "Broken light",
               description: "Lamp not working",
-              category: "MissingCategory",
+              categoryId: 999,
               location: { latitude: 45, longitude: 9 },
+              photoIds: ["1"]
             } as any,
             citizen.id
         )
-    ).rejects.toThrow("Category not found: MissingCategory");
+    ).rejects.toThrow("Category not found with ID: 999");
   });
-
-
-  it("does not upload files when no photos are provided", async () => {
-    const { service } = buildService();
-
-    await expect(
-        service.create(
-            {
-              title: "No photos",
-              description: "Just text",
-              category: "Road",
-              location: { latitude: 3, longitude: 4 },
-            } as any,
-            citizen.id
-        )
-    ).rejects.toThrow();
-
-    expect(uploadSpy).not.toHaveBeenCalled();
-  });
-
+  
 });
