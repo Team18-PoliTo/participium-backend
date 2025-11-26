@@ -16,14 +16,9 @@ COPY package*.json ./
 # These are needed for: sqlite3, bcrypt, and any other native modules
 RUN apk add --no-cache python3 py3-setuptools make g++
 
-# Install dependencies (ignore scripts for security - we'll install native modules separately)
+# Install dependencies - npm will use pre-built binaries for native modules (fast!)
 # This layer is cached separately, so if package.json doesn't change, we skip this
-RUN npm ci --only=production=false --ignore-scripts --no-audit
-
-# Install native modules - npm will use pre-built binaries when available (MUCH faster!)
-# This runs the install scripts only for sqlite3 and bcrypt, which should download
-# pre-built binaries for linux/amd64 and linux/arm64 instead of compiling
-RUN npm install --no-save --ignore-scripts=false sqlite3 bcrypt
+RUN npm ci --only=production=false --no-audit
 
 # Copy source code
 # Note: .dockerignore ensures sensitive files (.env, node_modules, etc.) are excluded
