@@ -2,6 +2,7 @@ import { Router } from "express";
 import CitizenController from "../controllers/citizenController";
 import CitizenService from "../services/implementation/citizenService";
 import CitizenRepository from "../repositories/implementation/CitizenRepository";
+import { requireAuth, requireCitizen } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -143,6 +144,8 @@ router.post("/register", citizenController.register.bind(citizenController));
  */
 router.patch(
     "/me",
+    requireAuth,
+    requireCitizen,
     citizenController.updateMyProfile.bind(citizenController)
 );
 
