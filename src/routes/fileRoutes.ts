@@ -70,7 +70,6 @@ const upload = multer({
  *             type: object
  *             required:
  *               - file
- *               - type
  *             properties:
  *               file:
  *                 type: string
@@ -79,8 +78,8 @@ const upload = multer({
  *               type:
  *                 type: string
  *                 enum: [report, profile]
- *                 description: File category
- *                 example: "profile"
+ *                 description: File category (optional, defaults to "report" for backward compatibility)
+ *                 example: "report"
  *     responses:
  *       201:
  *         description: File uploaded successfully
