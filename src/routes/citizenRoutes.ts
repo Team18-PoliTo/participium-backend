@@ -86,20 +86,15 @@ router.post("/register", citizenController.register.bind(citizenController));
 
 /**
  * @swagger
- * /citizens/{id}:
+ * /citizens/me:
  *   patch:
- *     summary: Partially update citizen profile
+ *     summary: Update profile of the logged-in citizen
+ *     description: Allows the authenticated citizen to update their profile information.
  *     tags: [Citizens]
+
  *     security:
- *       - bearerAuth: []
- *
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *
+ *       - citizenPassword: []
+
  *     requestBody:
  *       required: false
  *       content:
@@ -134,18 +129,21 @@ router.post("/register", citizenController.register.bind(citizenController));
  *                 type: string
  *                 nullable: true
  *                 example: "temp/1b4b98e7/photo.png"
- *                 description: Temporary file path returned by /files/upload
- *
+ *                 description: Temporary file path returned from /files/upload
+
  *     responses:
  *       200:
- *         description: Citizen updated successfully
+ *         description: Citizen profile updated successfully
  *       400:
  *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Citizen not found
  */
 router.patch(
-    "/:id",
-    citizenController.updateCitizen.bind(citizenController)
+    "/me",
+    citizenController.updateMyProfile.bind(citizenController)
 );
+
 export default router;

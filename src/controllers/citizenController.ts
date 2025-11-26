@@ -38,15 +38,14 @@ class CitizenController {
     }
   }
 
-  async updateCitizen(req: Request, res: Response, next: NextFunction) {
+  async updateMyProfile(req: Request, res: Response, next: NextFunction) {
     try {
-      const id = Number(req.params.id);
+      const citizenId = (req as any).auth?.sub;
 
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid citizen ID" });
+      if (!citizenId) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      // accountPhoto теперь НЕ файл, а строка
       const {
         email,
         username,
@@ -54,10 +53,10 @@ class CitizenController {
         lastName,
         telegramUsername,
         emailNotificationsEnabled,
-        accountPhoto, // ← получаем строку из body
+        accountPhoto,
       } = req.body;
 
-      const updated = await this.citizenService.updateCitizen(id, {
+      const updated = await this.citizenService.updateCitizen(citizenId, {
         email: email ?? undefined,
         username: username ?? undefined,
         firstName: firstName ?? undefined,
@@ -73,14 +72,8 @@ class CitizenController {
 
       return res.status(200).json(updated);
 
-    } catch (err: any) {
-      if (err instanceof Error && err.message === "Citizen not found") {
-        return res.status(404).json({ error: err.message });
-      }
-      if (err instanceof Error && err.message.startsWith("Invalid")) {
-        return res.status(400).json({ error: err.message });
-      }
-      return next(err);
+    } catch (err) {
+      next(err);
     }
   }
 }

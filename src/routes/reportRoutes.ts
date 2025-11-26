@@ -2,7 +2,6 @@ import { Router } from "express";
 import ReportController from "../controllers/reportController";
 import ReportService from "../services/implementation/reportService";
 import { ReportRepository } from "../repositories/implementation/ReportRepository";
-import CitizenController from "../controllers/citizenController";
 
 const router = Router();
 

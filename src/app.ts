@@ -43,7 +43,7 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', authRoutes);
 
 // Public (citizen) routes
-app.use('/api/citizens', citizenRoutes);
+app.use('/api/citizens', requireAuth, requireCitizen, citizenRoutes);
 app.use('/api/citizens/reports', requireAuth, requireCitizen, reportRoutes);
 
 // Categories
