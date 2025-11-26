@@ -330,7 +330,10 @@ describe("ReportService", () => {
       reportRepository.findById.mockResolvedValue(null);
 
       await expect(
-        service.updateReport(999, { status: ReportStatus.REJECTED })
+        service.updateReport(999, {
+          status: ReportStatus.REJECTED,
+          explanation: ""
+        })
       ).rejects.toThrow("Report not found");
     });
 
@@ -345,7 +348,10 @@ describe("ReportService", () => {
       await expect(
         service.updateReport(
           1,
-          { status: ReportStatus.IN_PROGRESS },
+          {
+            status: ReportStatus.IN_PROGRESS,
+            explanation: ""
+          },
           "Public Relations Officer"
         )
       ).rejects.toThrow('PR officers can only update reports with status "Pending Approval"');
@@ -385,6 +391,7 @@ describe("ReportService", () => {
       await service.updateReport(1, {
         status: ReportStatus.REJECTED,
         categoryId: 2,
+        explanation: ""
       });
 
       expect(categoryRepository.findById).toHaveBeenCalledWith(2);
@@ -400,6 +407,7 @@ describe("ReportService", () => {
         service.updateReport(1, {
           status: ReportStatus.REJECTED,
           categoryId: 999,
+          explanation: ""
         })
       ).rejects.toThrow("Category not found with ID: 999");
     });
@@ -433,6 +441,7 @@ describe("ReportService", () => {
 
       const result = await service.updateReport(1, {
         status: ReportStatus.ASSIGNED,
+        explanation: ""
       });
 
       expect(categoryRoleRepository.findRoleByCategory).toHaveBeenCalledWith("Road");
@@ -463,7 +472,7 @@ describe("ReportService", () => {
       internalUserRepository.findByRoleId.mockResolvedValue([]);
 
       await expect(
-        service.updateReport(1, { status: ReportStatus.ASSIGNED })
+        service.updateReport(1, { status: ReportStatus.ASSIGNED, explanation: "" })
       ).rejects.toThrow("No officers available for category: Road");
     });
 
@@ -484,7 +493,7 @@ describe("ReportService", () => {
       categoryRoleRepository.findRoleByCategory.mockResolvedValue(null);
 
       await expect(
-        service.updateReport(1, { status: ReportStatus.ASSIGNED })
+        service.updateReport(1, { status: ReportStatus.ASSIGNED, explanation: "" })
       ).rejects.toThrow("No role found for category: Road");
     });
 
@@ -513,7 +522,7 @@ describe("ReportService", () => {
         assignedTo: officers[1],
       });
 
-      await service.updateReport(1, { status: ReportStatus.ASSIGNED });
+      await service.updateReport(1, { status: ReportStatus.ASSIGNED, explanation: "" });
 
       expect(internalUserRepository.incrementActiveTasks).toHaveBeenCalledWith(102);
     });
