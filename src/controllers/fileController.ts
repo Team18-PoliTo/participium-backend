@@ -16,12 +16,8 @@ class FileController {
         return;
       }
 
-      const type = req.body.type as FileType;
-
-      if (!type) {
-        res.status(400).json({ error: "Missing required field: type" });
-        return;
-      }
+      // Type is optional, defaults to "report" for backward compatibility
+      const type = (req.body.type as FileType) || "report";
 
       if (!VALID_TYPES.includes(type)) {
         res.status(400).json({ error: `Invalid type. Allowed: ${VALID_TYPES.join(", ")}` });

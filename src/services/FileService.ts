@@ -194,11 +194,21 @@ class FileService {
     const tempFile = await this.tempFileRepository.findByFileId(fileId);
     
     if (tempFile) {
-      // Delete from MinIO
-      try {
-        await MinIoService.deleteFile(MINIO_BUCKET,tempFile.tempPath);
-      } catch (error) {
-        console.error(`Failed to delete file from MinIO: ${tempFile.tempPath}`, error);
+      // Delete from MinIO - try both buckets since we don't store which bucket was used
+      // This handles both "report" (MINIO_BUCKET) and "profile" (PROFILE_BUCKET) files
+      let deleted = false;
+      for (const bucket of [MINIO_BUCKET, PROFILE_BUCKET]) {
+        try {
+          await MinIoService.deleteFile(bucket, tempFile.tempPath);
+          deleted = true;
+          break; // Successfully deleted, no need to try other bucket
+        } catch (error) {
+          // Continue to next bucket if this one fails
+        }
+      }
+      
+      if (!deleted) {
+        console.error(`Failed to delete file from MinIO: ${tempFile.tempPath}`);
       }
       
       // Delete from database
@@ -216,8 +226,21 @@ class FileService {
 
     for (const file of expiredFiles) {
       try {
-        // Delete from MinIO
-        await MinIoService.deleteFile(MINIO_BUCKET,file.tempPath);
+        // Delete from MinIO - try both buckets since we don't store which bucket was used
+        let deleted = false;
+        for (const bucket of [MINIO_BUCKET, PROFILE_BUCKET]) {
+          try {
+            await MinIoService.deleteFile(bucket, file.tempPath);
+            deleted = true;
+            break; // Successfully deleted, no need to try other bucket
+          } catch (error) {
+            // Continue to next bucket if this one fails
+          }
+        }
+        
+        if (!deleted) {
+          console.error(`Failed to delete expired file from MinIO: ${file.tempPath}`);
+        }
         
         // Delete from database
         await this.tempFileRepository.delete(file.id);
