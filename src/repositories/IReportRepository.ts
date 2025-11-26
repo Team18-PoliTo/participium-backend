@@ -6,7 +6,13 @@ export interface IReportRepository {
   update(reportDAO: Partial<ReportDAO>): Promise<ReportDAO>;
   findByStatus(status: string): Promise<ReportDAO[]>;
   findAll(): Promise<ReportDAO[]>;
-  updateStatus(id: number, status: string, explanation?: string, assignedTo?: any): Promise<ReportDAO>;
+  updateStatus(
+    id: number,
+    status: string,
+    explanation?: string,
+    assignedTo?: any
+  ): Promise<ReportDAO>;
+  findAllApproved(): Promise<ReportDAO[]>;
   findByUser(citizenId: number): Promise<ReportDAO[]>;
   findByAssignedStaff(staffId: number): Promise<ReportDAO[]>;
   findByCategoryIds(categoryIds: number[]): Promise<ReportDAO[]>;

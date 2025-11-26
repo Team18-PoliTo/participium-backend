@@ -56,7 +56,9 @@ class ReportService implements IReportService {
     } else {
       // Multiple officers with the least active tasks, selects randomly
       const randomIndex = Math.floor(Math.random() * filteredOfficers.length);
-      this.internalUserRepository.incrementActiveTasks(filteredOfficers[randomIndex].id);
+      this.internalUserRepository.incrementActiveTasks(
+        filteredOfficers[randomIndex].id
+      );
       return filteredOfficers[randomIndex];
     }
   }
@@ -92,8 +94,10 @@ class ReportService implements IReportService {
 
     // Prepare permanent paths for photos
     const moves = tempFiles.map((tempFile, index) => {
-      const extension = tempFile.originalName.split('.').pop();
-      const permanentPath = `reports/${newReport.id}/photo${index + 1}_${uuidv4()}.${extension}`;
+      const extension = tempFile.originalName.split(".").pop();
+      const permanentPath = `reports/${newReport.id}/photo${
+        index + 1
+      }_${uuidv4()}.${extension}`;
       return {
         fileId: tempFile.fileId,
         permanentPath,
@@ -109,9 +113,9 @@ class ReportService implements IReportService {
       if (permanentPaths[1]) newReport.photo2 = permanentPaths[1];
       if (permanentPaths[2]) newReport.photo3 = permanentPaths[2];
 
-    await this.reportRepository.update(newReport);
+      await this.reportRepository.update(newReport);
 
-    return await ReportMapper.toDTO(newReport);
+      return await ReportMapper.toDTO(newReport);
     } catch (error) {
       // If file moving fails, throw error
       // Report exists in DB without photos (degraded state)
@@ -123,7 +127,40 @@ class ReportService implements IReportService {
 
   async getReportsByStatus(status: string): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByStatus(status);
-    return await Promise.all(reports.map((report) => ReportMapper.toDTO(report)));
+    return await Promise.all(
+      reports.map((report) => ReportMapper.toDTO(report))
+    );
+  }
+
+  async getAssignedReportsInMap(
+    corners: Object[]
+  ): Promise<Partial<ReportDTO>[]> {
+    const reports = await this.reportRepository.findAllApproved();
+    const [corner1, corner2] = corners as {
+      latitude: number;
+      longitude: number;
+    }[];
+    const minLat = Math.min(corner1.latitude, corner2.latitude);
+    const minLong = Math.min(corner1.longitude, corner2.longitude);
+    const maxLong = Math.max(corner1.longitude, corner2.longitude);
+    const maxLat = Math.max(corner1.latitude, corner2.latitude);
+    const filtered = reports.filter((report) => {
+      const location = JSON.parse(report.location);
+      return (
+        location.latitude >= minLat &&
+        location.latitude <= maxLat &&
+        location.longitude >= minLong &&
+        location.longitude <= maxLong
+      );
+    });
+    return filtered.map((report) => ReportMapper.toDTOforMap(report));
+  }
+  async getReportById(reportId: number): Promise<ReportDTO> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+    return ReportMapper.toDTO(report);
   }
 
   async updateReport(
@@ -149,14 +186,14 @@ class ReportService implements IReportService {
     }
 
     // Determine the category to use (use provided categoryId or existing one)
-    const categoryToUse = data.categoryId 
+    const categoryToUse = data.categoryId
       ? await this.categoryRepository.findById(data.categoryId)
       : report.category;
-    
+
     if (data.categoryId && !categoryToUse) {
       throw new Error(`Category not found with ID: ${data.categoryId}`);
     }
-    
+
     const categoryNameToUse = categoryToUse!.name;
 
     // If status is "Assigned", validate officer availability BEFORE making any changes
@@ -214,12 +251,11 @@ class ReportService implements IReportService {
     return await ReportMapper.toDTO(updatedReport);
   }
 
-
   async getReportsByUser(citizenId: number): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByUser(citizenId);
 
     return await Promise.all(
-        reports.map(report => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report))
     );
   }
 
@@ -227,13 +263,14 @@ class ReportService implements IReportService {
     const reports = await this.reportRepository.findByAssignedStaff(staffId);
 
     return await Promise.all(
-        reports.map(report => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report))
     );
   }
 
   async getReportsByOffice(staffId: number): Promise<ReportDTO[]> {
-
-    const staff = await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
+    const staff = await this.internalUserRepository.findByIdWithRoleAndOffice(
+      staffId
+    );
     if (!staff) {
       throw new Error("Internal user not found");
     }
@@ -243,8 +280,10 @@ class ReportService implements IReportService {
       return [];
     }
 
-    const categories = await this.categoryRoleRepository.findCategoriesByOffice(officeId);
-    const categoryIds = categories.map(c => c.id);
+    const categories = await this.categoryRoleRepository.findCategoriesByOffice(
+      officeId
+    );
+    const categoryIds = categories.map((c) => c.id);
 
     if (categoryIds.length === 0) {
       return [];
@@ -252,9 +291,8 @@ class ReportService implements IReportService {
 
     const reports = await this.reportRepository.findByCategoryIds(categoryIds);
 
-    return Promise.all(reports.map(r => ReportMapper.toDTO(r)));
+    return Promise.all(reports.map((r) => ReportMapper.toDTO(r)));
   }
-
 }
 export const reportService = new ReportService();
 export default ReportService;

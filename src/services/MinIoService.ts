@@ -1,7 +1,11 @@
 import {minioClient, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
 
 class MinioService {
-  async uploadFile(objectKey: string, fileBuffer: Buffer, mimeType: string): Promise<string> {
+  async uploadFile(
+    objectKey: string,
+    fileBuffer: Buffer,
+    mimeType: string
+  ): Promise<string> {
     await minioClient.putObject(
       MINIO_BUCKET,
       objectKey,
@@ -34,17 +38,22 @@ class MinioService {
   async copyFile(sourcePath: string, destPath: string): Promise<void> {
     // Read file from source
     const sourceBuffer = await this.getFile(sourcePath);
-    
+
     // Get metadata from source file to preserve content type
     let contentType = "application/octet-stream";
     try {
       const stat = await minioClient.statObject(MINIO_BUCKET, sourcePath);
-      contentType = stat.metaData?.["content-type"] || stat.metaData?.["Content-Type"] || "application/octet-stream";
+      contentType =
+        stat.metaData?.["content-type"] ||
+        stat.metaData?.["Content-Type"] ||
+        "application/octet-stream";
     } catch (error) {
       // If stat fails, use default content type
-      console.warn(`Could not get metadata for ${sourcePath}, using default content type`);
+      console.warn(
+        `Could not get metadata for ${sourcePath}, using default content type`
+      );
     }
-    
+
     // Write file to destination
     await minioClient.putObject(
       MINIO_BUCKET,
@@ -98,8 +107,24 @@ class MinioService {
    * @param expirySeconds - URL expiry time in seconds (default: 7 days)
    * @returns Pre-signed URL
    */
-  async getPresignedUrl(objectKey: string, expirySeconds: number = 7 * 24 * 60 * 60): Promise<string> {
-    return await minioClient.presignedGetObject(MINIO_BUCKET, objectKey, expirySeconds);
+  async getPresignedUrl(
+    objectKey: string,
+    expirySeconds: number = 7 * 24 * 60 * 60
+  ): Promise<string> {
+    try {
+      return await minioClient.presignedGetObject(
+        MINIO_BUCKET,
+        objectKey,
+        expirySeconds
+      );
+    } catch (error: any) {
+      console.warn(
+        `[MinIO] Could not generate presigned URL for ${objectKey}:`,
+        error && error.message ? error.message : error
+      );
+      // return empty string as fallback so callers can filter falsy values
+      return "";
+    }
   }
 }
 
