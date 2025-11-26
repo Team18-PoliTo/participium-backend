@@ -1,25 +1,44 @@
 import { Client } from "minio";
 
-const MINIO_BUCKET = process.env.MINIO_BUCKET || "unit-test-bucket";
+const MINIO_BUCKET = process.env.MINIO_BUCKET || "reports";
 
 describe("MinIO E2E Tests", () => {
     let minioClient: Client;
 
     const initMinio = async () => {
-        const buckets = await minioClient.listBuckets();
-        const exists = buckets.some(b => b.name === MINIO_BUCKET);
+        try {
+            const buckets = await minioClient.listBuckets();
+            const exists = buckets.some(b => b.name === MINIO_BUCKET);
 
-        if (!exists) await minioClient.makeBucket(MINIO_BUCKET);
+            if (!exists) {
+                await minioClient.makeBucket(MINIO_BUCKET);
+            }
+        } catch (error: any) {
+            console.error("MinIO connection error:", error.message);
+            throw new Error(`Failed to connect to MinIO at ${process.env.MINIO_ENDPOINT || "localhost"}:${process.env.MINIO_PORT || 9000}. Make sure MinIO is running. Error: ${error.message}`);
+        }
     };
 
     beforeAll(async () => {
+        const endpoint = process.env.MINIO_ENDPOINT || "localhost";
+        const port = Number(process.env.MINIO_PORT) || 9000;
+        const accessKey = process.env.MINIO_ACCESS_KEY || "minioadmin";
+        const secretKey = process.env.MINIO_SECRET_KEY || "minioadmin";
+
         minioClient = new Client({
-            endPoint: process.env.MINIO_ENDPOINT || "localhost",
-            port: Number(process.env.MINIO_PORT) || 9000,
-            useSSL: false,
-            accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
-            secretKey: process.env.MINIO_SECRET_KEY || "minioadmin"
+            endPoint: endpoint,
+            port: port,
+            useSSL: process.env.MINIO_USE_SSL === "true",
+            accessKey: accessKey,
+            secretKey: secretKey
         });
+
+        // Test connection first
+        try {
+            await minioClient.listBuckets();
+        } catch (error: any) {
+            throw new Error(`Cannot connect to MinIO at ${endpoint}:${port}. Make sure MinIO is running and accessible. Error: ${error.message}`);
+        }
 
         await initMinio();
     });

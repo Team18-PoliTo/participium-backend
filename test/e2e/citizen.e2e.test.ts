@@ -3,8 +3,10 @@ import express, { Express } from "express";
 import citizenRouter from "../../src/routes/citizenRoutes";
 import { AppDataSource } from "../../src/config/database";
 import CitizenDAO from "../../src/models/dao/CitizenDAO";
+import jwt from "jsonwebtoken";
 
 let app: Express;
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 
 beforeAll(async () => {
   if (!AppDataSource.isInitialized) {
@@ -30,100 +32,79 @@ afterAll(async () => {
 });
 
 describe("Citizen Update E2E", () => {
-
-  test("PATCH /:id → should return 400 for invalid ID", async () => {
-    const res = await request(app)
-        .patch("/abc") // invalid param
-        .send({ firstName: "New" })
-        .expect(400);
-
-    expect(res.body.error).toBe("Invalid citizen ID");
-  });
-
-  test("PATCH /:id → should return 404 if citizen not found", async () => {
-    const res = await request(app)
-        .patch("/9999") // nonexistent
-        .send({ firstName: "Ghost" })
-        .expect(404);
-
-    expect(res.body.error).toBe("Citizen not found");
-  });
-
-  test("PATCH /:id → should update citizen fields successfully", async () => {
+  const createCitizenAndToken = async () => {
     const created = await request(app)
-        .post("/register")
-        .send({
-          email: "aaa@example.com",
-          username: "aaa",
-          firstName: "A",
-          lastName: "A",
-          password: "aaaaaa",
-        })
-        .expect(201);
+      .post("/register")
+      .send({
+        email: "test@example.com",
+        username: "testuser",
+        firstName: "Test",
+        lastName: "User",
+        password: "password123",
+      })
+      .expect(201);
 
-    const id = created.body.id;
+    const token = jwt.sign(
+      { sub: created.body.id, kind: "citizen", email: created.body.email },
+      JWT_SECRET
+    );
+
+    return { citizen: created.body, token };
+  };
+
+  test("PATCH /me → should return 401 when not authenticated", async () => {
+    const res = await request(app)
+      .patch("/me")
+      .send({ firstName: "New" })
+      .expect(401);
+
+    expect(res.body).toHaveProperty("message");
+  });
+
+  test("PATCH /me → should update citizen fields successfully", async () => {
+    const { token } = await createCitizenAndToken();
 
     const res = await request(app)
-        .patch(`/${id}`)
-        .send({
-          firstName: "Updated",
-          lastName: "Person",
-          telegramUsername: "telegram123",
-          emailNotificationsEnabled: true,
-        })
-        .expect(200);
+      .patch("/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        firstName: "Updated",
+        lastName: "Person",
+        telegramUsername: "telegram123",
+        emailNotificationsEnabled: true,
+      })
+      .expect(200);
 
     expect(res.body.firstName).toBe("Updated");
     expect(res.body.lastName).toBe("Person");
-    expect(res.body.telegramUsername).toBeUndefined();
-    expect(res.body.emailNotificationsEnabled).toBeUndefined();
+    expect(res.body.telegramUsername).toBe("telegram123");
+    expect(res.body.emailNotificationsEnabled).toBe(true);
   });
 
-
-  test("PATCH /:id → should upload accountPhoto via multipart/form-data", async () => {
-    const created = await request(app)
-        .post("/register")
-        .send({
-          email: "bbb@example.com",
-          username: "bbb",
-          firstName: "B",
-          lastName: "B",
-          password: "bbbbbb",
-        })
-        .expect(201);
-
-    const id = created.body.id;
+  test("PATCH /me → should update accountPhoto with photoPath", async () => {
+    const { token } = await createCitizenAndToken();
 
     const res = await request(app)
-        .patch(`/${id}`)
-        .field("firstName", "PhotoUser")
-        .attach("accountPhoto", Buffer.from("12345"), "test.png")
-        .expect(200);
+      .patch("/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        firstName: "PhotoUser",
+        accountPhoto: "temp/12345/profile.jpg",
+      })
+      .expect(200);
 
     expect(res.body.firstName).toBe("PhotoUser");
-    expect(res.body.photo).toBeUndefined();
-    expect(res.body.photoUrl).toBeUndefined();
-    expect(res.body.photoPath).toBeUndefined();
+    expect(res.body.accountPhoto).toBeDefined();
   });
 
-  test("PATCH /:id → invalid email is accepted (no validation)", async () => {
-    const created = await request(app)
-        .post("/register")
-        .send({
-          email: "ccc@example.com",
-          username: "ccc",
-          firstName: "C",
-          lastName: "C",
-          password: "cccccc",
-        })
-        .expect(201);
-
-    const id = created.body.id;
+  test("PATCH /me → invalid email is accepted (no validation)", async () => {
+    const { token } = await createCitizenAndToken();
 
     const res = await request(app)
-        .patch(`/${id}`)
-        .send({ email: "bad_email" })
-        .expect(200);
+      .patch("/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ email: "bad_email" })
+      .expect(200);
 
     expect(res.body.email).toBe("bad_email");
   });

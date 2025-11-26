@@ -56,6 +56,24 @@ const citizenController = new CitizenController(citizenService);
  *         createdAt:
  *           type: string
  *           format: date-time
+ *         accountPhoto:
+ *           type: string
+ *           nullable: true
+ *           description: Presigned URL for profile photo (valid for 7 days). Field name matches PATCH /me endpoint.
+ *           example: "https://merguven.ddns.net:9000/profile-photos/citizens/1/profile.jpg?X-Amz-Signature=..."
+ *         telegramUsername:
+ *           type: string
+ *           nullable: true
+ *           example: "mytelegram"
+ *         emailNotificationsEnabled:
+ *           type: boolean
+ *           nullable: true
+ *           example: true
+ *         lastLoginAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           example: "2025-11-26T20:00:00.000Z"
  */
 
 /**
@@ -84,6 +102,34 @@ const citizenController = new CitizenController(citizenService);
  */
 // POST /register - Register a new citizen
 router.post("/register", citizenController.register.bind(citizenController));
+
+/**
+ * @swagger
+ * /citizens/me:
+ *   get:
+ *     summary: Get current authenticated citizen's profile
+ *     description: Returns the profile information of the logged-in citizen, including presigned URL for profile photo.
+ *     tags: [Citizens]
+ *     security:
+ *       - citizenPassword: []
+ *     responses:
+ *       200:
+ *         description: Citizen profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CitizenDTO'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Citizen not found
+ */
+router.get(
+    "/me",
+    requireAuth,
+    requireCitizen,
+    citizenController.getMe.bind(citizenController)
+);
 
 /**
  * @swagger

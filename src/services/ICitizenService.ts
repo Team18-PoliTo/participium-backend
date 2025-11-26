@@ -5,6 +5,7 @@ import { LoginRequestDTO } from "../models/dto/LoginRequestDTO";
 export interface ICitizenService {
     register(registerData: RegisterCitizenRequestDTO): Promise<CitizenDTO>;
     login(loginData: LoginRequestDTO): Promise<{ access_token: string; token_type: "bearer" }>;
+    getCitizenById(id: number): Promise<CitizenDTO>;
     updateCitizen(
         id: number,
         data: {

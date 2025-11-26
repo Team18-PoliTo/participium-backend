@@ -112,7 +112,7 @@ class AuthController {
           res.status(404).json({ error: "Citizen not found" });
           return;
         }
-        res.status(200).json({ kind: "citizen", profile: CitizenMapper.toDTO(citizen) });
+        res.status(200).json({ kind: "citizen", profile: await CitizenMapper.toDTO(citizen) });
         return;
       }
 
