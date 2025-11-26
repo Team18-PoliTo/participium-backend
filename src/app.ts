@@ -42,7 +42,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', authRoutes);
 
-// Public (citizen) routes
+// Citizen routes (authentication handled at endpoint level)
 app.use('/api/citizens', citizenRoutes);
 app.use('/api/citizens/reports', requireAuth, requireCitizen, reportRoutes);
 

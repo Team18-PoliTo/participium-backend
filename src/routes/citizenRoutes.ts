@@ -2,10 +2,9 @@ import { Router } from "express";
 import CitizenController from "../controllers/citizenController";
 import CitizenService from "../services/implementation/citizenService";
 import CitizenRepository from "../repositories/implementation/CitizenRepository";
+import { requireAuth, requireCitizen } from "../middleware/authMiddleware";
 
 const router = Router();
-import multer from "multer";
-const upload = multer();
 
 // Dependency Injection Setup
 const citizenRepository = new CitizenRepository();
@@ -88,22 +87,19 @@ router.post("/register", citizenController.register.bind(citizenController));
 
 /**
  * @swagger
- * /citizens/{id}:
+ * /citizens/me:
  *   patch:
- *     summary: Partially update citizen profile
+ *     summary: Update profile of the logged-in citizen
+ *     description: Allows the authenticated citizen to update their profile information.
  *     tags: [Citizens]
+
  *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
+ *       - citizenPassword: []
+
  *     requestBody:
  *       required: false
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
  *             properties:
@@ -132,19 +128,25 @@ router.post("/register", citizenController.register.bind(citizenController));
  *                 example: true
  *               accountPhoto:
  *                 type: string
- *                 format: binary
+ *                 nullable: true
+ *                 example: "temp/1b4b98e7/photo.png"
+ *                 description: Temporary file path returned from /files/upload
+
  *     responses:
  *       200:
- *         description: Citizen updated successfully
+ *         description: Citizen profile updated successfully
  *       400:
  *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Citizen not found
  */
 router.patch(
-    "/:id",
-    upload.single("accountPhoto"),
-    citizenController.updateCitizen.bind(citizenController)
+    "/me",
+    requireAuth,
+    requireCitizen,
+    citizenController.updateMyProfile.bind(citizenController)
 );
 
 export default router;
