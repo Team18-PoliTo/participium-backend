@@ -124,11 +124,8 @@ class MinioService {
       // Replace the internal endpoint with external endpoint in the URL
       // This ensures the URL works from outside the Docker network
       const protocol = MINIO_EXTERNAL_USE_SSL ? "https" : "http";
-      const internalEndpoint = `${process.env.MINIO_ENDPOINT || "localhost"}:${parseInt(process.env.MINIO_PORT || "9000")}`;
-      const externalEndpoint = `${MINIO_EXTERNAL_ENDPOINT}:${MINIO_EXTERNAL_PORT}`;
       
       // Replace internal endpoint with external endpoint in the URL
-      // Handle both http://minio:9000 and https://minio:9000 formats
       const url = new URL(presignedUrl);
       url.hostname = MINIO_EXTERNAL_ENDPOINT;
       url.port = MINIO_EXTERNAL_PORT.toString();
