@@ -409,7 +409,10 @@ describe('CitizenService — complete tests', () => {
             expect(repo.update).toHaveBeenCalledWith(42, {
                 accountPhotoUrl: newPhotoPath,
             });
-            expect(result.accountPhotoUrl).toBe(newPhotoPath);
+            // The mapper converts accountPhotoUrl to a presigned URL in accountPhoto field
+            expect(result.accountPhoto).toBeDefined();
+            expect(typeof result.accountPhoto).toBe('string');
+            expect(result.accountPhoto).toContain('https://presigned-url.com/');
         });
 
         it('should update multiple fields at once', async () => {

@@ -155,7 +155,9 @@ describe("FileService", () => {
       const path = await FileService.moveToPermanent("uid", "perm/1");
 
       expect(MinIoService.copyFile).toHaveBeenCalledWith("temp/1", "perm/1");
-      expect(MinIoService.deleteFile).toHaveBeenCalledWith("reports", "temp/1");
+      // MINIO_BUCKET from environment (defaults to "reports" but may be "uploads" in test env)
+      const expectedBucket = process.env.MINIO_BUCKET || "reports";
+      expect(MinIoService.deleteFile).toHaveBeenCalledWith(expectedBucket, "temp/1");
       expect(mockTempRepo.delete).toHaveBeenCalledWith(1);
       expect(path).toBe("perm/1");
     });
@@ -184,7 +186,9 @@ describe("FileService", () => {
 
         await expect(FileService.moveMultipleToPermanent(files)).rejects.toThrow("not found");
         
-        expect(MinIoService.deleteFile).toHaveBeenCalledWith("reports", "perm/1");
+        // MINIO_BUCKET from environment (defaults to "reports" but may be "uploads" in test env)
+        const expectedBucket = process.env.MINIO_BUCKET || "reports";
+        expect(MinIoService.deleteFile).toHaveBeenCalledWith(expectedBucket, "perm/1");
       });
   });
 

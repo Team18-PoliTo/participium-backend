@@ -113,7 +113,9 @@ describe("Citizen Update E2E", () => {
         })
         .expect(200);
 
-    expect(res.body.accountPhotoUrl).toBe("temp/some-uuid/profile.png");
+    expect(res.body.accountPhoto).toBeDefined();
+    // The accountPhoto will be a presigned URL, not the path
+    expect(typeof res.body.accountPhoto).toBe("string");
     
     const repo = AppDataSource.getRepository(CitizenDAO);
     const updated = await repo.findOneBy({ id: citizenId });
