@@ -43,7 +43,15 @@ class CitizenService implements ICitizenService {
       status: "ACTIVE",
     });
 
-    return CitizenMapper.toDTO(newCitizen);
+    return await CitizenMapper.toDTO(newCitizen);
+  }
+
+  async getCitizenById(id: number): Promise<CitizenDTO> {
+    const citizen = await this.citizenRepository.findById(id);
+    if (!citizen) {
+      throw new Error("Citizen not found");
+    }
+    return await CitizenMapper.toDTO(citizen);
   }
 
   async login({
@@ -149,7 +157,7 @@ class CitizenService implements ICitizenService {
       throw new Error("Citizen not found after update");
     }
 
-    return CitizenMapper.toDTO(updatedCitizen);
+    return await CitizenMapper.toDTO(updatedCitizen);
   }
 }
 

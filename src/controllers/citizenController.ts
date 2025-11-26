@@ -38,6 +38,24 @@ class CitizenController {
     }
   }
 
+  async getMe(req: Request, res: Response, next: NextFunction) {
+    try {
+      const citizenId = (req as any).auth?.sub;
+
+      if (!citizenId) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      const citizen = await this.citizenService.getCitizenById(citizenId);
+      return res.status(200).json(citizen);
+    } catch (err: any) {
+      if (err instanceof Error && err.message === "Citizen not found") {
+        return res.status(404).json({ error: err.message });
+      }
+      next(err);
+    }
+  }
+
   async updateMyProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const citizenId = (req as any).auth?.sub;

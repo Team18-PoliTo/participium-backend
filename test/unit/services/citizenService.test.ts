@@ -29,10 +29,10 @@ import jwt from 'jsonwebtoken';
 import MinIoService from '../../../src/services/MinIoService';
 import { LoginRequestDTO } from '../../../src/models/dto/LoginRequestDTO';
 
-// Mock CitizenMapper (named export)
+// Mock CitizenMapper (named export) - now async
 jest.mock('../../../src/mappers/CitizenMapper', () => ({
     CitizenMapper: {
-        toDTO: (u: any) => ({
+        toDTO: jest.fn(async (u: any) => ({
             id: u.id,
             email: u.email,
             username: u.username,
@@ -40,10 +40,12 @@ jest.mock('../../../src/mappers/CitizenMapper', () => ({
             lastName: u.lastName,
             status: u.status ?? 'ACTIVE',
             createdAt: u.createdAt,
-            telegramUsername: u.telegramUsername,
-            emailNotificationsEnabled: u.emailNotificationsEnabled,
-            accountPhotoUrl: u.accountPhotoUrl,
-        }),
+            // Convert null to undefined to match real mapper behavior
+            telegramUsername: u.telegramUsername ?? undefined,
+            emailNotificationsEnabled: u.emailNotificationsEnabled ?? undefined,
+            accountPhoto: u.accountPhotoUrl ? `https://presigned-url.com/${u.accountPhotoUrl}` : undefined,
+            lastLoginAt: u.lastLoginAt ?? undefined,
+        })),
     },
 }));
 
@@ -475,6 +477,84 @@ describe('CitizenService — complete tests', () => {
 
             expect(repo.update).toHaveBeenCalledWith(42, {});
             expect(result.id).toBe(42);
+        });
+    });
+
+    describe('getCitizenById', () => {
+        it('should return citizen DTO when citizen exists', async () => {
+            const citizen = {
+                ...citizenBase,
+                telegramUsername: 'telegram_user',
+                emailNotificationsEnabled: true,
+                lastLoginAt: new Date('2025-11-26'),
+                accountPhotoUrl: 'citizens/42/profile.jpg',
+            };
+            repo.findById.mockResolvedValue(citizen);
+
+            const result = await service.getCitizenById(42);
+
+            expect(repo.findById).toHaveBeenCalledWith(42);
+            expect(result.id).toBe(42);
+            expect(result.email).toBe(citizen.email);
+            expect(result.telegramUsername).toBe('telegram_user');
+            expect(result.emailNotificationsEnabled).toBe(true);
+            expect(result.lastLoginAt).toEqual(citizen.lastLoginAt);
+            expect(result.accountPhoto).toContain('https://presigned-url.com/');
+        });
+
+        it('should throw error when citizen not found', async () => {
+            repo.findById.mockResolvedValue(null);
+
+            await expect(service.getCitizenById(999)).rejects.toThrow('Citizen not found');
+            expect(repo.findById).toHaveBeenCalledWith(999);
+        });
+
+        it('should return citizen without photo when accountPhotoUrl is null', async () => {
+            const citizen = {
+                ...citizenBase,
+                accountPhotoUrl: null,
+            };
+            repo.findById.mockResolvedValue(citizen);
+
+            const result = await service.getCitizenById(42);
+
+            expect(result.accountPhoto).toBeUndefined();
+        });
+
+        it('should return citizen with all optional fields when present', async () => {
+            const citizen = {
+                ...citizenBase,
+                telegramUsername: 'test_telegram',
+                emailNotificationsEnabled: false,
+                lastLoginAt: new Date('2025-11-25'),
+                accountPhotoUrl: 'citizens/42/profile.png',
+            };
+            repo.findById.mockResolvedValue(citizen);
+
+            const result = await service.getCitizenById(42);
+
+            expect(result.telegramUsername).toBe('test_telegram');
+            expect(result.emailNotificationsEnabled).toBe(false);
+            expect(result.lastLoginAt).toEqual(new Date('2025-11-25'));
+            expect(result.accountPhoto).toContain('https://presigned-url.com/');
+        });
+
+        it('should return citizen without optional fields when they are null', async () => {
+            const citizen = {
+                ...citizenBase,
+                telegramUsername: null,
+                emailNotificationsEnabled: null,
+                lastLoginAt: null,
+                accountPhotoUrl: null,
+            };
+            repo.findById.mockResolvedValue(citizen);
+
+            const result = await service.getCitizenById(42);
+
+            expect(result.telegramUsername).toBeUndefined();
+            expect(result.emailNotificationsEnabled).toBeUndefined();
+            expect(result.lastLoginAt).toBeUndefined();
+            expect(result.accountPhoto).toBeUndefined();
         });
     });
 });

@@ -109,11 +109,13 @@ class MinioService {
    * The signature is calculated with the external endpoint, so it's valid for external access
    * Note: presigned URL generation doesn't require a network connection - it's just cryptographic signing
    * @param objectKey - The MinIO object key
+   * @param bucket - The bucket name (defaults to MINIO_BUCKET for backward compatibility)
    * @param expirySeconds - URL expiry time in seconds (default: 7 days)
    * @returns Pre-signed URL with external endpoint
    */
   async getPresignedUrl(
     objectKey: string,
+    bucket: string = MINIO_BUCKET,
     expirySeconds: number = 7 * 24 * 60 * 60
   ): Promise<string> {
     try {
@@ -123,7 +125,7 @@ class MinioService {
       // The region is set in the client config to avoid getBucketRegionAsync call
       // Note: presigned URL generation is primarily cryptographic, but MinIO client may validate connection
       return await minioClientForPresigned.presignedGetObject(
-        MINIO_BUCKET,
+        bucket,
         objectKey,
         expirySeconds
       );
@@ -131,7 +133,7 @@ class MinioService {
       // If we get a connection error, it means external endpoint is not reachable from Docker
       // In that case, we might need to make it reachable or use a different approach
       console.warn(
-        `[MinIO] Could not generate presigned URL for ${objectKey}:`,
+        `[MinIO] Could not generate presigned URL for ${objectKey} in bucket ${bucket}:`,
         error && error.message ? error.message : error
       );
       // return empty string as fallback so callers can filter falsy values
