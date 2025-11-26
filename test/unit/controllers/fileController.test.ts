@@ -43,13 +43,19 @@ describe("FileController", () => {
     });
 
     it("should handle validation errors (400)", async () => {
-      req.file = { originalname: "bad.exe" } as Express.Multer.File;
-      mockFileService.uploadTemp.mockRejectedValue(new Error("File type undefined is not allowed. Allowed types: image/jpeg, image/jpg, image/png, image/gif, image/webp"));
+      req.file = { 
+        originalname: "bad.exe",
+        mimetype: "application/x-msdownload"
+      } as Express.Multer.File;
+      req.body = { type: "report" };
+      mockFileService.uploadTemp.mockRejectedValue(new Error("File type application/x-msdownload is not allowed. Allowed types: image/jpeg, image/jpg, image/png, image/gif, image/webp"));
 
       await FileController.uploadTemp(req as Request, res as Response, next);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: "File type undefined is not allowed. Allowed types: image/jpeg, image/jpg, image/png, image/gif, image/webp" });
+      expect(res.json).toHaveBeenCalledWith({ 
+        error: "File type application/x-msdownload is not allowed. Allowed types: image/jpeg, image/jpg, image/png, image/gif, image/webp" 
+      });
     });
   });
 
