@@ -64,6 +64,7 @@ export class ReportMapper {
       status: reportDAO.status,
       description: reportDAO.description,
       location: JSON.parse(reportDAO.location),
+      category: reportDAO.category.name,
     };
   }
 }

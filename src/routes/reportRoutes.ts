@@ -244,6 +244,9 @@ router.post("/", reportController.create.bind(reportController));
  *                   description:
  *                     type: string
  *                     example: Large pothole near my house
+ *                   category:
+ *                     type: string
+ *                     example: Roads and Urban Furnishings
  *                   location:
  *                     type: object
  *                     properties:
@@ -253,14 +256,6 @@ router.post("/", reportController.create.bind(reportController));
  *                       longitude:
  *                         type: number
  *                         example: 9.1900
- *             example:
- *               - id: 1
- *                 citizenId: 123
- *                 title: Pothole in the street
- *                 description: Large pothole near my house
- *                 location:
- *                   latitude: 45.4642
- *                   longitude: 9.1900
  *       400:
  *         description: Validation error
  *       401:
@@ -276,7 +271,7 @@ router.post(
 
 /**
  * @swagger
- * /citizens/reports/{id}:
+ * /citizens/reports/getById/{id}:
  *   get:
  *     summary: Get report by ID
  *     tags: [Citizens]
@@ -306,7 +301,7 @@ router.post(
  *       403:
  *         description: Forbidden
  */
-router.get("/:id", reportController.getById.bind(reportController));
+router.get("/getById/:id", reportController.getById.bind(reportController));
 
 /**
  * @swagger
@@ -332,6 +327,5 @@ router.get("/:id", reportController.getById.bind(reportController));
  *         description: Forbidden
  */
 router.get("/myReports", reportController.getMyReports.bind(reportController));
-
 
 export default router;
