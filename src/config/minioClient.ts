@@ -9,20 +9,11 @@ export const minioClient = new Client({
   secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
 });
 
-// External client for presigned URLs (uses public/external endpoint)
-// This ensures presigned URLs are accessible from outside the Docker network
-// If MINIO_EXTERNAL_ENDPOINT is not set, fall back to internal endpoint (for local dev)
-const externalEndpoint = process.env.MINIO_EXTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT || "localhost";
-const externalPort = parseInt(process.env.MINIO_EXTERNAL_PORT || process.env.MINIO_PORT || "9000");
-const externalUseSSL = process.env.MINIO_EXTERNAL_USE_SSL === "true" || (process.env.MINIO_EXTERNAL_USE_SSL === undefined && process.env.MINIO_USE_SSL === "true");
-
-export const minioClientForPresigned = new Client({
-  endPoint: externalEndpoint,
-  port: externalPort,
-  useSSL: externalUseSSL,
-  accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
-  secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
-});
+// External endpoint configuration for presigned URLs
+// These are used to replace the hostname in presigned URLs after generation
+export const MINIO_EXTERNAL_ENDPOINT = process.env.MINIO_EXTERNAL_ENDPOINT || process.env.MINIO_ENDPOINT || "localhost";
+export const MINIO_EXTERNAL_PORT = parseInt(process.env.MINIO_EXTERNAL_PORT || process.env.MINIO_PORT || "9000");
+export const MINIO_EXTERNAL_USE_SSL = process.env.MINIO_EXTERNAL_USE_SSL === "true" || (process.env.MINIO_EXTERNAL_USE_SSL === undefined && process.env.MINIO_USE_SSL === "true");
 
 export const MINIO_BUCKET = process.env.MINIO_BUCKET || "reports";
 export const PROFILE_BUCKET = process.env.MINIO_PROFILE_BUCKET || "profile-photos";
