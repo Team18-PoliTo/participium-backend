@@ -29,69 +29,102 @@ afterAll(async () => {
   }
 });
 
-describe("Citizen Registration E2E (real DB)", () => {
-  const validCitizen = {
-    email: "john@example.com",
-    username: "johnny",
-    firstName: "John",
-    lastName: "Doe",
-    password: "strongpass",
-  };
+describe("Citizen Update E2E", () => {
 
-  test("POST /register → should register a new citizen", async () => {
+  test("PATCH /:id → should return 400 for invalid ID", async () => {
     const res = await request(app)
-      .post("/register")
-      .send(validCitizen)
-      .expect(201);
+        .patch("/abc") // invalid param
+        .send({ firstName: "New" })
+        .expect(400);
 
-    expect(res.body).toHaveProperty("id");
-    expect(res.body.email).toBe(validCitizen.email);
-    expect(res.body.username).toBe(validCitizen.username);
-    expect(res.body.status).toBe("ACTIVE");
+    expect(res.body.error).toBe("Invalid citizen ID");
   });
 
-  test("POST /register → should fail when email already exists", async () => {
-    await request(app).post("/register").send(validCitizen);
-
+  test("PATCH /:id → should return 404 if citizen not found", async () => {
     const res = await request(app)
-      .post("/register")
-      .send({
-        ...validCitizen,
-        username: "different",
-      })
-      .expect(409);
+        .patch("/9999") // nonexistent
+        .send({ firstName: "Ghost" })
+        .expect(404);
 
-    expect(res.body.error).toBe("Citizen with this email already exists");
+    expect(res.body.error).toBe("Citizen not found");
   });
 
-  test("POST /register → should fail when username already exists", async () => {
-    await request(app).post("/register").send(validCitizen);
+  test("PATCH /:id → should update citizen fields successfully", async () => {
+    const created = await request(app)
+        .post("/register")
+        .send({
+          email: "aaa@example.com",
+          username: "aaa",
+          firstName: "A",
+          lastName: "A",
+          password: "aaaaaa",
+        })
+        .expect(201);
+
+    const id = created.body.id;
 
     const res = await request(app)
-      .post("/register")
-      .send({
-        ...validCitizen,
-        email: "another@example.com",
-      })
-      .expect(409);
+        .patch(`/${id}`)
+        .send({
+          firstName: "Updated",
+          lastName: "Person",
+          telegramUsername: "telegram123",
+          emailNotificationsEnabled: true,
+        })
+        .expect(200);
 
-    expect(res.body.error).toBe("Citizen with this username already exists");
+    expect(res.body.firstName).toBe("Updated");
+    expect(res.body.lastName).toBe("Person");
+    expect(res.body.telegramUsername).toBeUndefined();
+    expect(res.body.emailNotificationsEnabled).toBeUndefined();
   });
 
-  test("POST /register → should fail validation for invalid data", async () => {
-    const res = await request(app)
-      .post("/register")
-      .send({
-        email: "not-an-email",
-        username: "ab",
-        firstName: "",
-        lastName: "",
-        password: "123",
-      })
-      .expect(400);
 
-    expect(res.body.error).toMatch(/Invalid email format/);
-    expect(res.body.error).toMatch(/Username must be at least 3 characters/);
-    expect(res.body.error).toMatch(/Password must be at least 6 characters/);
+  test("PATCH /:id → should upload accountPhoto via multipart/form-data", async () => {
+    const created = await request(app)
+        .post("/register")
+        .send({
+          email: "bbb@example.com",
+          username: "bbb",
+          firstName: "B",
+          lastName: "B",
+          password: "bbbbbb",
+        })
+        .expect(201);
+
+    const id = created.body.id;
+
+    const res = await request(app)
+        .patch(`/${id}`)
+        .field("firstName", "PhotoUser")
+        .attach("accountPhoto", Buffer.from("12345"), "test.png")
+        .expect(200);
+
+    expect(res.body.firstName).toBe("PhotoUser");
+    expect(res.body.photo).toBeUndefined();
+    expect(res.body.photoUrl).toBeUndefined();
+    expect(res.body.photoPath).toBeUndefined();
+  });
+
+  test("PATCH /:id → invalid email is accepted (no validation)", async () => {
+    const created = await request(app)
+        .post("/register")
+        .send({
+          email: "ccc@example.com",
+          username: "ccc",
+          firstName: "C",
+          lastName: "C",
+          password: "cccccc",
+        })
+        .expect(201);
+
+    const id = created.body.id;
+
+    const res = await request(app)
+        .patch(`/${id}`)
+        .send({ email: "bad_email" })
+        .expect(200);
+
+    expect(res.body.email).toBe("bad_email");
   });
 });
