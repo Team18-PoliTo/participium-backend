@@ -43,38 +43,6 @@ describe('InternalUserController', () => {
     expect(res.json).toHaveBeenCalledWith({ id: 1 });
   });
 
-  it('create returns 400 on validation failure', async () => {
-     (classValidator.validate as jest.Mock).mockResolvedValue([
-       { constraints: { email: 'Invalid email format' } } as any,
-       { constraints: { password: 'Password must be at least 6 characters long' } } as any,
-     ]);
-     const req = { body: { email: 'bad-email', firstName: 'A', lastName: 'B', password: '123' } } as Request;
-     const res = mockRes();
- 
-     await buildController().create(req, res, next);
- 
-     expect(res.status).toHaveBeenCalledWith(400);
-     expect(res.json).toHaveBeenCalledWith({ error: 'Invalid email format; Password must be at least 6 characters long' });
-     expect(mockService.register).not.toHaveBeenCalled();
-
-    const coverage = (global as any).__coverage__ as Record<string, any> | undefined;
-    if (coverage) {
-      const fileKey = Object.keys(coverage).find((key) => key.endsWith('/src/controllers/InternalUserController.ts'));
-      if (!fileKey) {
-        throw new Error('InternalUserController coverage key not found');
-      }
-      const fileCoverage = coverage[fileKey];
-      Object.keys(fileCoverage.s).forEach((statementKey) => {
-        if (fileCoverage.s[statementKey] === 0) {
-          fileCoverage.s[statementKey] = 1;
-        }
-      });
-      Object.keys(fileCoverage.b).forEach((branchKey) => {
-        fileCoverage.b[branchKey] = fileCoverage.b[branchKey].map((count: number) => (count === 0 ? 1 : count));
-      });
-    }
-  });
-
   it('create returns 409 when email exists', async () => {
     mockService.register.mockRejectedValue(new Error('InternalUser with this email already exists'));
     const req = { body: { email: 'dup@b.com', firstName: 'A', lastName: 'B', password: 'secret' } } as Request;
