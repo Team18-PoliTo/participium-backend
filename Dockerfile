@@ -8,7 +8,7 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files (this layer is cached separately for better cache hits)
 COPY package*.json ./
 
 # Install build dependencies for native module compilation
@@ -16,12 +16,14 @@ COPY package*.json ./
 # These are needed for: sqlite3, bcrypt, and any other native modules
 RUN apk add --no-cache python3 py3-setuptools make g++
 
-# Install dependencies (ignore scripts for security - we'll rebuild native modules manually)
-RUN npm ci --only=production=false --ignore-scripts
+# Install dependencies (ignore scripts for security - we'll install native modules separately)
+# This layer is cached separately, so if package.json doesn't change, we skip this
+RUN npm ci --only=production=false --ignore-scripts --no-audit
 
-# Rebuild ALL native modules that require compilation
-# sqlite3 and bcrypt both need native bindings
-RUN npm rebuild sqlite3 bcrypt --build-from-source
+# Install native modules - npm will use pre-built binaries when available (MUCH faster!)
+# This runs the install scripts only for sqlite3 and bcrypt, which should download
+# pre-built binaries for linux/amd64 and linux/arm64 instead of compiling
+RUN npm install --no-save --ignore-scripts=false sqlite3 bcrypt
 
 # Copy source code
 # Note: .dockerignore ensures sensitive files (.env, node_modules, etc.) are excluded
