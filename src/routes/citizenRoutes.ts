@@ -4,8 +4,6 @@ import CitizenService from "../services/implementation/citizenService";
 import CitizenRepository from "../repositories/implementation/CitizenRepository";
 
 const router = Router();
-import multer from "multer";
-const upload = multer();
 
 // Dependency Injection Setup
 const citizenRepository = new CitizenRepository();
@@ -94,16 +92,18 @@ router.post("/register", citizenController.register.bind(citizenController));
  *     tags: [Citizens]
  *     security:
  *       - bearerAuth: []
+ *
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
+ *
  *     requestBody:
  *       required: false
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
  *             properties:
@@ -132,7 +132,10 @@ router.post("/register", citizenController.register.bind(citizenController));
  *                 example: true
  *               accountPhoto:
  *                 type: string
- *                 format: binary
+ *                 nullable: true
+ *                 example: "temp/1b4b98e7/photo.png"
+ *                 description: Temporary file path returned by /files/upload
+ *
  *     responses:
  *       200:
  *         description: Citizen updated successfully
@@ -143,8 +146,6 @@ router.post("/register", citizenController.register.bind(citizenController));
  */
 router.patch(
     "/:id",
-    upload.single("accountPhoto"),
     citizenController.updateCitizen.bind(citizenController)
 );
-
 export default router;

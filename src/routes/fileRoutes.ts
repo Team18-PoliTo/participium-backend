@@ -25,6 +25,7 @@ const upload = multer({
  *         - mimeType
  *         - tempPath
  *         - expiresAt
+ *         - type
  *       properties:
  *         fileId:
  *           type: string
@@ -46,6 +47,10 @@ const upload = multer({
  *           type: string
  *           format: date-time
  *           example: "2025-11-20T13:37:00.000Z"
+ *         type:
+ *           type: string
+ *           enum: [report, profile]
+ *           example: "report"
  */
 
 /**
@@ -65,11 +70,17 @@ const upload = multer({
  *             type: object
  *             required:
  *               - file
+ *               - type
  *             properties:
  *               file:
  *                 type: string
  *                 format: binary
  *                 description: Image file (JPEG/PNG/GIF/WebP) up to 5MB
+ *               type:
+ *                 type: string
+ *                 enum: [report, profile]
+ *                 description: File category
+ *                 example: "profile"
  *     responses:
  *       201:
  *         description: File uploaded successfully
@@ -116,4 +127,3 @@ router.post("/upload", upload.single("file"), fileController.uploadTemp);
 router.delete("/temp/:fileId", fileController.deleteTempFile);
 
 export default router;
-

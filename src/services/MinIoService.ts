@@ -2,17 +2,19 @@ import {minioClient, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
 
 class MinioService {
   async uploadFile(
-    objectKey: string,
-    fileBuffer: Buffer,
-    mimeType: string
+      bucket: string,
+      objectKey: string,
+      fileBuffer: Buffer,
+      mimeType: string
   ): Promise<string> {
     await minioClient.putObject(
-      MINIO_BUCKET,
-      objectKey,
-      fileBuffer,
-      fileBuffer.length,
-      { "Content-Type": mimeType }
+        bucket,
+        objectKey,
+        fileBuffer,
+        fileBuffer.length,
+        { "Content-Type": mimeType }
     );
+
     return objectKey;
   }
 
@@ -26,8 +28,8 @@ class MinioService {
     });
   }
 
-  async deleteFile(objectKey: string): Promise<void> {
-    await minioClient.removeObject(MINIO_BUCKET, objectKey);
+  async deleteFile(bucket: string, objectKey: string): Promise<void> {
+    await minioClient.removeObject(bucket, objectKey);
   }
 
   /**

@@ -46,8 +46,7 @@ class CitizenController {
         return res.status(400).json({ error: "Invalid citizen ID" });
       }
 
-      const photoFile = req.file ?? null;
-
+      // accountPhoto теперь НЕ файл, а строка
       const {
         email,
         username,
@@ -55,6 +54,7 @@ class CitizenController {
         lastName,
         telegramUsername,
         emailNotificationsEnabled,
+        accountPhoto, // ← получаем строку из body
       } = req.body;
 
       const updated = await this.citizenService.updateCitizen(id, {
@@ -68,7 +68,7 @@ class CitizenController {
                 ? emailNotificationsEnabled === "true" ||
                 emailNotificationsEnabled === true
                 : undefined,
-        photoFile,
+        photoPath: accountPhoto ?? undefined,
       });
 
       return res.status(200).json(updated);
@@ -83,7 +83,6 @@ class CitizenController {
       return next(err);
     }
   }
-
 }
 
 export default CitizenController;

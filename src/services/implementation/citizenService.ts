@@ -8,6 +8,7 @@ import {ICitizenRepository} from "../../repositories/ICitizenRepository";
 import {ICitizenService} from "../ICitizenService";
 import {LoginRequestDTO} from "../../models/dto/LoginRequestDTO";
 import MinIoService from "../MinIoService";
+import {PROFILE_BUCKET} from "../../config/minioClient";
 
 class CitizenService implements ICitizenService {
   constructor(
@@ -92,7 +93,7 @@ class CitizenService implements ICitizenService {
         lastName?: string | null;
         telegramUsername?: string | null;
         emailNotificationsEnabled?: boolean;
-        photoFile?: Express.Multer.File | null;
+        photoPath?: string | null;
       }
   ): Promise<CitizenDTO> {
 
@@ -131,8 +132,14 @@ class CitizenService implements ICitizenService {
     if (data.emailNotificationsEnabled !== undefined)
       updatePayload.emailNotificationsEnabled = data.emailNotificationsEnabled;
 
-    if (data.photoFile) {
-      updatePayload.accountPhotoUrl = await MinIoService.uploadUserProfilePhoto(id, data.photoFile);
+    if (data.photoPath !== undefined) {
+      if (data.photoPath !== null) {
+
+        if (citizen.accountPhotoUrl) {
+          await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+        }
+        updatePayload.accountPhotoUrl = data.photoPath;
+      }
     }
 
     await this.citizenRepository.update(id, updatePayload);
@@ -144,7 +151,6 @@ class CitizenService implements ICitizenService {
 
     return CitizenMapper.toDTO(updatedCitizen);
   }
-
 }
 
 export const citizenService = new CitizenService();

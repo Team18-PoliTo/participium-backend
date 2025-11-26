@@ -14,7 +14,8 @@ export interface ICitizenService {
             lastName?: string | null;
             telegramUsername?: string | null;
             emailNotificationsEnabled?: boolean;
-            photoFile?: Express.Multer.File | null;
+            photoPath?: string;
         }
     ): Promise<CitizenDTO>;
+
 }

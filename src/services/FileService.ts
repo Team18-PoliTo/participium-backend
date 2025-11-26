@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import MinIoService from "./MinIoService";
 import TempFileRepository from "../repositories/implementation/TempFileRepository";
 import TempFileDAO from "../models/dao/TempFileDAO";
+import {MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
 
 export interface UploadedFileDTO {
   fileId: string;
@@ -11,6 +12,9 @@ export interface UploadedFileDTO {
   tempPath: string;
   expiresAt: string; // ISO string format (Date converted to string for JSON response)
 }
+
+const VALID_TYPES = ["report", "profile"] as const;
+type FileType = typeof VALID_TYPES[number];
 
 class FileService {
   private tempFileRepository: TempFileRepository;
@@ -59,18 +63,21 @@ class FileService {
   /**
    * Upload file to temporary storage
    * @param file - The file to upload (from multer)
+   * @param type
    * @returns Metadata about the uploaded temp file
    */
-  async uploadTemp(file: Express.Multer.File): Promise<UploadedFileDTO> {
+  async uploadTemp(file: Express.Multer.File, type: FileType): Promise<UploadedFileDTO> {
     // Validate file
     this.validateFile(file);
 
     const fileId = uuidv4();
     const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
     const tempPath = `temp/${fileId}/${sanitizedFilename}`;
-    
+
+    const bucket = type === "report" ? MINIO_BUCKET : PROFILE_BUCKET;
+
     // Upload to MinIO
-    await MinIoService.uploadFile(tempPath, file.buffer, file.mimetype);
+    await MinIoService.uploadFile(bucket, tempPath, file.buffer, file.mimetype);
     
     // Store metadata in database
     const expiresAt = new Date();
@@ -144,7 +151,7 @@ class FileService {
     await MinIoService.copyFile(tempFile.tempPath, permanentPath);
     
     // Delete temp file from MinIO
-    await MinIoService.deleteFile(tempFile.tempPath);
+    await MinIoService.deleteFile(MINIO_BUCKET, tempFile.tempPath);
     
     // Delete temp file record from database
     await this.tempFileRepository.delete(tempFile.id);
@@ -170,7 +177,7 @@ class FileService {
       // Rollback: delete any files that were successfully moved
       for (const path of movedPaths) {
         try {
-          await MinIoService.deleteFile(path);
+          await MinIoService.deleteFile(MINIO_BUCKET,path);
         } catch (deleteError) {
           console.error(`Failed to rollback file ${path}:`, deleteError);
         }
@@ -189,7 +196,7 @@ class FileService {
     if (tempFile) {
       // Delete from MinIO
       try {
-        await MinIoService.deleteFile(tempFile.tempPath);
+        await MinIoService.deleteFile(MINIO_BUCKET,tempFile.tempPath);
       } catch (error) {
         console.error(`Failed to delete file from MinIO: ${tempFile.tempPath}`, error);
       }
@@ -210,7 +217,7 @@ class FileService {
     for (const file of expiredFiles) {
       try {
         // Delete from MinIO
-        await MinIoService.deleteFile(file.tempPath);
+        await MinIoService.deleteFile(MINIO_BUCKET,file.tempPath);
         
         // Delete from database
         await this.tempFileRepository.delete(file.id);

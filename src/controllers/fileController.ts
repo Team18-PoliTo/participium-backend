@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import FileService from "../services/FileService";
 
+const VALID_TYPES = ["report", "profile"] as const;
+type FileType = typeof VALID_TYPES[number];
+
 class FileController {
   /**
    * Upload a file to temporary storage
@@ -13,20 +16,34 @@ class FileController {
         return;
       }
 
-      const uploadedFile = await FileService.uploadTemp(req.file);
-      
-      res.status(201).json(uploadedFile);
-    } catch (error) {
-      if (error instanceof Error) {
-        // Handle validation errors
-        if (error.message.includes('exceeds maximum') || 
-            error.message.includes('not allowed') || 
-            error.message.includes('does not match')) {
-          res.status(400).json({ error: error.message });
-          return;
-        }
+      const type = req.body.type as FileType;
+
+      if (!type) {
+        res.status(400).json({ error: "Missing required field: type" });
+        return;
       }
-      
+
+      if (!VALID_TYPES.includes(type)) {
+        res.status(400).json({ error: `Invalid type. Allowed: ${VALID_TYPES.join(", ")}` });
+        return;
+      }
+
+      const uploadedFile = await FileService.uploadTemp(req.file, type);
+
+      res.status(201).json(uploadedFile);
+    } catch (error: any) {
+      if (
+          error instanceof Error &&
+          (
+              error.message.includes("exceeds maximum") ||
+              error.message.includes("not allowed") ||
+              error.message.includes("does not match")
+          )
+      ) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+
       res.status(500).json({ error: "Failed to upload file" });
       next(error);
     }
@@ -46,7 +63,7 @@ class FileController {
       }
 
       await FileService.deleteTempFile(fileId);
-      
+
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete temporary file" });
@@ -56,4 +73,5 @@ class FileController {
 }
 
 export default new FileController();
+
 
