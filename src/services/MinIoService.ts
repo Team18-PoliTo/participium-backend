@@ -1,4 +1,4 @@
-import {minioClient, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
+import {minioClient, minioClientForPresigned, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
 
 class MinioService {
   async uploadFile(
@@ -103,6 +103,7 @@ class MinioService {
 
   /**
    * Generate a pre-signed URL for accessing a file
+   * Uses the external MinIO client to ensure URLs are accessible from outside Docker network
    * @param objectKey - The MinIO object key
    * @param expirySeconds - URL expiry time in seconds (default: 7 days)
    * @returns Pre-signed URL
@@ -112,7 +113,8 @@ class MinioService {
     expirySeconds: number = 7 * 24 * 60 * 60
   ): Promise<string> {
     try {
-      return await minioClient.presignedGetObject(
+      // Use external client for presigned URLs so they work from outside Docker network
+      return await minioClientForPresigned.presignedGetObject(
         MINIO_BUCKET,
         objectKey,
         expirySeconds
