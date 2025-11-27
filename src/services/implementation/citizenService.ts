@@ -142,11 +142,34 @@ class CitizenService implements ICitizenService {
 
     if (data.photoPath !== undefined) {
       if (data.photoPath !== null) {
-
+        // Delete old photo if it exists (gracefully handle errors)
         if (citizen.accountPhotoUrl) {
-          await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+          try {
+            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+          } catch (error: any) {
+            // Log warning but don't fail the update if old photo deletion fails
+            // (photo might not exist, or path might be invalid)
+            console.warn(
+              `[CitizenService] Failed to delete old profile photo ${citizen.accountPhotoUrl}:`,
+              error?.message || error
+            );
+          }
         }
         updatePayload.accountPhotoUrl = data.photoPath;
+      } else {
+        // If photoPath is explicitly null, delete existing photo
+        if (citizen.accountPhotoUrl) {
+          try {
+            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+          } catch (error: any) {
+            // Log warning but don't fail the update if deletion fails
+            console.warn(
+              `[CitizenService] Failed to delete profile photo ${citizen.accountPhotoUrl}:`,
+              error?.message || error
+            );
+          }
+        }
+        updatePayload.accountPhotoUrl = null;
       }
     }
 
