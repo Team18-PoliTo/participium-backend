@@ -34,7 +34,6 @@ Index:
 - Code present on GitHub
 - End-to-End tests performed
 - Manual testing for frontend
-- Automated tests for frontend
 
 #### Detailed statistics
 
