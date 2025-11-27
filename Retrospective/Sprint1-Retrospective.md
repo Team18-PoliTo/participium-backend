@@ -95,7 +95,7 @@ Index:
 
 #### Coverage
 
-![Test coverage chart](./TestCoverage.jpg)
+![Test coverage chart](./Sprint1-TestCoverage.jpg)
 
 ## ASSESSMENT
 
