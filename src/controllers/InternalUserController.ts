@@ -2,10 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import {
   RegisterInternalUserRequestDTO,
   UpdateInternalUserRequestDTO,
+  UpdateReportRequestDTO,
 } from "../models/dto/ValidRequestDTOs";
 import { InternalUserDTO } from "../models/dto/InternalUserDTO";
+import { ReportDTO } from "../models/dto/ReportDTO";
 import { validate } from "class-validator";
 import { plainToClass } from "class-transformer";
+import { IReportService } from "../services/IReportService";
+import { ReportStatus } from "../constants/ReportStatus";
 
 interface IInternalUserService {
   register(data: RegisterInternalUserRequestDTO): Promise<InternalUserDTO>;
@@ -18,7 +22,10 @@ interface IInternalUserService {
 }
 
 class InternalUserController {
-  constructor(private internalUserService: IInternalUserService) {}
+  constructor(
+    private internalUserService: IInternalUserService,
+    private reportService?: IReportService
+  ) {}
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -121,6 +128,160 @@ class InternalUserController {
       res.status(204).send();
     } catch (err) {
       next(err);
+    }
+  }
+
+  async getReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      // Get the requesting user's role
+      const userRole = (req as any).auth?.role;
+      let status = (req.query.status as string);
+
+      // If user is a PR Officer (role 10) and requests non-pending status, return empty list
+      if (userRole === "Public Relations Officer" || userRole?.includes("Public Relations Officer")) {
+        if (status && status !== ReportStatus.PENDING_APPROVAL) {
+          // PR Officers can only retrieve pending reports
+          res.status(200).json([]);
+          return;
+        }
+        // Default PR Officers to pending reports if no status specified
+        status = ReportStatus.PENDING_APPROVAL;
+      } else {
+        // For other internal users (technical officers, etc.), default to pending if no status specified
+        status = status || ReportStatus.PENDING_APPROVAL;
+      }
+
+      const reports: ReportDTO[] = await this.reportService.getReportsByStatus(status);
+      res.status(200).json(reports);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async updateReportStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const reportId = parseInt(req.params.id, 10);
+      if (isNaN(reportId)) {
+        res.status(400).json({ error: "Invalid report ID" });
+        return;
+      }
+
+      const updateReportDTO = plainToClass(UpdateReportRequestDTO, req.body);
+      const errors = await validate(updateReportDTO);
+
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((err) => Object.values(err.constraints || {}).join(", "))
+          .join("; ");
+        res.status(400).json({ error: errorMessages });
+        return;
+      }
+
+      // Validate status is one of the allowed statuses
+      const validStatuses = Object.values(ReportStatus);
+      if (!validStatuses.includes(updateReportDTO.status as any)) {
+        res.status(400).json({ 
+          error: `Invalid status. Allowed values: ${validStatuses.join(", ")}` 
+        });
+        return;
+      }
+
+      // Get user role for authorization check in service layer
+      const userRole = (req as any).auth?.role;
+
+      const updatedReport = await this.reportService.updateReport(
+        reportId,
+        updateReportDTO,
+        userRole
+      );
+      res.status(200).json(updatedReport);
+    } catch (error) {
+      if (error instanceof Error) {
+        // Check if it's an authorization error (PR officer restriction)
+        if (error.message.includes("PR officers can only update")) {
+          res.status(403).json({ error: error.message });
+          return;
+        }
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async getReportsForTechnicalOfficer(
+      req: Request,
+      res: Response,
+      next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const staffId = (req as any).auth?.sub;
+
+      if (!staffId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const reports = await this.reportService.getReportsForStaff(staffId);
+
+      res.status(200).json(reports);
+
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async getReportsByOffice(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const staffId = (req as any).auth?.sub;
+      const userRole = (req as any).auth?.role;
+
+      if (!staffId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+      if (userRole === "Public Relations Officer" || userRole?.includes("Public Relations Officer")) {
+        res.status(403).json({ error: "PR Officers cannot filter by office" });
+        return;
+      }
+      const reports = await this.reportService.getReportsByOffice(staffId);
+
+      res.status(200).json(reports);
+
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
     }
   }
 }

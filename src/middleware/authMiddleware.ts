@@ -101,6 +101,24 @@ export const requireRole = (allowedRoles: string[]) => {
 
 export const requireAdmin = requireRole(["ADMIN"]);
 
+export const requireInternalUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.auth) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  if (req.auth.kind !== "internal") {
+    res.status(403).json({ message: "Forbidden: not an internal user" });
+    return;
+  }
+
+  next();
+};
+
 export const requireCitizen = (
   req: Request,
   res: Response,

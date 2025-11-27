@@ -6,10 +6,11 @@ import {
   IsOptional,
   IsInt,
   Min,
-  ValidateNested,
+  IsObject,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from "class-validator";
-import { BinaryFileDTO } from "./ReportDTO";
-import { Type } from "class-transformer";
 
 export class RegisterCitizenRequestDTO {
   @IsEmail({}, { message: "Invalid email format" })
@@ -78,43 +79,44 @@ export class CreateReportRequestDTO {
   @IsString({message: "Description must be a string"})
   @IsNotEmpty({ message: "Description is required" })
   description: string;
-  
-  @IsInt({ message: "citizenId must be a number" })
-  @Min(1)
-  citizenId: number;
 
-  @IsString({message: "Category must be a string"})
+  @IsInt({message: "Category ID must be a number"})
   @IsNotEmpty({ message: "Category is required" })
-  category: string;
+  categoryId: number;
 
-
-  @IsNotEmpty({ message: "At least one photo is required" })
-  binaryPhoto1:{
-    filename: string;
-    data: Buffer;
-    size: number;
-    mimetype: string;
-  };
-
-  @IsOptional()
-  binaryPhoto2?: {
-    filename: string;
-    data: Buffer;
-    size: number;
-    mimetype: string;
-  };
-
-  @IsOptional()
-  binaryPhoto3?: {
-    filename: string;
-    data: Buffer;
-    size: number;
-    mimetype: string;
-  };
+  @IsArray({ message: "Photo IDs must be an array" })
+  @ArrayMinSize(1, { message: "At least one photo is required" })
+  @ArrayMaxSize(3, { message: "Maximum 3 photos allowed" })
+  @IsString({ each: true, message: "Each photo ID must be a string" })
+  photoIds: string[];
 
   @IsNotEmpty({ message: "Location is required" })
   location: {
     latitude: number;
     longitude: number;
   };
+}
+
+export class UpdateReportRequestDTO {
+  @IsString({ message: "Status must be a string" })
+  @IsNotEmpty({ message: "Status is required" })
+  status: string;
+
+  @IsOptional()
+  @IsInt({ message: "Category ID must be a number" })
+  categoryId?: number;
+
+  @IsString({ message: "Explanation must be a string" })
+  @IsNotEmpty({ message: "Explanation is required" })
+  explanation: string;
+}
+
+export class GetAssignedReportsForMapRequestDTO {
+  @IsNotEmpty({ message: "Corners are required" })
+  @IsObject({ each: true, message: "Each corner must be an object with longitude and latitude" })
+  @IsArray({ message: "Corners must be an array" })
+  corners: {
+    latitude: number;
+    longitude: number;
+  }[];
 }

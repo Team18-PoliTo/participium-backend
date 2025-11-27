@@ -35,14 +35,19 @@ describe("Database E2E Tests", () => {
         const roleRepo = AppDataSource.getRepository(RoleDAO);
         const roles = await roleRepo.find();
 
-        expect(roles.length).toBeGreaterThanOrEqual(5);
+        expect(roles.length).toBeGreaterThanOrEqual(10);
         expect(roles.map((r) => r.role)).toEqual(
             expect.arrayContaining([
                 "Unassigned",
                 "ADMIN",
-                "Municipal Administrator",
-                "Municipal Public Relations Officer",
-                "Technical Office Staff",
+                "Public Relations Officer",
+                "Street Maintenance Operator",
+                "Public Lighting Operator",
+                "Waste Management Operator",
+                "Urban Mobility Operator",
+                "Green Spaces Operator",
+                "Water Infrastructure Operator",
+                "Accessibility Officer",
             ])
         );
     });
@@ -50,7 +55,7 @@ describe("Database E2E Tests", () => {
     it("should have created default admin user", async () => {
         const userRepo = AppDataSource.getRepository(InternalUserDAO);
         const admin = await userRepo.findOne({
-            where: { email: "admin@admin.com" },
+            where: { email: "admin@participium.com" },
             relations: ["role"],
         });
 
@@ -58,7 +63,7 @@ describe("Database E2E Tests", () => {
         expect(admin!.role.role).toBe("ADMIN");
         expect(admin!.status).toBe("ACTIVE");
 
-        const isValid = await bcrypt.compare("password", admin!.password);
+        const isValid = await bcrypt.compare("password123", admin!.password);
         expect(isValid).toBe(true);
     });
 

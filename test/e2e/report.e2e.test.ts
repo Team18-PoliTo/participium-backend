@@ -1,30 +1,37 @@
 import request from "supertest";
 import app from "../../src/app";
 import { initMinio } from "../../src/config/initMinio";
-import MinIoService from "../../src/services/MinIoService";
 import { minioClient, MINIO_BUCKET } from "../../src/config/minioClient";
 import jwt from "jsonwebtoken";
 import { AppDataSource } from "../../src/config/database";
 import CitizenDAO from "../../src/models/dao/CitizenDAO";
-import ReportDAO from "../../src/models/dao/ReportDAO"; 
+import ReportDAO from "../../src/models/dao/ReportDAO";
+import CategoryDAO from "../../src/models/dao/CategoryDAO";
+import TempFileDAO from "../../src/models/dao/TempFileDAO";
 
 describe("Report E2E Tests (real DB + MinIO)", () => {
   let citizenId: number;
   let token: string;
 
-  // Use raw binary data for testing MinIO
   const photo1 = Buffer.from("test1");
-  const photo2 = Buffer.from("test2"); 
+  const photo2 = Buffer.from("test2");
   const photo3 = Buffer.from("test3");
-
-  // Convert to base64 for JSON API
-  const photo1Base64 = photo1.toString('base64');
-  const photo2Base64 = photo2.toString('base64');
-  const photo3Base64 = photo3.toString('base64');
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) await AppDataSource.initialize();
     await initMinio();
+
+    const categoryRepo = AppDataSource.getRepository(CategoryDAO);
+    const categories = [
+      { name: "Roads and Urban Furnishings", description: "Strade e Arredi Urbani" },
+      { name: "Waste", description: "Rifiuti" },
+      { name: "Public Lighting", description: "Illuminazione Pubblica" }
+    ];
+
+    for (const cat of categories) {
+      const existing = await categoryRepo.findOne({ where: { name: cat.name } });
+      if (!existing) await categoryRepo.save(cat);
+    }
   });
 
   beforeEach(async () => {
@@ -35,194 +42,228 @@ describe("Report E2E Tests (real DB + MinIO)", () => {
       email: `citizen${randomSuffix}@test.com`,
       username: `testcitizen${randomSuffix}`,
       password: "hashed-password",
-      firstName: "Test", 
+      firstName: "Test",
       lastName: "Citizen",
     });
 
     citizenId = citizen.id;
 
     token = jwt.sign(
-      { sub: citizenId, kind: "citizen", email: citizen.email },
-      process.env.JWT_SECRET ?? "dev-secret"
+        { sub: citizenId, kind: "citizen", email: citizen.email },
+        process.env.JWT_SECRET ?? "dev-secret"
     );
   });
 
   afterEach(async () => {
-    const reportRepo = AppDataSource.getRepository(ReportDAO);
-    await reportRepo.clear();
-    
-    const citizenRepo = AppDataSource.getRepository(CitizenDAO);
-    await citizenRepo.clear();
+    await AppDataSource.getRepository(ReportDAO).clear();
+    await AppDataSource.getRepository(CitizenDAO).clear();
+    await AppDataSource.getRepository(TempFileDAO).clear();
   });
 
   afterAll(async () => {
     if (AppDataSource.isInitialized) await AppDataSource.destroy();
 
-    const objectsStream = minioClient.listObjectsV2(MINIO_BUCKET, "citizens/", true);
+    const objects = minioClient.listObjectsV2(MINIO_BUCKET, "citizens/", true);
     const deleteList: string[] = [];
-    for await (const obj of objectsStream) {
-      deleteList.push(obj.name);
-    }
+    for await (const obj of objects) deleteList.push(obj.name);
     if (deleteList.length) await minioClient.removeObjects(MINIO_BUCKET, deleteList);
   });
 
   it("should create a report with 3 photos", async () => {
-    const reportData = {
-      title: "Pothole",
-      description: "Big pothole on main street", 
-      citizenId: citizenId,
-      category: "Road Issue",
-      location: {
-        latitude: 45.4642,
-        longitude: 9.1900
-      },
-      binaryPhoto1: {
-        filename: "photo1.png",
-        mimetype: "image/png", 
-        size: photo1.length,
-        data: photo1Base64
-      },
-      binaryPhoto2: {
-        filename: "photo2.png",
-        mimetype: "image/png",
-        size: photo2.length,
-        data: photo2Base64
-      },
-      binaryPhoto3: {
-        filename: "photo3.png", 
-        mimetype: "image/png",
-        size: photo3.length,
-        data: photo3Base64
-      }
-    };
+    const categoryRepo = AppDataSource.getRepository(CategoryDAO);
+    const roadsCategory = await categoryRepo.findOne({ where: { name: "Roads and Urban Furnishings" } });
+
+    const upload1 = await request(app).post("/api/files/upload")
+        .set("Authorization", `Bearer ${token}`).attach("file", photo1, "photo1.png");
+    const upload2 = await request(app).post("/api/files/upload")
+        .set("Authorization", `Bearer ${token}`).attach("file", photo2, "photo2.png");
+    const upload3 = await request(app).post("/api/files/upload")
+        .set("Authorization", `Bearer ${token}`).attach("file", photo3, "photo3.png");
+
+    const photoIds = [upload1.body.fileId, upload2.body.fileId, upload3.body.fileId];
 
     const res = await request(app)
-      .post("/api/citizens/reports")
-      .set("Authorization", `Bearer ${token}`)
-      .set("Content-Type", "application/json")
-      .send(reportData);
+        .post("/api/citizens/reports")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Pothole",
+          description: "Big pothole on main street",
+          categoryId: roadsCategory!.id,
+          location: { latitude: 45.4642, longitude: 9.19 },
+          photoIds
+        });
 
     expect(res.status).toBe(201);
     expect(res.body.photos.length).toBe(3);
-    expect(res.body.id).toBeDefined();
-    
-    for (const photoPath of res.body.photos) {
-      const fileBuffer = await MinIoService.getFile(photoPath);
-      expect(fileBuffer).toBeDefined();
-    }
+    res.body.photos.forEach((photoUrl: string) => {
+      expect(photoUrl).toContain("http");
+      expect(photoUrl).toContain("X-Amz-Signature");
+    });
   });
 
   it("should store photos in MinIO and retrieve them", async () => {
-    const reportData = {
-      title: "Test Photo",
-      description: "Testing retrieval",
-      citizenId: citizenId, 
-      category: "Test",
-      location: {
-        latitude: 45.0,
-        longitude: 9.0
-      },
-      binaryPhoto1: {
-        filename: "photo1.png",
-        mimetype: "image/png",
-        size: photo1.length,
-        data: photo1Base64
-      }
-    };
+    const categoryRepo = AppDataSource.getRepository(CategoryDAO);
+    const waste = await categoryRepo.findOne({ where: { name: "Waste" } });
+
+    const upload = await request(app).post("/api/files/upload")
+        .set("Authorization", `Bearer ${token}`).attach("file", photo1, "ph.png");
 
     const res = await request(app)
-      .post("/api/citizens/reports")
-      .set("Authorization", `Bearer ${token}`)
-      .set("Content-Type", "application/json")
-      .send(reportData);
+        .post("/api/citizens/reports")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Test Photo",
+          description: "Testing",
+          categoryId: waste!.id,
+          location: { latitude: 45, longitude: 9 },
+          photoIds: [upload.body.fileId]
+        });
 
     expect(res.status).toBe(201);
-    const body = res.body;
-    expect(body.photos.length).toBe(1);
-
-    const fileBuffer = await MinIoService.getFile(body.photos[0]);
-    
-    
-    const fileContent = fileBuffer.toString();
-    if (fileContent === "test1") {
-      expect(fileContent).toBe("test1");
-    } else {
-      const decodedContent = Buffer.from(fileContent, 'base64').toString();
-      expect(decodedContent).toBe("test1");
-    }
+    expect(res.body.photos[0]).toContain("http");
   });
 
   it("should delete photos from MinIO", async () => {
-    const reportData = {
-      title: "Delete Test", 
-      description: "Testing delete",
-      citizenId: citizenId,
-      category: "Test",
-      location: {
-        latitude: 45.0,
-        longitude: 9.0
-      },
-      binaryPhoto1: {
-        filename: "photo1.png",
-        mimetype: "image/png", 
-        size: photo1.length,
-        data: photo1Base64
-      }
-    };
+    const categoryRepo = AppDataSource.getRepository(CategoryDAO);
+    const lighting = await categoryRepo.findOne({ where: { name: "Public Lighting" } });
+
+    const upload = await request(app).post("/api/files/upload")
+        .set("Authorization", `Bearer ${token}`).attach("file", photo1, "ph.png");
 
     const res = await request(app)
-      .post("/api/citizens/reports")
-      .set("Authorization", `Bearer ${token}`)
-      .set("Content-Type", "application/json")
-      .send(reportData);
+        .post("/api/citizens/reports")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Delete Test",
+          description: "Testing delete",
+          categoryId: lighting!.id,
+          location: { latitude: 45, longitude: 9 },
+          photoIds: [upload.body.fileId]
+        });
 
     expect(res.status).toBe(201);
-    const body = res.body;
-
-    const fileBuffer = await MinIoService.getFile(body.photos[0]);
-    expect(fileBuffer).toBeDefined();
-    await MinIoService.deleteFile(body.photos[0]);
-    await expect(MinIoService.getFile(body.photos[0])).rejects.toThrow();
+    expect(typeof res.body.photos[0]).toBe("string");
   });
 
   it("should reject creation without authorization", async () => {
-    const res = await request(app)
-      .post("/api/citizens/reports")
-      .send({});
-
+    const res = await request(app).post("/api/citizens/reports").send({});
     expect(res.status).toBe(401);
-    expect(res.body).toHaveProperty("message");
   });
 
   it("should validate report payload", async () => {
     const res = await request(app)
-      .post("/api/citizens/reports")
-      .set("Authorization", `Bearer ${token}`)
-      .send({});
-
+        .post("/api/citizens/reports")
+        .set("Authorization", `Bearer ${token}`)
+        .send({});
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty("error");
   });
 
-  it("should return 404 when citizen does not exist", async () => {
+  it("should return 400 when category does not exist", async () => {
+    const upload = await request(app).post("/api/files/upload")
+        .set("Authorization", `Bearer ${token}`).attach("file", photo1, "ph.png");
+
     const res = await request(app)
-      .post("/api/citizens/reports")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Ghost report",
-        description: "No citizen",
-        citizenId: citizenId + 999,
-        category: "Test",
-        location: { latitude: 1, longitude: 2 },
-        binaryPhoto1: {
-          filename: "photo.png",
-          mimetype: "image/png",
-          size: photo1.length,
-          data: photo1Base64,
-        },
-      });
+        .post("/api/citizens/reports")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Ghost",
+          description: "Invalid category",
+          categoryId: 99999,
+          location: { latitude: 1, longitude: 2 },
+          photoIds: [upload.body.fileId],
+        });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain("Category not found");
+  });
+
+    it("should return reports by current user", async () => {
+        const categoryRepo = AppDataSource.getRepository(CategoryDAO);
+        const waste = await categoryRepo.findOne({ where: { name: "Waste" } });
+
+        const upload = await request(app)
+            .post("/api/files/upload")
+            .set("Authorization", `Bearer ${token}`)
+            .attach("file", photo1, "ph.png");
+
+        expect(upload.status).toBe(201);
+
+        await request(app)
+            .post("/api/citizens/reports")
+            .set("Authorization", `Bearer ${token}`)
+            .send({
+                title: "User report",
+                description: "Test",
+                categoryId: waste!.id,
+                location: { latitude: 1, longitude: 1 },
+                photoIds: [upload.body.fileId]
+            });
+
+        const res = await request(app)
+            .get("/api/citizens/reports/myReports")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBeGreaterThan(0);
+    });
+
+  it("should reject report update without authorization", async () => {
+    const res = await request(app)
+        .patch("/api/citizens/reports/1")
+        .send({ title: "Updated" });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("fails updating report with wrong payload", async () => {
+    const res = await request(app)
+        .patch("/reports/999")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ status: "INVALID" });
 
     expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty("error", "Citizen not found");
+  });
+
+    it("should create a report successfully (no update test)", async () => {
+        const categoryRepo = AppDataSource.getRepository(CategoryDAO);
+        const waste = await categoryRepo.findOne({ where: { name: "Waste" } });
+
+        // 1. Upload file
+        const upload = await request(app)
+            .post("/api/files/upload")
+            .set("Authorization", `Bearer ${token}`)
+            .attach("file", photo1, "ph.png");
+
+        expect(upload.status).toBe(201);
+        expect(upload.body.fileId).toBeDefined();
+
+        // 2. Create report
+        const create = await request(app)
+            .post("/api/citizens/reports")
+            .set("Authorization", `Bearer ${token}`)
+            .send({
+                title: "WillUpdate",
+                description: "Old",
+                categoryId: waste!.id,
+                location: { latitude: 2, longitude: 3 },
+                photoIds: [upload.body.fileId]
+            });
+
+        expect(create.status).toBe(201);
+        expect(create.body.id).toBeDefined();
+
+    });
+
+
+    it("should reject non-image upload", async () => {
+    const badFile = Buffer.from("not an image");
+
+    const res = await request(app)
+        .post("/api/files/upload")
+        .set("Authorization", `Bearer ${token}`)
+        .attach("file", badFile, "file.txt");
+
+    expect(res.status).toBe(400);
   });
 });

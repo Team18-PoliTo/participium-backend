@@ -1,4 +1,3 @@
-/* istanbul ignore file */
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from "typeorm";
 import RoleDAO from "./RoleDAO";
 
@@ -24,11 +23,15 @@ class InternalUserDAO {
   @Column({ type: "varchar", default: () => "'ACTIVE'", nullable: true })
   status: InternalUserStatus;
 
+  @Column({ default: () => 0, nullable: false})
+  activeTasks: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @ManyToOne(() => RoleDAO, (role) => role.users, { nullable: false })
   role: RoleDAO;
+
 }
 
 export default InternalUserDAO;

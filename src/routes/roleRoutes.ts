@@ -1,7 +1,7 @@
 import { Router } from "express";
-import RoleController from "../controllers/RoleController";
+import RoleController from "../controllers/roleController";
 import RoleService from "../services/RoleService";
-import RoleRepository from "../repositories/RoleRepository";
+import RoleRepository from "../repositories/implementation/RoleRepository";
 
 const router = Router();
 
@@ -11,17 +11,10 @@ const roleController = new RoleController(roleService);
 
 /**
  * @swagger
- * tags:
- *   name: Roles
- *   description: Administrative role management
- */
-
-/**
- * @swagger
  * /admin/roles:
  *   get:
  *     summary: Fetch all internal user roles
- *     tags: [Roles]
+ *     tags: [Admin]
  *     security:
  *       - internalPassword: []
  *     responses:

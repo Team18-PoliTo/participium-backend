@@ -1,12 +1,14 @@
-import { CitizenMapper } from "../../mappers/CitizenMapper";
-import { CitizenDTO } from "../../models/dto/CitizenDTO";
-import { RegisterCitizenRequestDTO } from "../../models/dto/ValidRequestDTOs";
+import {CitizenMapper} from "../../mappers/CitizenMapper";
+import {CitizenDTO} from "../../models/dto/CitizenDTO";
+import {RegisterCitizenRequestDTO} from "../../models/dto/ValidRequestDTOs";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { ICitizenRepository } from "../../repositories/ICitizenRepository";
-import { ICitizenService } from "../ICitizenService";
-import { LoginRequestDTO } from "../../models/dto/LoginRequestDTO";
+import {ICitizenRepository} from "../../repositories/ICitizenRepository";
+import {ICitizenService} from "../ICitizenService";
+import {LoginRequestDTO} from "../../models/dto/LoginRequestDTO";
+import MinIoService from "../MinIoService";
+import {PROFILE_BUCKET} from "../../config/minioClient";
 
 class CitizenService implements ICitizenService {
   constructor(
@@ -41,7 +43,15 @@ class CitizenService implements ICitizenService {
       status: "ACTIVE",
     });
 
-    return CitizenMapper.toDTO(newCitizen);
+    return await CitizenMapper.toDTO(newCitizen);
+  }
+
+  async getCitizenById(id: number): Promise<CitizenDTO> {
+    const citizen = await this.citizenRepository.findById(id);
+    if (!citizen) {
+      throw new Error("Citizen not found");
+    }
+    return await CitizenMapper.toDTO(citizen);
   }
 
   async login({
@@ -80,6 +90,97 @@ class CitizenService implements ICitizenService {
     );
 
     return { access_token: token, token_type: "bearer" };
+  }
+
+  async updateCitizen(
+      id: number,
+      data: {
+        email?: string | null;
+        username?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        telegramUsername?: string | null;
+        emailNotificationsEnabled?: boolean;
+        photoPath?: string | null;
+      }
+  ): Promise<CitizenDTO> {
+
+    const citizen = await this.citizenRepository.findById(id);
+    if (!citizen) {
+      throw new Error("Citizen not found");
+    }
+
+    const normalize = (v: any) => {
+      if (v === undefined) return undefined;
+      if (v === "" || v === "null" || v === null) return null;
+      return v;
+    };
+
+    const updatePayload: any = {};
+
+    if (data.email !== undefined) {
+      const normalized = normalize(data.email);
+      updatePayload.email = normalized ? normalized.toLowerCase() : null;
+    }
+
+    if (data.username !== undefined) {
+      const normalized = normalize(data.username);
+      updatePayload.username = normalized ? normalized.toLowerCase() : null;
+    }
+
+    if (data.firstName !== undefined)
+      updatePayload.firstName = normalize(data.firstName);
+
+    if (data.lastName !== undefined)
+      updatePayload.lastName = normalize(data.lastName);
+
+    if (data.telegramUsername !== undefined)
+      updatePayload.telegramUsername = normalize(data.telegramUsername);
+
+    if (data.emailNotificationsEnabled !== undefined)
+      updatePayload.emailNotificationsEnabled = data.emailNotificationsEnabled;
+
+    if (data.photoPath !== undefined) {
+      if (data.photoPath !== null) {
+        // Delete old photo if it exists (gracefully handle errors)
+        if (citizen.accountPhotoUrl) {
+          try {
+            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+          } catch (error: any) {
+            // Log warning but don't fail the update if old photo deletion fails
+            // (photo might not exist, or path might be invalid)
+            console.warn(
+              `[CitizenService] Failed to delete old profile photo ${citizen.accountPhotoUrl}:`,
+              error?.message || error
+            );
+          }
+        }
+        updatePayload.accountPhotoUrl = data.photoPath;
+      } else {
+        // If photoPath is explicitly null, delete existing photo
+        if (citizen.accountPhotoUrl) {
+          try {
+            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+          } catch (error: any) {
+            // Log warning but don't fail the update if deletion fails
+            console.warn(
+              `[CitizenService] Failed to delete profile photo ${citizen.accountPhotoUrl}:`,
+              error?.message || error
+            );
+          }
+        }
+        updatePayload.accountPhotoUrl = null;
+      }
+    }
+
+    await this.citizenRepository.update(id, updatePayload);
+
+    const updatedCitizen = await this.citizenRepository.findById(id);
+    if (!updatedCitizen) {
+      throw new Error("Citizen not found after update");
+    }
+
+    return await CitizenMapper.toDTO(updatedCitizen);
   }
 }
 

@@ -11,12 +11,14 @@
     "typeorm": "ts-node ./node_modules/typeorm/cli.js",
     "migration:run": "npm run typeorm -- migration:run -d ./src/config/database.ts",
     "test": "npx jest --runInBand --detectOpenHandles --coverage",
+    "test-e2e" :"npx jest --runInBand --detectOpenHandles --coverage test/e2e/",
     "swagger:generate": "ts-node ./swagger.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/multer": "^2.0.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
@@ -26,12 +28,13 @@
     "jsonwebtoken": "^9.0.2",
     "minio": "^8.0.6",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "reflect-metadata": "^0.2.2",
     "sqlite3": "^5.1.7",
     "swagger-autogen": "^2.23.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.27",
+    "typeorm": "^0.3.17",
     "winston": "^3.18.3"
   },
   "devDependencies": {
