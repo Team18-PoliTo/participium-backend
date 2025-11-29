@@ -15,7 +15,6 @@ import { requireAuth, requireAdmin, requireCitizen, requireInternalUser } from '
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import reportRoutes from './routes/reportRoutes';
-import { initMinio } from "./config/initMinio";
 import categoryRoutes from "./routes/categoryRoutes";
 import fileRoutes from "./routes/fileRoutes";
 
@@ -28,11 +27,8 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
 
-( async () =>{
-
-  await initMinio();
-
-})();
+// MinIO initialization is called from server.ts after database is ready
+// This ensures proper initialization order: DB -> MinIO -> Seed Reports
 
 // Health check
 app.get('/api/health', (req: Request, res: Response) => {
