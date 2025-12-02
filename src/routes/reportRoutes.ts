@@ -238,14 +238,24 @@ router.post("/", reportController.create.bind(reportController));
  *                     type: string
  *                     example: Pothole in the street
  *                   status:
- *                    type: string
- *                    example: In progress
+ *                     type: string
+ *                     example: In progress
  *                   description:
  *                     type: string
  *                     example: Large pothole near my house
  *                   category:
- *                     type: string
- *                     example: Roads and Urban Furnishings
+ *                     type: object
+ *                     description: Category info of the report
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         example: Roads and Urban Furnishings
+ *                       description:
+ *                         type: string
+ *                         example: Issues related to roads and urban furniture
  *                   location:
  *                     type: object
  *                     properties:
@@ -261,7 +271,6 @@ router.post("/", reportController.create.bind(reportController));
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
- *
  */
 router.post(
   "/map",

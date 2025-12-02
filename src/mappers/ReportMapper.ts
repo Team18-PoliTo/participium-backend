@@ -24,7 +24,6 @@ export class ReportMapper {
       description: reportDAO.category.description,
     };
 
-    // Get photo object keys (MinIO paths)
     const photoKeys = [
       reportDAO.photo1,
       reportDAO.photo2,
@@ -35,7 +34,6 @@ export class ReportMapper {
     const photoUrlsRaw = await Promise.all(
       photoKeys.map((key) => MinIoService.getPresignedUrl(key))
     );
-    // Filter out empty/falsy URLs (MinIO might be unavailable or return an error fallback)
     const photoUrls = photoUrlsRaw.filter(Boolean);
 
     return {
@@ -46,7 +44,7 @@ export class ReportMapper {
       title: reportDAO.title,
       description: reportDAO.description,
       category: categoryDTO,
-      photos: photoUrls, // Contains pre-signed URLs (valid for 7 days)
+      photos: photoUrls,
       createdAt: reportDAO.createdAt,
       location: JSON.parse(reportDAO.location),
       status: reportDAO.status,
@@ -64,7 +62,7 @@ export class ReportMapper {
       status: reportDAO.status,
       description: reportDAO.description,
       location: JSON.parse(reportDAO.location),
-      category: reportDAO.category.name,
+      category: reportDAO.category,
     };
   }
 }
