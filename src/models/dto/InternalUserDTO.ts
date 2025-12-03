@@ -8,3 +8,7 @@ export class InternalUserDTO {
   role: number | string;
   status: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 }
+
+export class ExternalMantainerDTO extends InternalUserDTO {
+  company: number;
+}
