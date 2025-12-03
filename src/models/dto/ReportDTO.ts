@@ -15,7 +15,7 @@ export class ReportDTO {
   id: number;
   citizenId: number;
   citizenName: string;
-  citizenSurname: string;
+  citizenLastName: string;
   title: string;
   description: string;
   category: CategoryDTO;

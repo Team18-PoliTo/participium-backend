@@ -1,7 +1,9 @@
 jest.mock("uuid", () => ({
   v4: jest.fn(),
 }));
-
+beforeAll(() => {
+  jest.spyOn(console, "error").mockImplementation(() => {});
+});
 import ReportService from "../../../src/services/implementation/reportService";
 import MinIoService from "../../../src/services/MinIoService";
 import { v4 as uuidv4 } from "uuid";
