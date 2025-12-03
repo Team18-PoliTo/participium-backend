@@ -1,5 +1,5 @@
 import InternalUserDAO from "../models/dao/InternalUserDAO";
-import { InternalUserDTO } from "../models/dto/InternalUserDTO";
+import { ExternalMantainerDTO, InternalUserDTO } from "../models/dto/InternalUserDTO";
 
 export class InternalUserMapper {
   static toDTO(userDAO: InternalUserDAO): InternalUserDTO {
@@ -16,5 +16,15 @@ export class InternalUserMapper {
           : (userDAO.role as any)?.id ?? 0,
       status: userDAO.status ?? "ACTIVE",
     };
+  }
+}
+
+export class ExternalMantainerMapper {
+  static toDTO(userDAO: InternalUserDAO): ExternalMantainerDTO {
+    const baseDTO = InternalUserMapper.toDTO(userDAO);
+    return {
+      ...baseDTO,
+      company: userDAO.company ? userDAO.company.id : null,
+    } as ExternalMantainerDTO;
   }
 }
