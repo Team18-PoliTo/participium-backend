@@ -25,6 +25,7 @@ export class ReportDTO {
     latitude: number;
     longitude: number;
   };
+  address: string | null;
   status: string;
   explanation?: string | null;
   assignedTo?: AssignedOfficerDTO | null;

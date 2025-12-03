@@ -47,6 +47,7 @@ export class ReportMapper {
       photos: photoUrls,
       createdAt: reportDAO.createdAt,
       location: JSON.parse(reportDAO.location),
+      address: reportDAO.address,
       status: reportDAO.status,
       explanation: reportDAO.explanation,
       assignedTo,

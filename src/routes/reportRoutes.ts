@@ -134,7 +134,7 @@ const reportController = new ReportController(reportService);
 
 /**
  * @swagger
- * /citizens/reports:
+ * /citizens/report:
  *   post:
  *     summary: Create a new report
  *     tags: [Citizens]
@@ -180,10 +180,10 @@ const reportController = new ReportController(reportService);
  *                 properties:
  *                   latitude:
  *                     type: number
- *                     example: 45.4642
+ *                     example: 45.054728
  *                   longitude:
  *                     type: number
- *                     example: 9.1900
+ *                     example: 7.669915
  *     responses:
  *       201:
  *         description: Report created successfully
@@ -198,8 +198,7 @@ const reportController = new ReportController(reportService);
  *       403:
  *         description: Forbidden
  */
-
-router.post("/", reportController.create.bind(reportController));
+router.post("/report", reportController.create.bind(reportController));
 
 /**
  * @swagger
@@ -272,10 +271,7 @@ router.post("/", reportController.create.bind(reportController));
  *       403:
  *         description: Forbidden
  */
-router.post(
-  "/map",
-  reportController.getAssignedReportsInMap.bind(reportController)
-);
+router.post("/reports/map", reportController.getAssignedReportsInMap.bind(reportController));
 
 /**
  * @swagger
@@ -309,7 +305,7 @@ router.post(
  *       403:
  *         description: Forbidden
  */
-router.get("/getById/:id", reportController.getById.bind(reportController));
+router.get("/reports/getById/:id", reportController.getById.bind(reportController));
 
 /**
  * @swagger
@@ -334,6 +330,6 @@ router.get("/getById/:id", reportController.getById.bind(reportController));
  *       403:
  *         description: Forbidden
  */
-router.get("/myReports", reportController.getMyReports.bind(reportController));
+router.get("/reports/myReports", reportController.getMyReports.bind(reportController));
 
 export default router;
