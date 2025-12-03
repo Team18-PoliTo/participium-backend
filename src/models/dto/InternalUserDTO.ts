@@ -1,3 +1,5 @@
+import { CompanyDTO } from "./CompanyDTO";
+
 export class InternalUserDTO {
   id: number;
   email: string;
@@ -10,5 +12,5 @@ export class InternalUserDTO {
 }
 
 export class ExternalMantainerDTO extends InternalUserDTO {
-  company: number;
+  company: CompanyDTO ;
 }
