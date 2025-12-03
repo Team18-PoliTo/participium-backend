@@ -1,6 +1,5 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 import * as bcrypt from "bcrypt";
-import e from "express";
 
 export class InitialSeed1000000000001 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
