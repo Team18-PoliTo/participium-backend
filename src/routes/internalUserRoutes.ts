@@ -49,7 +49,7 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  * /internal/reports/{id}:
  *   patch:
  *     summary: Review and update report (approve/reject/change category)
- *     description: Allows PR officers to review reports, approve/reject them, optionally correct category, and provide explanation. If approved (Assigned status), system auto-assigns to an available officer with the appropriate role for that category.
+ *     description: Allows PR officers to review a report, approve/reject it, optionally correct category, and provide explanation.
  *     tags: [Internal]
  *     security:
  *       - internalPassword: []
@@ -74,26 +74,31 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  *                 type: string
  *                 enum: [Pending Approval, Assigned, In Progress, Suspended, Rejected, Resolved]
  *                 example: "Assigned"
- *               category:
- *                 type: string
- *                 description: Optional - correct category if citizen chose the wrong one
- *                 example: "Roads and Urban Furnishings"
+ *               categoryId:
+ *                 type: integer
+ *                 description: Optional corrected category ID
+ *                 example: 3
  *               explanation:
  *                 type: string
  *                 example: "Report approved and assigned for processing."
  *     responses:
  *       200:
- *         description: Report updated successfully with assignment details if approved
+ *         description: Update successful
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ReportDTO'
- *       400:
- *         description: Validation error or missing fields
- *       401:
- *         description: Unauthorized
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 assignedTo:
+ *                   type: string
  *       404:
  *         description: Report not found
+ *       400:
+ *         description: Validation error
  */
 router.patch("/reports/:id", internalUserController.updateReportStatus.bind(internalUserController));
 
