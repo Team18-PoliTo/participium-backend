@@ -10,5 +10,6 @@ export interface IReportService {
   getReportById(reportId: number): Promise<ReportDTO>;
   getReportsForStaff(staffId: number): Promise<ReportDTO[]>;
   getReportsByOffice(staffId: number): Promise<ReportDTO[]>;
+  delegateReport(reportId: number, companyId: number): Promise<ReportDTO>;
 }
 

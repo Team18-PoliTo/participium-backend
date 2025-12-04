@@ -11,6 +11,6 @@ export class InternalUserDTO {
   status: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 }
 
-export class ExternalMantainerDTO extends InternalUserDTO {
-  company: CompanyDTO ;
+export class ExternalMaintainerDTO extends InternalUserDTO {
+  company: CompanyDTO;
 }
