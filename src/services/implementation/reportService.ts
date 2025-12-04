@@ -16,13 +16,15 @@ import FileService from "../FileService";
 import { v4 as uuidv4 } from "uuid";
 import { IReportService } from "../IReportService";
 import { ReportStatus } from "../../constants/ReportStatus";
+import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
 class ReportService implements IReportService {
   constructor(
     private reportRepository: IReportRepository = new ReportRepository(),
     private citizenRepository: ICitizenRepository = new CitizenRepository(),
     private categoryRepository: CategoryRepository = new CategoryRepository(),
     private categoryRoleRepository: CategoryRoleRepository = new CategoryRoleRepository(),
-    private internalUserRepository: InternalUserRepository = new InternalUserRepository()
+    private internalUserRepository: InternalUserRepository = new InternalUserRepository(),
+    private companyCategoryRepository = new CompanyCategoryRepository()
   ) {}
 
   /**
@@ -60,6 +62,36 @@ class ReportService implements IReportService {
         filteredOfficers[randomIndex].id
       );
       return filteredOfficers[randomIndex];
+    }
+  }
+
+  /**
+   * Selects an external maintainer with the least number of active tasks for a given company ID.
+   * If multiple maintainers have the same minimum number of active tasks, one is selected randomly.
+   */
+  private async selectUnoccupiedMaintainerByCompany(companyId: number) {
+    const maintainersInCompany =
+      await this.internalUserRepository.findExternalMaintainersByCompany(
+        companyId
+      );
+
+    if (maintainersInCompany.length === 0) {
+      throw new Error(
+        "This company does not have maintainers available at the moment, please choose another company"
+      );
+    }
+    // since they are ordered by activeTasks ASC, the first one has the minimum
+    const chosenMaintainer = maintainersInCompany[0];
+
+    if (chosenMaintainer) {
+      await this.internalUserRepository.incrementActiveTasks(
+        chosenMaintainer.id
+      );
+      return chosenMaintainer;
+    } else {
+      throw new Error(
+        "This company does not have maintainers available at the moment, please choose another company"
+      );
     }
   }
 
@@ -155,6 +187,7 @@ class ReportService implements IReportService {
     });
     return filtered.map((report) => ReportMapper.toDTOforMap(report));
   }
+
   async getReportById(reportId: number): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
@@ -246,6 +279,60 @@ class ReportService implements IReportService {
       data.status,
       data.explanation,
       report.assignedTo
+    );
+
+    return await ReportMapper.toDTO(updatedReport);
+  }
+
+  async delegateReport(
+    reportId: number,
+    companyId: number
+  ): Promise<ReportDTO> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+
+    if (
+      report.status !== ReportStatus.ASSIGNED &&
+      report.status !== ReportStatus.IN_PROGRESS &&
+      report.assignedTo
+    ) {
+      throw new Error(
+        "Only reports with status 'Assigned' or 'In Progress' can be delegated"
+      );
+    }
+
+    // checks that the category sent actually handles that category
+    // a bit overkill but better to be sure
+    const companies =
+      await this.companyCategoryRepository.findCompaniesByCategory(
+        report.category.id
+      );
+    const companyHandlesCategory = companies.some((c) => c.id === companyId);
+
+    if (!companyHandlesCategory) {
+      throw new Error(
+        "The selected company does not handle this report's category"
+      );
+    }
+    // selects the external maintainer, already increments their active tasks
+    const selectedMaintainer = await this.selectUnoccupiedMaintainerByCompany(
+      companyId
+    );
+
+    await this.internalUserRepository.decrementActiveTasks(
+      report.assignedTo!.id
+    );
+
+    report.status = ReportStatus.DELEGATED;
+    report.assignedTo = selectedMaintainer;
+
+    const updatedReport = await this.reportRepository.updateStatus(
+      reportId,
+      ReportStatus.DELEGATED,
+      undefined,
+      selectedMaintainer
     );
 
     return await ReportMapper.toDTO(updatedReport);

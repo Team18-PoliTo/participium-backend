@@ -5,6 +5,7 @@ export const ReportStatus = {
   SUSPENDED: "Suspended",
   REJECTED: "Rejected",
   RESOLVED: "Resolved",
+  DELEGATED: "Delegated",
 } as const;
 
 export type ReportStatusType = typeof ReportStatus[keyof typeof ReportStatus];

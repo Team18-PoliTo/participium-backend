@@ -69,6 +69,10 @@ export class UpdateInternalUserRequestDTO {
   @IsInt({ message: "newRoleId must be a number" })
   @Min(0)
   newRoleId?: number;
+  @IsOptional()
+  @IsInt({ message: "newCompanyId must be a number" })
+  @Min(0)
+  newCompanyId?: number;
 }
 
 export class CreateReportRequestDTO {
@@ -109,6 +113,10 @@ export class UpdateReportRequestDTO {
   @IsString({ message: "Explanation must be a string" })
   @IsNotEmpty({ message: "Explanation is required" })
   explanation: string;
+
+  @IsOptional()
+  @IsInt({ message: "Company ID must be a number" })
+  companyId?: number; 
 }
 
 export class GetAssignedReportsForMapRequestDTO {

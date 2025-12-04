@@ -27,7 +27,7 @@ class CompanyDAO {
   })
   internalUsers: InternalUserDAO[];
 
-  @OneToMany(() => CompanyCategoryDAO, (categoryCompany) => categoryCompany.category, {
+  @OneToMany(() => CompanyCategoryDAO, (categoryCompany) => categoryCompany.company, {
     cascade: true,
     eager: false,
   })

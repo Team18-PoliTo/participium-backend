@@ -1,6 +1,6 @@
 import CompanyDAO from "../models/dao/CompanyDAO";
 import { CompanyDTO } from "../models/dto/CompanyDTO";
-import { ExternalMantainerMapper } from "./InternalUserMapper";
+import { ExternalMaintainerMapper } from "./InternalUserMapper";
 
 export class CompanyMapper {
   static toDTO(companyDAO: CompanyDAO): CompanyDTO {
@@ -34,7 +34,7 @@ export class CompanyMapper {
       description: companyDAO.description,
       employees:
         companyDAO.internalUsers?.map((user) =>
-          ExternalMantainerMapper.toDTO(user)
+          ExternalMaintainerMapper.toDTO(user)
         ) || [],
     };
   }
