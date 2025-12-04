@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import CategoryRoleDAO from "./CategoryRoleDAO";
+import CompanyCategoryDAO from "./CompanyCategoryDAO";
 
 @Entity("categories")
 class CategoryDAO {
@@ -7,7 +8,7 @@ class CategoryDAO {
   id: number;
 
   @Column({ nullable: false, unique: true })
-  name: string; // e.g. "Water Supply – Drinking Water" (Fornitura di Acqua - Acqua Potabile)
+  name: string;
 
   @Column({ nullable: true })
   description: string;
@@ -17,6 +18,12 @@ class CategoryDAO {
     eager: false,
   })
   categoryRoles: CategoryRoleDAO[];
+
+  @OneToMany(() => CompanyCategoryDAO, (categoryCompany) => categoryCompany.category, {
+    cascade: true,
+    eager: false,
+  })
+  companies: CompanyCategoryDAO[];
 }
 
 export default CategoryDAO;
