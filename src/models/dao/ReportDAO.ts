@@ -53,6 +53,9 @@ class ReportDAO {
   @Column({ nullable: false })
   location: string;
 
+  @Column({ type: "varchar", length: 255, nullable: true })
+  address: string | null;
+
   @Column({ nullable: false, default: ReportStatus.PENDING_APPROVAL })
   status: string;
 

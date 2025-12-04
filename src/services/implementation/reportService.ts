@@ -11,11 +11,11 @@ import { ICitizenRepository } from "../../repositories/ICitizenRepository";
 import { CategoryRoleRepository } from "../../repositories/implementation/CategoryRoleRepository";
 import { CategoryRepository } from "../../repositories/implementation/CategoryRepository";
 import InternalUserRepository from "../../repositories/InternalUserRepository";
-import MinIoService from "../MinIoService";
 import FileService from "../FileService";
 import { v4 as uuidv4 } from "uuid";
 import { IReportService } from "../IReportService";
 import { ReportStatus } from "../../constants/ReportStatus";
+import {GeocodingService} from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
 class ReportService implements IReportService {
   constructor(
@@ -121,6 +121,7 @@ class ReportService implements IReportService {
       category: category,
       createdAt: new Date(),
       location: JSON.stringify(data.location),
+      address: await GeocodingService.getAddress(data.location.latitude, data.location.longitude),
       status: ReportStatus.PENDING_APPROVAL,
     });
 
@@ -187,7 +188,6 @@ class ReportService implements IReportService {
     });
     return filtered.map((report) => ReportMapper.toDTOforMap(report));
   }
-
   async getReportById(reportId: number): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {

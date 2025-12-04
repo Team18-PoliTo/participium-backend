@@ -7,28 +7,33 @@ import { validate } from "class-validator";
 import { plainToClass } from "class-transformer";
 
 import { IReportService } from "../services/IReportService";
+import {HttpException} from "@nestjs/common";
 
 class ReportController {
   constructor(private reportService: IReportService) {}
   private handleError(error: any, res: Response, next: NextFunction): void {
+    if (error instanceof HttpException) {
+      const status = error.getStatus();
+      const response = error.getResponse();
+
+      res.status(status).json(
+          typeof response === "string" ? { error: response } : response
+      );
+      return;
+    }
     if (error instanceof Error) {
       if (error.message === "Citizen not found") {
         res.status(404).json({ error: error.message });
         return;
       }
-
       if (error.message.includes("Category not found")) {
         res.status(400).json({ error: error.message });
         return;
       }
-
       res.status(500).json({ error: "Internal Server Error" });
-      next(error);
       return;
     }
-
     res.status(500).json({ error: "Internal Server Error" });
-    next(error);
   }
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {

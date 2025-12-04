@@ -1,6 +1,6 @@
 import {minioClient, minioClientForPresigned, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
 
-class MinioService {
+class MinIoService {
   async uploadFile(
       bucket: string,
       objectKey: string,
@@ -142,4 +142,4 @@ class MinioService {
   }
 }
 
-export default new MinioService();
+export default new MinIoService();

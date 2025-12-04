@@ -13,6 +13,7 @@ interface SeedReport {
   title: string;
   description: string;
   location: { latitude: number; longitude: number };
+  address: string | null;
   categoryId: number;
   status: string;
   explanation: string | null;
@@ -117,6 +118,7 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
         description: seedReport.description,
         category,
         location: JSON.stringify(seedReport.location),
+        address: seedReport.address,
         status: seedReport.status,
         explanation: seedReport.explanation,
         assignedTo,

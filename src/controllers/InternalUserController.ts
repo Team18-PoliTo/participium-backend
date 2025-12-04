@@ -185,33 +185,40 @@ class InternalUserController {
 
       if (errors.length > 0) {
         const errorMessages = errors
-          .map((err) => Object.values(err.constraints || {}).join(", "))
-          .join("; ");
+            .map((err) => Object.values(err.constraints || {}).join(", "))
+            .join("; ");
         res.status(400).json({ error: errorMessages });
         return;
       }
 
-      // Validate status is one of the allowed statuses
       const validStatuses = Object.values(ReportStatus);
       if (!validStatuses.includes(updateReportDTO.status as any)) {
-        res.status(400).json({ 
-          error: `Invalid status. Allowed values: ${validStatuses.join(", ")}` 
+        res.status(400).json({
+          error: `Invalid status. Allowed values: ${validStatuses.join(", ")}`
         });
         return;
       }
 
-      // Get user role for authorization check in service layer
       const userRole = (req as any).auth?.role;
 
       const updatedReport = await this.reportService.updateReport(
-        reportId,
-        updateReportDTO,
-        userRole
+          reportId,
+          updateReportDTO,
+          userRole
       );
-      res.status(200).json(updatedReport);
+
+      res.status(200).json({
+        message: "Report updated successfully",
+        reportId: updatedReport.id,
+        status: updatedReport.status,
+        assignedTo:
+            updatedReport.assignedTo
+                ? `${updatedReport.assignedTo.firstName} ${updatedReport.assignedTo.lastName}`
+                : null
+      });
+
     } catch (error) {
       if (error instanceof Error) {
-        // Check if it's an authorization error (PR officer restriction)
         if (error.message.includes("PR officers can only update")) {
           res.status(403).json({ error: error.message });
           return;
@@ -222,6 +229,7 @@ class InternalUserController {
       next(error);
     }
   }
+
 
   async getReportsForTechnicalOfficer(
       req: Request,
