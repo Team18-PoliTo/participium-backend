@@ -49,9 +49,9 @@
     "location": { "latitude": 45.06105642969861, "longitude": 7.658168077468873 },
     "address": "Via Gottardo, 10154 Torino",
     "categoryId": 5,
-    "status": "Assigned",
+    "status": "Delegated",
     "explanation": "No explanation required",
-    "assignedToId": 5,
+    "assignedToId": 12,
     "images": ["photo1_58aa6e56-56ac-4fa2-bee2-a9a92369f2b2.jpg"]
   },
   {
