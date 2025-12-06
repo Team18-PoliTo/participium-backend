@@ -40,7 +40,7 @@ export class InitialSeed1000000000001 implements MigrationInterface {
                     (25, 'Digital Services Technician', 1),
                     (26, 'Emergency Response Liaison', 1),
                     (27, 'Noise and Air Quality Technician', 7),
-                    (28, 'External Mantainer', NULL)`
+                    (28, 'External Maintainer', NULL)`
     );
 
     // Insert Categories (Categorie)
