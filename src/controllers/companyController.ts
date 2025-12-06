@@ -5,7 +5,7 @@ import CompanyService from "../services/implementation/companyService";
  * Controller for handling companies.
  */
 class CompanyController {
-  constructor(private companyService: CompanyService) {}
+  constructor(private readonly companyService: CompanyService) {}
 
   async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -30,7 +30,7 @@ class CompanyController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const categoryId = parseInt(req.params.categoryId, 10);
+      const categoryId = Number.parseInt(req.params.categoryId, 10);
       const companies = await this.companyService.getCompaniesByCategory(
         categoryId
       );

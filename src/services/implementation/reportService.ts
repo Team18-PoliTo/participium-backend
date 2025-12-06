@@ -370,7 +370,7 @@ class ReportService implements IReportService {
       selectedMaintainer
     );
 
-    return await ExternalMaintainerMapper.toDTO(report.assignedTo!);
+    return ExternalMaintainerMapper.toDTO(report.assignedTo);
   }
 
   async getReportsByUser(citizenId: number): Promise<ReportDTO[]> {

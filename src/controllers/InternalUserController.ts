@@ -60,7 +60,7 @@ class InternalUserController {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = Number.parseInt(req.params.id, 10);
       if (isNaN(id)) {
         res.status(400).json({ error: "Invalid ID format" });
         return;
@@ -186,7 +186,7 @@ class InternalUserController {
         return;
       }
 
-      const reportId = parseInt(req.params.id, 10);
+      const reportId = Number.parseInt(req.params.id, 10);
       if (Number.isNaN(reportId)) {
         res.status(400).json({ error: "Invalid report ID" });
         return;
@@ -253,7 +253,7 @@ class InternalUserController {
         return;
       }
 
-      const reportId = parseInt(req.params.id, 10);
+      const reportId = Number.parseInt(req.params.id, 10);
       if (Number.isNaN(reportId)) {
         res.status(400).json({ error: "Invalid report ID" });
         return;
