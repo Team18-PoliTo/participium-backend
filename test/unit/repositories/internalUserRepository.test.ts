@@ -108,7 +108,7 @@ describe("InternalUserRepository", () => {
       const result = await repo.findById(1);
       expect(typeOrmMock.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ["role"],
+        relations: ["role", "company"],
       });
       expect(result).toEqual(user);
     });
@@ -127,7 +127,7 @@ describe("InternalUserRepository", () => {
       typeOrmMock.find.mockResolvedValue(users);
 
       const result = await repo.fetchAll();
-      expect(typeOrmMock.find).toHaveBeenCalledWith({ relations: ["role"] });
+      expect(typeOrmMock.find).toHaveBeenCalledWith({ relations: ["role", "company"] });
       expect(result).toEqual(users);
     });
   });
@@ -154,7 +154,7 @@ describe("InternalUserRepository", () => {
       const result = await repo.findByRoleId(1);
       expect(typeOrmMock.find).toHaveBeenCalledWith({
         where: { role: { id: 1 } },
-        relations: ["role"],
+        relations: ["role", "company"],
       });
       expect(result).toEqual(users);
     });
@@ -165,7 +165,7 @@ describe("InternalUserRepository", () => {
       const result = await repo.findByRoleId(99);
       expect(typeOrmMock.find).toHaveBeenCalledWith({
         where: { role: { id: 99 } },
-        relations: ["role"],
+        relations: ["role", "company"],
       });
       expect(result).toEqual([]);
     });
@@ -226,7 +226,7 @@ describe('decrementActiveTasks', () => {
       const result = await repo.findByIdWithRoleAndOffice(1);
       expect(typeOrmMock.findOne).toHaveBeenCalledWith({
         where: { id: 1 },
-        relations: ["role", "role.office"],
+        relations: ["role", "role.office", "company"],
       });
       expect(result).toEqual(user);
     });
@@ -237,7 +237,7 @@ describe('decrementActiveTasks', () => {
       const result = await repo.findByIdWithRoleAndOffice(99);
       expect(typeOrmMock.findOne).toHaveBeenCalledWith({
         where: { id: 99 },
-        relations: ["role", "role.office"],
+        relations: ["role", "role.office", "company"],
       });
       expect(result).toBeNull();
     });
