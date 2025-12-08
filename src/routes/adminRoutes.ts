@@ -54,6 +54,15 @@ const internalUserController = new InternalUserController(internalUserService);
  *         status:
  *           type: string
  *           enum: [ACTIVE, SUSPENDED, DEACTIVATED]
+ *         company: 
+ *           type: object
+ *         properties:
+ *           id:
+ *             type: integer
+ *           name:
+ *             type: string
+ *           description: Company details
+ * 
  */
 
 /**
@@ -138,6 +147,9 @@ router.post("/", internalUserController.create.bind(internalUserController));
  *               newRoleId:
  *                 type: integer
  *                 description: Optional new role identifier
+ *               newCompanyId:
+ *                 type: integer
+ *                 description: Optional new company identifier, only for roles with id = 28 (external maintainer)
  *     responses:
  *       200:
  *         description: Internal user updated
