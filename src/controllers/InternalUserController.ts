@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import {
+  DelegateReportRequestDTO,
   RegisterInternalUserRequestDTO,
   UpdateInternalUserRequestDTO,
   UpdateReportRequestDTO,
@@ -18,7 +19,7 @@ interface IInternalUserService {
     data: UpdateInternalUserRequestDTO
   ): Promise<InternalUserDTO>;
   fetchUsers(): Promise<InternalUserDTO[]>;
-  disableById(id: number): Promise<'ok' | 'not_found'>;
+  disableById(id: number): Promise<"ok" | "not_found">;
 }
 
 class InternalUserController {
@@ -59,7 +60,7 @@ class InternalUserController {
 
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const id = parseInt(req.params.id, 10);
+      const id = Number.parseInt(req.params.id, 10);
       if (isNaN(id)) {
         res.status(400).json({ error: "Invalid ID format" });
         return;
@@ -96,9 +97,7 @@ class InternalUserController {
       const users = await this.internalUserService.fetchUsers();
       res.status(200).json(users);
     } catch (error) {
-      if (
-        error instanceof Error        
-      ) {
+      if (error instanceof Error) {
         res.status(400).json({ error: error.message });
         return;
       }
@@ -110,18 +109,18 @@ class InternalUserController {
     try {
       const id = Number(req.params.id);
       if (!Number.isFinite(id) || id < 0) {
-        res.status(400).json({ message: 'Invalid internal user id' });
+        res.status(400).json({ message: "Invalid internal user id" });
         return;
       }
 
       if ((req as any).auth?.sub && Number((req as any).auth.sub) === id) {
-        res.status(403).json({ message: 'You cannot delete your own account' });
+        res.status(403).json({ message: "You cannot delete your own account" });
         return;
       }
 
       const result = await this.internalUserService.disableById(id);
-      if (result === 'not_found') {
-        res.status(404).json({ message: 'Internal user not found' });
+      if (result === "not_found") {
+        res.status(404).json({ message: "Internal user not found" });
         return;
       }
 
@@ -131,7 +130,11 @@ class InternalUserController {
     }
   }
 
-  async getReports(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getReports(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       if (!this.reportService) {
         res.status(500).json({ error: "Report service not configured" });
@@ -140,10 +143,13 @@ class InternalUserController {
 
       // Get the requesting user's role
       const userRole = (req as any).auth?.role;
-      let status = (req.query.status as string);
+      let status = req.query.status as string;
 
       // If user is a PR Officer (role 10) and requests non-pending status, return empty list
-      if (userRole === "Public Relations Officer" || userRole?.includes("Public Relations Officer")) {
+      if (
+        userRole === "Public Relations Officer" ||
+        userRole?.includes("Public Relations Officer")
+      ) {
         if (status && status !== ReportStatus.PENDING_APPROVAL) {
           // PR Officers can only retrieve pending reports
           res.status(200).json([]);
@@ -156,7 +162,9 @@ class InternalUserController {
         status = status || ReportStatus.PENDING_APPROVAL;
       }
 
-      const reports: ReportDTO[] = await this.reportService.getReportsByStatus(status);
+      const reports: ReportDTO[] = await this.reportService.getReportsByStatus(
+        status
+      );
       res.status(200).json(reports);
     } catch (error) {
       if (error instanceof Error) {
@@ -167,15 +175,19 @@ class InternalUserController {
     }
   }
 
-  async updateReportStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateReportStatus(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       if (!this.reportService) {
         res.status(500).json({ error: "Report service not configured" });
         return;
       }
 
-      const reportId = parseInt(req.params.id, 10);
-      if (isNaN(reportId)) {
+      const reportId = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(reportId)) {
         res.status(400).json({ error: "Invalid report ID" });
         return;
       }
@@ -185,8 +197,8 @@ class InternalUserController {
 
       if (errors.length > 0) {
         const errorMessages = errors
-            .map((err) => Object.values(err.constraints || {}).join(", "))
-            .join("; ");
+          .map((err) => Object.values(err.constraints || {}).join(", "))
+          .join("; ");
         res.status(400).json({ error: errorMessages });
         return;
       }
@@ -194,29 +206,29 @@ class InternalUserController {
       const validStatuses = Object.values(ReportStatus);
       if (!validStatuses.includes(updateReportDTO.status as any)) {
         res.status(400).json({
-          error: `Invalid status. Allowed values: ${validStatuses.join(", ")}`
+          error: `Invalid status. Allowed values: ${validStatuses.join(", ")}`,
         });
         return;
       }
 
       const userRole = (req as any).auth?.role;
+      const userId = (req as any).auth?.sub;
 
       const updatedReport = await this.reportService.updateReport(
-          reportId,
-          updateReportDTO,
-          userRole
+        reportId,
+        updateReportDTO,
+        userId,
+        userRole
       );
 
       res.status(200).json({
         message: "Report updated successfully",
         reportId: updatedReport.id,
         status: updatedReport.status,
-        assignedTo:
-            updatedReport.assignedTo
-                ? `${updatedReport.assignedTo.firstName} ${updatedReport.assignedTo.lastName}`
-                : null
+        assignedTo: updatedReport.assignedTo
+          ? `${updatedReport.assignedTo.firstName} ${updatedReport.assignedTo.lastName}`
+          : null,
       });
-
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes("PR officers can only update")) {
@@ -230,11 +242,69 @@ class InternalUserController {
     }
   }
 
+  async delegateReport(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const reportId = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(reportId)) {
+        res.status(400).json({ error: "Invalid report ID" });
+        return;
+      }
+
+      const delegateReportDTO = plainToClass(
+        DelegateReportRequestDTO,
+        req.body
+      );
+      const errors = await validate(delegateReportDTO);
+
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((err) => Object.values(err.constraints || {}).join(", "))
+          .join("; ");
+        res.status(400).json({ error: errorMessages });
+        return;
+      }
+      const userId = (req as any).auth?.sub;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const assignedTo = await this.reportService.delegateReport(
+        reportId,
+        userId,
+        delegateReportDTO.companyId
+      );
+
+      res.status(200).json({
+        assignedTo: assignedTo.id,
+        message: `Report delegated successfully to maintainer ${assignedTo.firstName} ${assignedTo.lastName} from company ${assignedTo.company.name}`,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.message.includes("currently assigned officer")) {
+          res.status(403).json({ error: error.message });
+          return;
+        }
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
 
   async getReportsForTechnicalOfficer(
-      req: Request,
-      res: Response,
-      next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
   ): Promise<void> {
     try {
       if (!this.reportService) {
@@ -252,7 +322,6 @@ class InternalUserController {
       const reports = await this.reportService.getReportsForStaff(staffId);
 
       res.status(200).json(reports);
-
     } catch (error) {
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });
@@ -262,7 +331,11 @@ class InternalUserController {
     }
   }
 
-  async getReportsByOffice(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getReportsByOffice(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       if (!this.reportService) {
         res.status(500).json({ error: "Report service not configured" });
@@ -276,14 +349,16 @@ class InternalUserController {
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
-      if (userRole === "Public Relations Officer" || userRole?.includes("Public Relations Officer")) {
+      if (
+        userRole === "Public Relations Officer" ||
+        userRole?.includes("Public Relations Officer")
+      ) {
         res.status(403).json({ error: "PR Officers cannot filter by office" });
         return;
       }
       const reports = await this.reportService.getReportsByOffice(staffId);
 
       res.status(200).json(reports);
-
     } catch (error) {
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });

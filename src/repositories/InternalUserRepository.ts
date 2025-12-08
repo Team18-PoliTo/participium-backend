@@ -78,7 +78,7 @@ export class InternalUserRepository implements IInternalUserRepository {
     await this.repo
       .createQueryBuilder()
       .update(InternalUserDAO)
-      .set({ activeTasks: () => "GREATEST(activeTasks - 1, 0)" })
+      .set({ activeTasks: () => "MAX(activeTasks - 1, 0)" })
       .where("id = :id", { id: userId })
       .execute();
   }

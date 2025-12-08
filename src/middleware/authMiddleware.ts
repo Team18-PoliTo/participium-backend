@@ -101,6 +101,8 @@ export const requireRole = (allowedRoles: string[]) => {
 
 export const requireAdmin = requireRole(["ADMIN"]);
 
+export const requireExternalMaintainer = requireRole(["External Maintainer"]);
+
 export const requireInternalUser = (
   req: Request,
   res: Response,

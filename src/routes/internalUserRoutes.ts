@@ -104,6 +104,58 @@ router.patch("/reports/:id", internalUserController.updateReportStatus.bind(inte
 
 /**
  * @swagger
+ * /internal/reports/{id}/delegate:
+ *   patch:
+ *     summary: Delegate a report to an external company
+ *     description: Allows technical officers to delegate a report assigned to them whenever they are not able to process it. They choose a company that handles the category of the report from a list.
+ *     tags: [Internal]
+ *     security:
+ *       - internalPassword: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Report ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - companyId
+ *             properties:
+ *               companyId:
+ *                 type: integer
+ *                 example: 5
+ *                 description: ID of the external company to delegate the report to
+ *     responses:
+ *       200:
+ *         description: Delegated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 assignedTo:
+ *                   type: integer
+ *                   example: 12
+ *                 message:
+ *                   type: string
+ *                   example: "Report delegated successfully to maintainer Francesco Magetti from company Manital"
+ *       404:
+ *         description: Report not found
+ *       403:
+ *         description: Forbidden - Only the currently assigned officer can delegate this report
+ *       400:
+ *         description: Validation error
+ */
+router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind(internalUserController));
+
+/**
+ * @swagger
  * /internal/reports/assigned:
  *   get:
  *     summary: Get reports assigned to the authenticated technical staff officer

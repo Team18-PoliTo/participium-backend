@@ -15,8 +15,10 @@ import FileService from "../FileService";
 import { v4 as uuidv4 } from "uuid";
 import { IReportService } from "../IReportService";
 import { ReportStatus } from "../../constants/ReportStatus";
-import {GeocodingService} from "../GeocodingService";
+import { GeocodingService } from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
+import { ExternalMaintainerDTO } from "../../models/dto/InternalUserDTO";
+import { ExternalMaintainerMapper } from "../../mappers/InternalUserMapper";
 class ReportService implements IReportService {
   constructor(
     private reportRepository: IReportRepository = new ReportRepository(),
@@ -121,7 +123,10 @@ class ReportService implements IReportService {
       category: category,
       createdAt: new Date(),
       location: JSON.stringify(data.location),
-      address: await GeocodingService.getAddress(data.location.latitude, data.location.longitude),
+      address: await GeocodingService.getAddress(
+        data.location.latitude,
+        data.location.longitude
+      ),
       status: ReportStatus.PENDING_APPROVAL,
     });
 
@@ -199,14 +204,27 @@ class ReportService implements IReportService {
   async updateReport(
     reportId: number,
     data: UpdateReportRequestDTO,
+    userId: number,
     userRole?: string
   ): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
       throw new Error("Report not found");
     }
+    if (
+      report.status === ReportStatus.RESOLVED ||
+      report.status === ReportStatus.REJECTED
+    ) {
+      throw new Error(
+        "Cannot update a report that is already Resolved or Rejected"
+      );
+    }
 
-    // Authorization: PR Officers can only update reports in PENDING_APPROVAL status
+    /** Authorization:
+     * - ADMIN can update any report
+     * - PR Officers can only update reports with status "Pending Approval"
+     * - Technical Officers can only update reports assigned to them
+     */
     if (
       userRole === "Public Relations Officer" ||
       userRole?.includes("Public Relations Officer")
@@ -214,6 +232,18 @@ class ReportService implements IReportService {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
           `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
+        );
+      }
+    }
+
+    if (report.status !== ReportStatus.PENDING_APPROVAL) {
+      const user = await this.internalUserRepository.findById(userId);
+      if (!user) {
+        throw new Error("Internal user not found");
+      }
+      if (!report.assignedTo || report.assignedTo.id !== user.id) {
+        throw new Error(
+          "Only the currently assigned officer can update this report to the selected status"
         );
       }
     }
@@ -286,13 +316,18 @@ class ReportService implements IReportService {
 
   async delegateReport(
     reportId: number,
+    userId: number,
     companyId: number
-  ): Promise<ReportDTO> {
+  ): Promise<ExternalMaintainerDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
       throw new Error("Report not found");
     }
-
+    if (report.assignedTo?.id !== userId) {
+      throw new Error(
+        "Only the currently assigned officer can delegate this report"
+      );
+    }
     if (
       report.status !== ReportStatus.ASSIGNED &&
       report.status !== ReportStatus.IN_PROGRESS &&
@@ -335,7 +370,7 @@ class ReportService implements IReportService {
       selectedMaintainer
     );
 
-    return await ReportMapper.toDTO(updatedReport);
+    return ExternalMaintainerMapper.toDTO(report.assignedTo);
   }
 
   async getReportsByUser(citizenId: number): Promise<ReportDTO[]> {

@@ -17,6 +17,7 @@ import { swaggerSpec } from './config/swagger';
 import reportRoutes from './routes/reportRoutes';
 import categoryRoutes from "./routes/categoryRoutes";
 import fileRoutes from "./routes/fileRoutes";
+import companyRoutes from "./routes/companyRoutes";
 
 const app = express();
 
@@ -45,6 +46,9 @@ app.use('/api/citizens', requireAuth, requireCitizen, reportRoutes);
 // Categories
 app.use('/api/categories', categoryRoutes);
 
+// Companies
+app.use('/api/companies', requireAuth, requireInternalUser, companyRoutes);
+
 // File upload/management routes (authenticated users)
 app.use('/api/files', requireAuth, fileRoutes);
 
@@ -54,6 +58,8 @@ app.use('/api/internal', requireAuth, requireInternalUser, internalUserRoutes);
 // Protected admin-only routes (admin user management and roles)
 app.use('/api/admin/internal-users', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/admin/roles', requireAuth, requireAdmin, roleRoutes);
+
+
 
 export default app;
 

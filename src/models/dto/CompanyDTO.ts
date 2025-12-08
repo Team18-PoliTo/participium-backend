@@ -1,4 +1,4 @@
-import { ExternalMantainerDTO } from "./InternalUserDTO";
+import { ExternalMaintainerDTO } from "./InternalUserDTO";
 import { CategoryDTO } from "./ReportDTO";
 
 export class CompanyDTO {
@@ -7,5 +7,5 @@ export class CompanyDTO {
     contactEmail: string | null;
     description: string | null;
     categories?: CategoryDTO[];
-    employees?: ExternalMantainerDTO[];
+    employees?: ExternalMaintainerDTO[];
   }
