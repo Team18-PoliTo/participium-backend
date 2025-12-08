@@ -72,6 +72,10 @@ describe("InternalUserRepository", () => {
         "internalUser.role",
         "role"
       );
+      expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
+        "internalUser.company", 
+        "company"
+      );
       expect(qb.where).toHaveBeenCalledWith(
         "LOWER(internalUser.email) = LOWER(:email)",
         { email: "ab.com" }
@@ -172,47 +176,46 @@ describe("InternalUserRepository", () => {
   });
 
   describe('incrementActiveTasks', () => {
-  it('should increment activeTasks for the specified user ID', async () => {
-    const qb = {
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      execute: jest.fn().mockResolvedValue(undefined),
-    };
+    it('should increment activeTasks for the specified user ID', async () => {
+      const qb = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(undefined),
+      };
 
-    typeOrmMock.createQueryBuilder.mockReturnValue(qb as any);
+      typeOrmMock.createQueryBuilder.mockReturnValue(qb as any);
 
-    await repo.incrementActiveTasks(1);
+      await repo.incrementActiveTasks(1);
 
-    expect(typeOrmMock.createQueryBuilder).toHaveBeenCalled();
-    expect(qb.update).toHaveBeenCalledWith(InternalUserDAO);
-    expect(qb.set).toHaveBeenCalledWith({ activeTasks: expect.any(Function) });
-    expect(qb.where).toHaveBeenCalledWith('id = :id', { id: 1 });
-    expect(qb.execute).toHaveBeenCalled();
+      expect(typeOrmMock.createQueryBuilder).toHaveBeenCalled();
+      expect(qb.update).toHaveBeenCalledWith(InternalUserDAO);
+      expect(qb.set).toHaveBeenCalledWith({ activeTasks: expect.any(Function) });
+      expect(qb.where).toHaveBeenCalledWith('id = :id', { id: 1 });
+      expect(qb.execute).toHaveBeenCalled();
+    });
   });
-});
 
-describe('decrementActiveTasks', () => {
-  it('should decrement activeTasks for the specified user ID, ensuring it does not go below 0', async () => {
-    const qb = {
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      execute: jest.fn().mockResolvedValue(undefined),
-    };
+  describe('decrementActiveTasks', () => {
+    it('should decrement activeTasks for the specified user ID, ensuring it does not go below 0', async () => {
+      const qb = {
+        update: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(undefined),
+      };
 
-    typeOrmMock.createQueryBuilder.mockReturnValue(qb as any);
+      typeOrmMock.createQueryBuilder.mockReturnValue(qb as any);
 
-    await repo.decrementActiveTasks(1);
+      await repo.decrementActiveTasks(1);
 
-    expect(typeOrmMock.createQueryBuilder).toHaveBeenCalled();
-    expect(qb.update).toHaveBeenCalledWith(InternalUserDAO);
-    expect(qb.set).toHaveBeenCalledWith({ activeTasks: expect.any(Function) });
-    expect(qb.where).toHaveBeenCalledWith('id = :id', { id: 1 });
-    expect(qb.execute).toHaveBeenCalled();
+      expect(typeOrmMock.createQueryBuilder).toHaveBeenCalled();
+      expect(qb.update).toHaveBeenCalledWith(InternalUserDAO);
+      expect(qb.set).toHaveBeenCalledWith({ activeTasks: expect.any(Function) });
+      expect(qb.where).toHaveBeenCalledWith('id = :id', { id: 1 });
+      expect(qb.execute).toHaveBeenCalled();
+    });
   });
-});
-
 
   describe("findByIdWithRoleAndOffice", () => {
     it("should return user with role and office populated if ID exists", async () => {
@@ -240,6 +243,30 @@ describe('decrementActiveTasks', () => {
         relations: ["role", "role.office", "company"],
       });
       expect(result).toBeNull();
+    });
+  });
+
+  describe("findExternalMaintainersByCompany", () => {
+    it("should return maintainers for a specific company ordered by active tasks", async () => {
+      const companyId = 5;
+      const maintainers = [
+        { id: 1, activeTasks: 0, role: { id: 28 }, company: { id: 5 } },
+        { id: 2, activeTasks: 2, role: { id: 28 }, company: { id: 5 } },
+      ] as InternalUserDAO[];
+
+      typeOrmMock.find.mockResolvedValue(maintainers);
+
+      const result = await repo.findExternalMaintainersByCompany(companyId);
+
+      expect(typeOrmMock.find).toHaveBeenCalledWith({
+        where: {
+          role: { id: 28 },
+          company: { id: companyId },
+        },
+        relations: ["role", "company"],
+        order: { activeTasks: "ASC" },
+      });
+      expect(result).toEqual(maintainers);
     });
   });
 });

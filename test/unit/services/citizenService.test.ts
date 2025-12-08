@@ -1,5 +1,4 @@
 // test/unit/services/citizenService.test.ts
-// --- Mock bcrypt and jwt BEFORE importing the service ---
 jest.mock('bcrypt', () => ({
     __esModule: true,
     hash: jest.fn(async () => 'hashed-pass'),
@@ -15,7 +14,6 @@ jest.mock('jsonwebtoken', () => {
     return { __esModule: true, default: { sign }, sign };
 });
 
-// Mock MinIoService
 jest.mock('../../../src/services/MinIoService', () => ({
     __esModule: true,
     default: {
@@ -29,7 +27,6 @@ import jwt from 'jsonwebtoken';
 import MinIoService from '../../../src/services/MinIoService';
 import { LoginRequestDTO } from '../../../src/models/dto/LoginRequestDTO';
 
-// Mock CitizenMapper (named export) - now async
 jest.mock('../../../src/mappers/CitizenMapper', () => ({
     CitizenMapper: {
         toDTO: jest.fn(async (u: any) => ({
@@ -88,7 +85,6 @@ describe('CitizenService — complete tests', () => {
         loadService();
     });
 
-    // ---------- REGISTER TESTS ----------
     describe('register', () => {
         it('register: fails when email already exists', async () => {
             repo.findByEmail.mockResolvedValueOnce(citizenBase);
@@ -157,7 +153,6 @@ describe('CitizenService — complete tests', () => {
         });
     });
 
-    // ---------- LOGIN TESTS ----------
     describe('login', () => {
         it('login: success — returns token and DTO, resets failed attempts', async () => {
             repo.findByEmail.mockResolvedValueOnce({
@@ -260,7 +255,6 @@ describe('CitizenService — complete tests', () => {
         });
     });
 
-    // ---------- UPDATE CITIZEN TESTS ----------
     describe('updateCitizen', () => {
         it('should throw when citizen not found', async () => {
             repo.findById.mockResolvedValueOnce(null);
@@ -388,7 +382,6 @@ describe('CitizenService — complete tests', () => {
         });
 
         it('should update accountPhotoUrl given a photo path, deleting old one', async () => {
-            // Setup citizen with an existing photo
             const oldPhotoPath = 'photos/old.jpg';
             const newPhotoPath = 'temp/new.jpg';
             
@@ -560,4 +553,5 @@ describe('CitizenService — complete tests', () => {
             expect(result.accountPhoto).toBeUndefined();
         });
     });
+
 });
