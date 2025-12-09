@@ -133,8 +133,8 @@ class MinIoService {
       // If we get a connection error, it means external endpoint is not reachable from Docker
       // In that case, we might need to make it reachable or use a different approach
       console.warn(
-        `[MinIO] Could not generate presigned URL for ${objectKey} in bucket ${bucket}:`,
-        error && error.message ? error.message : error
+          `[MinIO] Could not generate presigned URL for ${objectKey} in bucket ${bucket}:`,
+          error?.message ?? error
       );
       // return empty string as fallback so callers can filter falsy values
       return "";

@@ -414,8 +414,6 @@ describe("Internal User Management E2E Tests", () => {
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
-
-      reportId = newReport.id;
     });
 
     it("PR Officer should ONLY see pending reports", async () => {

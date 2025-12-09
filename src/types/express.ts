@@ -9,5 +9,4 @@ declare global {
     }
 }
 
-export {};
-
+export type __express_request_auth_patch = unknown;

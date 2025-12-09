@@ -24,8 +24,8 @@ interface IInternalUserService {
 
 class InternalUserController {
   constructor(
-    private internalUserService: IInternalUserService,
-    private reportService?: IReportService
+    private readonly internalUserService: IInternalUserService,
+    private readonly reportService?: IReportService
   ) {}
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -61,7 +61,8 @@ class InternalUserController {
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = Number.parseInt(req.params.id, 10);
-      if (isNaN(id)) {
+
+      if (Number.isNaN(id)) {
         res.status(400).json({ error: "Invalid ID format" });
         return;
       }

@@ -13,7 +13,7 @@ import {PROFILE_BUCKET} from "../../config/minioClient";
 class CitizenService implements ICitizenService {
   static updateCitizen: any;
   constructor(
-    private citizenRepository: ICitizenRepository = new CitizenRepository()
+    private readonly citizenRepository: ICitizenRepository = new CitizenRepository()
   ) {}
 
   async register(
@@ -109,8 +109,11 @@ class CitizenService implements ICitizenService {
     const citizen = await this.citizenRepository.findById(id);
     if (!citizen) throw new Error("Citizen not found");
 
-    const normalize = (v: any) =>
-        v === undefined ? undefined : (v === "" || v === "null" || v === null ? null : v);
+    const normalize = (v: any) => {
+      if (v === undefined) return undefined;
+      if (v === "" || v === "null" || v === null) return null;
+      return v;
+    };
 
     const assignNormalized = (key: string, val: any, transform?: (v: any) => any) => {
       if (val === undefined) return;
@@ -138,9 +141,10 @@ class CitizenService implements ICitizenService {
     assignNormalized("lastName", data.lastName);
     assignNormalized("telegramUsername", data.telegramUsername);
 
-    if (data.emailNotificationsEnabled !== undefined) {
+    if (data.emailNotificationsEnabled != null) {
       updatePayload.emailNotificationsEnabled = data.emailNotificationsEnabled;
     }
+
 
     // PHOTO SECTION (reduced complexity)
     if (data.photoPath !== undefined) {

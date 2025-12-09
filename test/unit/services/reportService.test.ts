@@ -73,14 +73,13 @@ describe("ReportService", () => {
     };
   };
 
-  let uploadSpy: jest.SpyInstance;
   let validateTempFilesSpy: jest.SpyInstance;
   let moveMultipleToPermanentSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    uploadSpy = jest
+   jest
       .spyOn(MinIoService, "uploadFile")
       .mockResolvedValue(undefined as any);
     (uuidv4 as jest.Mock).mockImplementation(() => "uuid");

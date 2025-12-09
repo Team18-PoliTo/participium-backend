@@ -11,10 +11,10 @@ import { InternalUserMapper } from "../mappers/InternalUserMapper";
 
 class AuthController {
   constructor(
-    private citizenService: ICitizenService,
-    private internalUserService: InternalUserService,
-    private citizenRepository: CitizenRepository = new CitizenRepository(),
-    private internalRepository: InternalUserRepository = new InternalUserRepository()
+    private readonly citizenService: ICitizenService,
+    private readonly internalUserService: InternalUserService,
+    private readonly citizenRepository: CitizenRepository = new CitizenRepository(),
+    private readonly internalRepository: InternalUserRepository = new InternalUserRepository()
   ) {}
 
   async loginCitizen(

@@ -5,7 +5,7 @@ import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
 
 class CitizenController {
-  constructor(private citizenService: ICitizenService) {}
+  constructor(private readonly citizenService: ICitizenService) {}
 
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

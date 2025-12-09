@@ -52,5 +52,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 # 1. synchronize() - creates all tables from entities
 # 2. runMigrations() - runs seed data migrations
 # This ensures tables exist before migrations try to insert data
-CMD npm start
+CMD ["npm", "start"]
+
 

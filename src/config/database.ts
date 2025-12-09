@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import path from "path";
-import { readdirSync } from "fs";
+import path from "node:path";
 
+import { readdirSync } from "node:fs";
 // this is needed, otherwise TypeORM can't find the entities
 const ENTITIES_PATH = path.resolve(__dirname, "../models/dao");
 
