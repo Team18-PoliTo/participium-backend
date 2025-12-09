@@ -8,29 +8,18 @@ import CategoryDAO from '../../models/dao/CategoryDAO';
 import InternalUserDAO from '../../models/dao/InternalUserDAO';
 import MinIoService from '../../services/MinIoService';
 import { MINIO_BUCKET } from '../../config/minioClient';
-
-interface SeedReport {
-  title: string;
-  description: string;
-  location: { latitude: number; longitude: number };
-  address: string | null;
-  categoryId: number;
-  status: string;
-  explanation: string | null;
-  assignedToId: number | null;
-  images: string[];
-}
+import {SeedReport} from "./seedReport";
 
 /**
  * Seeds the database with sample reports and uploads images to MinIO.
  * This function should be called after MinIO is initialized and the database is ready.
- * 
+ *
  * @param dataSource - The TypeORM DataSource instance
  * @param forceSeed - If true, will seed even if reports already exist
  */
 export async function seedReports(dataSource: DataSource, forceSeed: boolean = false): Promise<void> {
   const reportRepo = dataSource.getRepository(ReportDAO);
-  
+
   // Check if reports already exist
   const existingCount = await reportRepo.count();
   if (existingCount > 0 && !forceSeed) {
@@ -46,12 +35,12 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
 
   // Load seed data
   let seedDataPath = path.join(__dirname, 'seed-reports.json');
-  
+
   // Handle both src and dist paths
   if (!fs.existsSync(seedDataPath) && __dirname.includes('/dist/')) {
     seedDataPath = path.join(__dirname, '../../../../src/data/seed/seed-reports.json');
   }
-  
+
   if (!fs.existsSync(seedDataPath)) {
     console.error(`[Seed] Seed data file not found at: ${seedDataPath}`);
     return;
@@ -77,12 +66,12 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
   if (!fs.existsSync(imagesDir) && __dirname.includes('/dist/')) {
     imagesDir = path.join(__dirname, '../../../../src/data/seed/images');
   }
-  
+
   if (!fs.existsSync(imagesDir)) {
     console.error(`[Seed] Images directory not found at: ${imagesDir}`);
     return;
   }
-  
+
   console.log('[Seed] Looking for images in:', imagesDir);
 
   let successCount = 0;
@@ -129,7 +118,7 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
 
       // Upload images
       const imageFolder = path.join(imagesDir, String(folderIndex));
-      
+
       if (!fs.existsSync(imageFolder)) {
         console.warn(`[Seed] Image folder not found: ${imageFolder}`);
         successCount++;
@@ -151,14 +140,14 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
           const imageBuffer = fs.readFileSync(imagePath);
           const ext = path.extname(imageName).toLowerCase();
           const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
-          
+
           // Generate MinIO path matching the app's pattern
           const minioPath = `reports/${savedReport.id}/photo${imgIdx + 1}_${uuidv4()}${ext}`;
-          
+
           // Upload to MinIO
           await MinIoService.uploadFile(MINIO_BUCKET, minioPath, imageBuffer, mimeType);
           uploadedPaths.push(minioPath);
-          
+
           console.log(`[Seed] Uploaded: ${imageName} -> ${minioPath}`);
         } catch (uploadError) {
           console.error(`[Seed] Failed to upload ${imageName}:`, uploadError);
@@ -169,7 +158,7 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
       if (uploadedPaths[0]) savedReport.photo1 = uploadedPaths[0];
       if (uploadedPaths[1]) savedReport.photo2 = uploadedPaths[1];
       if (uploadedPaths[2]) savedReport.photo3 = uploadedPaths[2];
-      
+
       await reportRepo.save(savedReport);
       console.log(`[Seed] Created report ${savedReport.id}: ${savedReport.title} (${uploadedPaths.length} images)`);
       successCount++;

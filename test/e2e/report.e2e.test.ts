@@ -115,10 +115,10 @@ describe("Report E2E Tests", () => {
   });
 
   afterAll(async () => {
-    if (AppDataSource && AppDataSource.isInitialized) {
-      await AppDataSource.destroy();
-    }
-    jest.clearAllMocks();
+      if (AppDataSource?.isInitialized) {
+          await AppDataSource.destroy();
+      }
+      jest.clearAllMocks();
   });
 
   it("should create a report with 3 photos", async () => {
