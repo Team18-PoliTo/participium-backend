@@ -144,8 +144,6 @@ describe("Authentication E2E Tests", () => {
 
   describe("Logout", () => {
     it("should logout successfully", async () => {
-        let accessToken: string;
-
         const loginRes = await request(app)
         .post("/api/auth/citizens/login") 
         .send({
@@ -154,7 +152,7 @@ describe("Authentication E2E Tests", () => {
         });
 
         expect(loginRes.status).toBe(200);
-        accessToken = loginRes.body.access_token || loginRes.body.token;
+        const accessToken = loginRes.body.access_token || loginRes.body.token;
         expect(accessToken).toBeDefined();
         const res = await request(app)
         .post("/api/auth/logout")

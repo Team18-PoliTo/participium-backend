@@ -74,7 +74,7 @@ describe("MinIO E2E Tests (Mocked)", () => {
         await minioClient.putObject(MINIO_BUCKET, objectName, buffer);
 
         const stream = await minioClient.getObject(MINIO_BUCKET, objectName);
-        let downloaded = "";
+        const downloaded = "";
 
         expect(minioClient.putObject).toHaveBeenCalledWith(MINIO_BUCKET, objectName, buffer);
         expect(minioClient.getObject).toHaveBeenCalledWith(MINIO_BUCKET, objectName);

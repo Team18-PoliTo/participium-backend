@@ -176,7 +176,7 @@ class ReportService implements IReportService {
   }
 
   async getAssignedReportsInMap(
-    corners: Object[]
+    corners: object[]
   ): Promise<Partial<ReportDTO>[]> {
     const reports = await this.reportRepository.findAllApproved();
     const [corner1, corner2] = corners as {
