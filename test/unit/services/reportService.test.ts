@@ -301,13 +301,6 @@ describe("ReportService", () => {
       company: null 
     };
     
-    // Mock technical staff user
-    const techStaffUser = { 
-      id: 50, 
-      role: { id: 5, name: "Road Officer" },
-      company: null 
-    };
-
     it("should update and return the updated report", async () => {
       const { service, reportRepository, internalUserRepository } = buildService();
       const updatedReport = {
