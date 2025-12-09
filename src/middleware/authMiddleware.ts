@@ -55,7 +55,6 @@ export const requireAuth = (
   }
 };
 
-
 /**
  * requireRole:
  * - Checks if the user has one of the allowed roles.

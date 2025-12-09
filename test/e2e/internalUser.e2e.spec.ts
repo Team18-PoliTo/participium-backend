@@ -13,7 +13,6 @@ import CitizenDAO from "../../src/models/dao/CitizenDAO";
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-
 describe("Internal User Management E2E Tests", () => {
   let adminToken: string;
   let adminId: number;
@@ -48,7 +47,10 @@ describe("Internal User Management E2E Tests", () => {
       throw new Error("Admin role not found");
     }
 
-    const existingAdmin = await userRepo.findOne({ where: { email: "admin@admin.com" }, relations: ["role"] });
+    const existingAdmin = await userRepo.findOne({
+      where: { email: "admin@admin.com" },
+      relations: ["role"],
+    });
     if (!existingAdmin) {
       const adminUser = userRepo.create({
         firstName: "AdminFirstName",
@@ -64,7 +66,10 @@ describe("Internal User Management E2E Tests", () => {
       adminId = existingAdmin.id;
     }
 
-    const adminUser = await userRepo.findOne({ where: { id: adminId }, relations: ["role"] });
+    const adminUser = await userRepo.findOne({
+      where: { id: adminId },
+      relations: ["role"],
+    });
     if (!adminUser) {
       throw new Error("Admin user not found after creation");
     }
@@ -106,10 +111,10 @@ describe("Internal User Management E2E Tests", () => {
     it("should create new internal user with valid data", async () => {
       const userData = {
         firstName: "Test",
-        lastName: "User", 
+        lastName: "User",
         email: "testuser@example.com",
         password: "password123",
-        roleId: proRoleId
+        roleId: proRoleId,
       };
 
       const res = await request(app)
@@ -128,9 +133,9 @@ describe("Internal User Management E2E Tests", () => {
       const userData = {
         firstName: "Test",
         lastName: "User",
-        email: "admin@admin.com", 
-        password: "password123", 
-        roleId: proRoleId
+        email: "admin@admin.com",
+        password: "password123",
+        roleId: proRoleId,
       };
 
       const res = await request(app)
@@ -139,7 +144,10 @@ describe("Internal User Management E2E Tests", () => {
         .send(userData);
 
       expect(res.status).toBe(409);
-      expect(res.body).toHaveProperty("error", "InternalUser with this email already exists");
+      expect(res.body).toHaveProperty(
+        "error",
+        "InternalUser with this email already exists"
+      );
     });
 
     it("should validate required fields", async () => {
@@ -186,7 +194,7 @@ describe("Internal User Management E2E Tests", () => {
         newFirstName: "Updated",
         newLastName: "Name",
         newEmail: "updated@example.com",
-        newRoleId: proRoleId
+        newRoleId: proRoleId,
       };
 
       const res = await request(app)
@@ -200,7 +208,6 @@ describe("Internal User Management E2E Tests", () => {
       expect(res.body.email).toBe("updated@example.com");
       expect(res.body.role).toBe("Municipal Administrator");
     });
-
 
     it("should reject invalid user ID", async () => {
       const res = await request(app)
@@ -255,7 +262,7 @@ describe("Internal User Management E2E Tests", () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      
+
       // Should at least have the admin user
       expect(res.body.length).toBeGreaterThan(0);
       expect(res.body[0]).toHaveProperty("email");
@@ -271,7 +278,7 @@ describe("Internal User Management E2E Tests", () => {
       const userRepo = AppDataSource.getRepository(InternalUserDAO);
       const roleRepo = AppDataSource.getRepository(RoleDAO);
       const proRole = await roleRepo.findOne({ where: { id: proRoleId } });
-      
+
       if (!proRole) {
         throw new Error("PRO role not found");
       }
@@ -296,9 +303,9 @@ describe("Internal User Management E2E Tests", () => {
       expect(res.status).toBe(204);
 
       const userRepo = AppDataSource.getRepository(InternalUserDAO);
-      const disabledUser = await userRepo.findOne({ 
+      const disabledUser = await userRepo.findOne({
         where: { id: testUserId },
-        relations: ["role"]
+        relations: ["role"],
       });
       expect(disabledUser?.status).toBe("DEACTIVATED");
     });
@@ -309,7 +316,10 @@ describe("Internal User Management E2E Tests", () => {
         .set("Authorization", `Bearer ${adminToken}`);
 
       expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty("message", "You cannot delete your own account");
+      expect(res.body).toHaveProperty(
+        "message",
+        "You cannot delete your own account"
+      );
     });
 
     it("should handle non-existent user", async () => {
@@ -343,8 +353,12 @@ describe("Internal User Management E2E Tests", () => {
       const citizenRepo = AppDataSource.getRepository(CitizenDAO);
       const reportRepo = AppDataSource.getRepository(ReportDAO);
 
-      const prRole = await roleRepo.findOne({ where: { role: "Municipal Public Relations Officer" } });
-      const techRole = await roleRepo.findOne({ where: { role: "Technical Office Staff" } });
+      const prRole = await roleRepo.findOne({
+        where: { role: "Municipal Public Relations Officer" },
+      });
+      const techRole = await roleRepo.findOne({
+        where: { role: "Technical Office Staff" },
+      });
       if (!prRole || !techRole) throw new Error("Required roles missing");
 
       const prUser = await userRepo.save({
@@ -410,7 +424,7 @@ describe("Internal User Management E2E Tests", () => {
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
-        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }), 
+        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }),
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
@@ -423,7 +437,6 @@ describe("Internal User Management E2E Tests", () => {
         .get("/api/internal/reports")
         .set("Authorization", `Bearer ${prToken}`);
 
-      
       if (res.status === 400) {
         console.log("Skipping due to JSON serialization issue");
         return;
@@ -444,7 +457,7 @@ describe("Internal User Management E2E Tests", () => {
 
       if (res.status === 400) {
         console.log("Skipping due to JSON serialization issue");
-        return; 
+        return;
       }
 
       expect(res.status).toBe(200);
@@ -474,8 +487,12 @@ describe("Internal User Management E2E Tests", () => {
       const citizenRepo = AppDataSource.getRepository(CitizenDAO);
       const reportRepo = AppDataSource.getRepository(ReportDAO);
 
-      const prRole = await roleRepo.findOne({ where: { role: "Municipal Public Relations Officer" } });
-      const techRole = await roleRepo.findOne({ where: { role: "Technical Office Staff" } });
+      const prRole = await roleRepo.findOne({
+        where: { role: "Municipal Public Relations Officer" },
+      });
+      const techRole = await roleRepo.findOne({
+        where: { role: "Technical Office Staff" },
+      });
       if (!prRole || !techRole) throw new Error("Required roles missing");
 
       const prUser = await userRepo.save({
@@ -539,7 +556,7 @@ describe("Internal User Management E2E Tests", () => {
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
-        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }), 
+        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }),
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
@@ -551,25 +568,27 @@ describe("Internal User Management E2E Tests", () => {
       // First, the report must be ASSIGNED (not PENDING_APPROVAL) for tech staff to update
       const reportRepo = AppDataSource.getRepository(ReportDAO);
       const internalUserRepo = AppDataSource.getRepository(InternalUserDAO);
-      
+
       // Assign the report to the tech staff user (created with email "tech2@example.com" in beforeAll)
-      const techUser = await internalUserRepo.findOne({ where: { email: "tech2@example.com" }});
-      await reportRepo.update(reportId, { 
+      const techUser = await internalUserRepo.findOne({
+        where: { email: "tech2@example.com" },
+      });
+      await reportRepo.update(reportId, {
         status: ReportStatus.ASSIGNED,
-        assignedTo: techUser 
+        assignedTo: techUser,
       });
 
       const res = await request(app)
         .patch(`/api/internal/reports/${reportId}`)
         .set("Authorization", `Bearer ${techToken}`)
-        .send({ 
+        .send({
           status: ReportStatus.IN_PROGRESS,
-          explanation: "Starting work on this report" 
+          explanation: "Starting work on this report",
         });
 
-      if (res.status === 400 && res.body.error?.includes('JSON')) {
+      if (res.status === 400 && res.body.error?.includes("JSON")) {
         console.log("Skipping due to JSON serialization issue in response");
-        return; 
+        return;
       }
 
       expect(res.status).toBe(200);
@@ -584,9 +603,9 @@ describe("Internal User Management E2E Tests", () => {
       const res = await request(app)
         .patch(`/api/internal/reports/${reportId}`)
         .set("Authorization", `Bearer ${prToken}`)
-        .send({ 
+        .send({
           status: ReportStatus.RESOLVED,
-          explanation: "Trying to resolve" 
+          explanation: "Trying to resolve",
         });
 
       // Status transition validation returns 400 - PR officer is not assigned to this report
@@ -596,20 +615,22 @@ describe("Internal User Management E2E Tests", () => {
 
     it("PR Officer should be able to approve pending reports", async () => {
       const reportRepo = AppDataSource.getRepository(ReportDAO);
-      await reportRepo.update(reportId, { status: ReportStatus.PENDING_APPROVAL });
+      await reportRepo.update(reportId, {
+        status: ReportStatus.PENDING_APPROVAL,
+      });
 
       // PR Officers can transition PENDING_APPROVAL -> ASSIGNED (approve) or -> REJECTED
       const res = await request(app)
         .patch(`/api/internal/reports/${reportId}`)
         .set("Authorization", `Bearer ${prToken}`)
-        .send({ 
-          status: ReportStatus.REJECTED,  // Changed to valid transition for PR Officer
-          explanation: "Rejecting this report - duplicate" 
+        .send({
+          status: ReportStatus.REJECTED, // Changed to valid transition for PR Officer
+          explanation: "Rejecting this report - duplicate",
         });
 
-      if (res.status === 400 && res.body.error?.includes('JSON')) {
+      if (res.status === 400 && res.body.error?.includes("JSON")) {
         console.log("Skipping due to JSON serialization issue in response");
-        return; 
+        return;
       }
 
       expect(res.status).toBe(200);
@@ -620,9 +641,9 @@ describe("Internal User Management E2E Tests", () => {
       const res = await request(app)
         .patch(`/api/internal/reports/${reportId}`)
         .set("Authorization", `Bearer ${techToken}`)
-        .send({ 
+        .send({
           status: "INVALID_STATUS",
-          explanation: "Some explanation" 
+          explanation: "Some explanation",
         });
 
       expect(res.status).toBe(400);
@@ -633,9 +654,9 @@ describe("Internal User Management E2E Tests", () => {
       const res = await request(app)
         .patch("/api/internal/reports/abc")
         .set("Authorization", `Bearer ${techToken}`)
-        .send({ 
+        .send({
           status: ReportStatus.IN_PROGRESS,
-          explanation: "Test explanation" 
+          explanation: "Test explanation",
         });
 
       expect(res.status).toBe(400);
@@ -646,8 +667,8 @@ describe("Internal User Management E2E Tests", () => {
       const res = await request(app)
         .patch(`/api/internal/reports/${reportId}`)
         .set("Authorization", `Bearer ${techToken}`)
-        .send({ 
-          status: ReportStatus.IN_PROGRESS
+        .send({
+          status: ReportStatus.IN_PROGRESS,
         });
 
       expect(res.status).toBe(400);
@@ -658,8 +679,8 @@ describe("Internal User Management E2E Tests", () => {
       const res = await request(app)
         .patch(`/api/internal/reports/${reportId}`)
         .set("Authorization", `Bearer ${techToken}`)
-        .send({ 
-          explanation: "Some explanation"
+        .send({
+          explanation: "Some explanation",
         });
 
       expect(res.status).toBe(400);

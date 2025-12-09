@@ -73,7 +73,7 @@ describe("InternalUserRepository", () => {
         "role"
       );
       expect(qb.leftJoinAndSelect).toHaveBeenCalledWith(
-        "internalUser.company", 
+        "internalUser.company",
         "company"
       );
       expect(qb.where).toHaveBeenCalledWith(
@@ -131,7 +131,9 @@ describe("InternalUserRepository", () => {
       typeOrmMock.find.mockResolvedValue(users);
 
       const result = await repo.fetchAll();
-      expect(typeOrmMock.find).toHaveBeenCalledWith({ relations: ["role", "company"] });
+      expect(typeOrmMock.find).toHaveBeenCalledWith({
+        relations: ["role", "company"],
+      });
       expect(result).toEqual(users);
     });
   });
@@ -175,8 +177,8 @@ describe("InternalUserRepository", () => {
     });
   });
 
-  describe('incrementActiveTasks', () => {
-    it('should increment activeTasks for the specified user ID', async () => {
+  describe("incrementActiveTasks", () => {
+    it("should increment activeTasks for the specified user ID", async () => {
       const qb = {
         update: jest.fn().mockReturnThis(),
         set: jest.fn().mockReturnThis(),
@@ -190,14 +192,16 @@ describe("InternalUserRepository", () => {
 
       expect(typeOrmMock.createQueryBuilder).toHaveBeenCalled();
       expect(qb.update).toHaveBeenCalledWith(InternalUserDAO);
-      expect(qb.set).toHaveBeenCalledWith({ activeTasks: expect.any(Function) });
-      expect(qb.where).toHaveBeenCalledWith('id = :id', { id: 1 });
+      expect(qb.set).toHaveBeenCalledWith({
+        activeTasks: expect.any(Function),
+      });
+      expect(qb.where).toHaveBeenCalledWith("id = :id", { id: 1 });
       expect(qb.execute).toHaveBeenCalled();
     });
   });
 
-  describe('decrementActiveTasks', () => {
-    it('should decrement activeTasks for the specified user ID, ensuring it does not go below 0', async () => {
+  describe("decrementActiveTasks", () => {
+    it("should decrement activeTasks for the specified user ID, ensuring it does not go below 0", async () => {
       const qb = {
         update: jest.fn().mockReturnThis(),
         set: jest.fn().mockReturnThis(),
@@ -211,8 +215,10 @@ describe("InternalUserRepository", () => {
 
       expect(typeOrmMock.createQueryBuilder).toHaveBeenCalled();
       expect(qb.update).toHaveBeenCalledWith(InternalUserDAO);
-      expect(qb.set).toHaveBeenCalledWith({ activeTasks: expect.any(Function) });
-      expect(qb.where).toHaveBeenCalledWith('id = :id', { id: 1 });
+      expect(qb.set).toHaveBeenCalledWith({
+        activeTasks: expect.any(Function),
+      });
+      expect(qb.where).toHaveBeenCalledWith("id = :id", { id: 1 });
       expect(qb.execute).toHaveBeenCalled();
     });
   });

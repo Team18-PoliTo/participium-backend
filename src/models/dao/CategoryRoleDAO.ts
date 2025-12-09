@@ -23,4 +23,3 @@ class CategoryRoleDAO {
 }
 
 export default CategoryRoleDAO;
-

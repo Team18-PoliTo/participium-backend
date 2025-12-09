@@ -39,9 +39,8 @@ class ReportService implements IReportService {
    * If multiple officers have the same minimum number of active tasks, one is selected randomly.
    */
   private async selectUnoccupiedOfficerByRole(roleId: number) {
-    const officersWithRole = await this.internalUserRepository.findByRoleId(
-      roleId
-    );
+    const officersWithRole =
+      await this.internalUserRepository.findByRoleId(roleId);
     if (officersWithRole.length === 0) {
       throw new Error(`No officers found with role ID ${roleId}`);
     }
@@ -390,9 +389,8 @@ class ReportService implements IReportService {
       );
     }
     // selects the external maintainer, already increments their active tasks
-    const selectedMaintainer = await this.selectUnoccupiedMaintainerByCompany(
-      companyId
-    );
+    const selectedMaintainer =
+      await this.selectUnoccupiedMaintainerByCompany(companyId);
 
     await this.internalUserRepository.decrementActiveTasks(
       report.assignedTo!.id
@@ -419,7 +417,10 @@ class ReportService implements IReportService {
     );
   }
 
-  async getReportsForStaff(staffId: number, statusFilter?: string): Promise<ReportDTO[]> {
+  async getReportsForStaff(
+    staffId: number,
+    statusFilter?: string
+  ): Promise<ReportDTO[]> {
     let reports = await this.reportRepository.findByAssignedStaff(staffId);
 
     // Apply optional status filter
@@ -433,9 +434,8 @@ class ReportService implements IReportService {
   }
 
   async getReportsByOffice(staffId: number): Promise<ReportDTO[]> {
-    const staff = await this.internalUserRepository.findByIdWithRoleAndOffice(
-      staffId
-    );
+    const staff =
+      await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
     if (!staff) {
       throw new Error("Internal user not found");
     }
@@ -445,9 +445,8 @@ class ReportService implements IReportService {
       return [];
     }
 
-    const categories = await this.categoryRoleRepository.findCategoriesByOffice(
-      officeId
-    );
+    const categories =
+      await this.categoryRoleRepository.findCategoriesByOffice(officeId);
     const categoryIds = categories.map((c) => c.id);
 
     if (categoryIds.length === 0) {

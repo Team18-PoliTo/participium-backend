@@ -35,4 +35,3 @@ export class TempFileRepository implements ITempFileRepository {
 }
 
 export default TempFileRepository;
-

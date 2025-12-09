@@ -10,7 +10,10 @@ const router = Router();
 const internalUserRepository = new InternalUserRepository();
 const internalUserService = new InternalUserService(internalUserRepository);
 const reportService = new ReportService();
-const internalUserController = new InternalUserController(internalUserService, reportService);
+const internalUserController = new InternalUserController(
+  internalUserService,
+  reportService
+);
 
 /**
  * @swagger
@@ -42,7 +45,10 @@ const internalUserController = new InternalUserController(internalUserService, r
  *       401:
  *         description: Unauthorized
  */
-router.get("/reports", internalUserController.getReports.bind(internalUserController));
+router.get(
+  "/reports",
+  internalUserController.getReports.bind(internalUserController)
+);
 
 /**
  * @swagger
@@ -51,22 +57,22 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  *     summary: Update report status
  *     description: |
  *       Update the status of a report. Different users have different permissions:
- *       
+ *
  *       **PR Officers:**
  *       - Can approve pending reports (set to "Assigned")
  *       - Can reject pending reports (set to "Rejected")
  *       - Can optionally correct the category before approval
- *       
+ *
  *       **Technical Staff (Municipality):**
  *       - Can update assigned reports to "In Progress"
  *       - Can delegate reports to external companies
  *       - Can suspend or resolve reports they are working on
- *       
+ *
  *       **External Maintainers:**
  *       - Can update delegated reports assigned to them
  *       - Can set status to "In Progress", "Suspended", or "Resolved"
  *       - Cannot change the report category
- *       
+ *
  *       **Valid Status Transitions:**
  *       | From | To | Who |
  *       |------|-----|-----|
@@ -150,7 +156,10 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  *       404:
  *         description: Report not found
  */
-router.patch("/reports/:id", internalUserController.updateReportStatus.bind(internalUserController));
+router.patch(
+  "/reports/:id",
+  internalUserController.updateReportStatus.bind(internalUserController)
+);
 
 /**
  * @swagger
@@ -202,7 +211,10 @@ router.patch("/reports/:id", internalUserController.updateReportStatus.bind(inte
  *       400:
  *         description: Validation error
  */
-router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind(internalUserController));
+router.patch(
+  "/reports/:id/delegate",
+  internalUserController.delegateReport.bind(internalUserController)
+);
 
 /**
  * @swagger
@@ -212,15 +224,15 @@ router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind
  *     description: |
  *       Returns reports assigned to the current user.
  *       Works for both **technical staff** and **external maintainers**.
- *       
+ *
  *       **For Technical Staff:**
  *       - Returns reports with status: Assigned, In Progress, Suspended, Delegated
  *       - Includes reports they have delegated (until reassigned)
- *       
+ *
  *       **For External Maintainers:**
  *       - Returns reports delegated to them (status: Delegated, In Progress, Suspended)
  *       - These are reports that municipality staff delegated to their company
- *       
+ *
  *       Use the optional `status` query parameter to filter by specific status.
  *     tags: [Internal]
  *     security:
@@ -254,8 +266,10 @@ router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind
  *         description: Forbidden - PR Officers cannot access this endpoint
  */
 router.get(
-    "/reports/assigned",
-    internalUserController.getReportsForTechnicalOfficer.bind(internalUserController)
+  "/reports/assigned",
+  internalUserController.getReportsForTechnicalOfficer.bind(
+    internalUserController
+  )
 );
 
 /**
@@ -284,8 +298,8 @@ router.get(
  *         description: Forbidden (PR Officers cannot access)
  */
 router.get(
-    "/reports/by-office",
-    internalUserController.getReportsByOffice.bind(internalUserController)
+  "/reports/by-office",
+  internalUserController.getReportsByOffice.bind(internalUserController)
 );
 
 export default router;

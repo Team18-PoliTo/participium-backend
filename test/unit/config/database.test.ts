@@ -1,4 +1,8 @@
-import { AppDataSource, closeDatabase, initializeDatabase } from "../../../src/config/database";
+import {
+  AppDataSource,
+  closeDatabase,
+  initializeDatabase,
+} from "../../../src/config/database";
 
 describe("database configuration", () => {
   beforeEach(() => {
@@ -47,11 +51,9 @@ describe("database configuration", () => {
 
   it("logs and exits when initialization throws", async () => {
     const error = new Error("init failed");
-    jest
-      .spyOn(AppDataSource, "initialize")
-      .mockImplementation(() => {
-        throw error;
-      });
+    jest.spyOn(AppDataSource, "initialize").mockImplementation(() => {
+      throw error;
+    });
 
     const errorSpy = jest.spyOn(console, "error").mockImplementation();
     const exitSpy = jest
@@ -87,7 +89,10 @@ describe("database configuration", () => {
 
     await initializeDatabase();
 
-    expect(errorSpy).toHaveBeenCalledWith("Error while opening the database: ", migrationError);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Error while opening the database: ",
+      migrationError
+    );
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
 
@@ -96,7 +101,9 @@ describe("database configuration", () => {
 
   describe("closeDatabase", () => {
     it("logs when destroy succeeds", async () => {
-      jest.spyOn(AppDataSource, "destroy").mockResolvedValue(undefined as never);
+      jest
+        .spyOn(AppDataSource, "destroy")
+        .mockResolvedValue(undefined as never);
       const logSpy = jest.spyOn(console, "log").mockImplementation();
 
       await closeDatabase();

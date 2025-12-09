@@ -9,4 +9,3 @@ export default {
   uploadTemp: jest.fn(),
   deleteTempFile: jest.fn(),
 };
-

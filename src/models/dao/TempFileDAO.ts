@@ -34,4 +34,3 @@ class TempFileDAO {
 }
 
 export default TempFileDAO;
-

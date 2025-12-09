@@ -271,7 +271,10 @@ router.post("/report", reportController.create.bind(reportController));
  *       403:
  *         description: Forbidden
  */
-router.post("/reports/map", reportController.getAssignedReportsInMap.bind(reportController));
+router.post(
+  "/reports/map",
+  reportController.getAssignedReportsInMap.bind(reportController)
+);
 
 /**
  * @swagger
@@ -305,7 +308,10 @@ router.post("/reports/map", reportController.getAssignedReportsInMap.bind(report
  *       403:
  *         description: Forbidden
  */
-router.get("/reports/getById/:id", reportController.getById.bind(reportController));
+router.get(
+  "/reports/getById/:id",
+  reportController.getById.bind(reportController)
+);
 
 /**
  * @swagger
@@ -330,6 +336,9 @@ router.get("/reports/getById/:id", reportController.getById.bind(reportControlle
  *       403:
  *         description: Forbidden
  */
-router.get("/reports/myReports", reportController.getMyReports.bind(reportController));
+router.get(
+  "/reports/myReports",
+  reportController.getMyReports.bind(reportController)
+);
 
 export default router;

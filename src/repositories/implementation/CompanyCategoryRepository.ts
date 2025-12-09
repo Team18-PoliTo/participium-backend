@@ -10,7 +10,7 @@ export class CompanyCategoryRepository {
   constructor(repo?: Repository<CompanyCategoryDAO>) {
     this.repo = repo ?? AppDataSource.getRepository(CompanyCategoryDAO);
   }
-/*
+  /*
   async findByCompanyId(companyId: number): Promise<CompanyCategoryDAO[]> {
     return await this.repo.find({
       where: { company: { id: companyId } },

@@ -4,40 +4,40 @@ import CategoryRepository from "../../../src/repositories/implementation/Categor
 import CategoryDAO from "../../../src/models/dao/CategoryDAO";
 
 describe("CategoryService", () => {
-    let mockCategoryRepository: jest.Mocked<CategoryRepository>;
-    let service: CategoryService;
+  let mockCategoryRepository: jest.Mocked<CategoryRepository>;
+  let service: CategoryService;
 
-    beforeEach(() => {
-        mockCategoryRepository = {
-            findAll: jest.fn(),
-        } as unknown as jest.Mocked<CategoryRepository>;
+  beforeEach(() => {
+    mockCategoryRepository = {
+      findAll: jest.fn(),
+    } as unknown as jest.Mocked<CategoryRepository>;
 
-        service = new CategoryService(mockCategoryRepository);
-    });
+    service = new CategoryService(mockCategoryRepository);
+  });
 
-    it("getAllCategories should map DAO to DTO", async () => {
-        const daos: CategoryDAO[] = [
-            { id: 1, name: "Potholes", description: "Road issues" } as CategoryDAO,
-            { id: 2, name: "Garbage", description: "Trash problems" } as CategoryDAO,
-        ];
+  it("getAllCategories should map DAO to DTO", async () => {
+    const daos: CategoryDAO[] = [
+      { id: 1, name: "Potholes", description: "Road issues" } as CategoryDAO,
+      { id: 2, name: "Garbage", description: "Trash problems" } as CategoryDAO,
+    ];
 
-        mockCategoryRepository.findAll.mockResolvedValue(daos);
+    mockCategoryRepository.findAll.mockResolvedValue(daos);
 
-        const result = await service.getAllCategories();
+    const result = await service.getAllCategories();
 
-        expect(mockCategoryRepository.findAll).toHaveBeenCalledTimes(1);
-        expect(result).toEqual([
-            { id: 1, name: "Potholes", description: "Road issues" },
-            { id: 2, name: "Garbage", description: "Trash problems" },
-        ]);
-    });
+    expect(mockCategoryRepository.findAll).toHaveBeenCalledTimes(1);
+    expect(result).toEqual([
+      { id: 1, name: "Potholes", description: "Road issues" },
+      { id: 2, name: "Garbage", description: "Trash problems" },
+    ]);
+  });
 
-    it("getAllCategories should return empty array when repository returns empty list", async () => {
-        mockCategoryRepository.findAll.mockResolvedValue([]);
+  it("getAllCategories should return empty array when repository returns empty list", async () => {
+    mockCategoryRepository.findAll.mockResolvedValue([]);
 
-        const result = await service.getAllCategories();
+    const result = await service.getAllCategories();
 
-        expect(mockCategoryRepository.findAll).toHaveBeenCalledTimes(1);
-        expect(result).toEqual([]);
-    });
+    expect(mockCategoryRepository.findAll).toHaveBeenCalledTimes(1);
+    expect(result).toEqual([]);
+  });
 });

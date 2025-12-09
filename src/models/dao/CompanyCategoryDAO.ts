@@ -23,4 +23,3 @@ class CompanyCategoryDAO {
 }
 
 export default CompanyCategoryDAO;
-

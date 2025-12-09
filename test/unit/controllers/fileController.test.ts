@@ -29,12 +29,12 @@ describe("FileController", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // FIX: Initialize body to prevent "Cannot read property 'type' of undefined"
     req = {
-        body: {}
+      body: {},
     };
-    
+
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
@@ -52,8 +52,10 @@ describe("FileController", () => {
 
     it("should handle validation errors (400)", async () => {
       req.file = { originalname: "bad.exe" } as Express.Multer.File;
-      
-      const error = new Error("File type undefined is not allowed. Allowed types: ...");
+
+      const error = new Error(
+        "File type undefined is not allowed. Allowed types: ..."
+      );
       mockUploadTemp.mockRejectedValue(error);
 
       await FileController.uploadTemp(req as Request, res as Response, next);
@@ -63,45 +65,53 @@ describe("FileController", () => {
     });
 
     it("should handle max size errors (400)", async () => {
-        req.file = { originalname: "big.png" } as Express.Multer.File;
-        const error = new Error("File size exceeds maximum");
-        mockUploadTemp.mockRejectedValue(error);
-  
-        await FileController.uploadTemp(req as Request, res as Response, next);
-  
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ error: error.message });
+      req.file = { originalname: "big.png" } as Express.Multer.File;
+      const error = new Error("File size exceeds maximum");
+      mockUploadTemp.mockRejectedValue(error);
+
+      await FileController.uploadTemp(req as Request, res as Response, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: error.message });
     });
 
     it("should return 500 for unexpected errors", async () => {
-        req.file = { originalname: "ok.png" } as Express.Multer.File;
-        const error = new Error("Database connection failed");
-        mockUploadTemp.mockRejectedValue(error);
-  
-        await FileController.uploadTemp(req as Request, res as Response, next);
-  
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({ error: "Failed to upload file" });
-        expect(next).toHaveBeenCalledWith(error);
+      req.file = { originalname: "ok.png" } as Express.Multer.File;
+      const error = new Error("Database connection failed");
+      mockUploadTemp.mockRejectedValue(error);
+
+      await FileController.uploadTemp(req as Request, res as Response, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Failed to upload file" });
+      expect(next).toHaveBeenCalledWith(error);
     });
   });
 
   describe("deleteTempFile", () => {
     it("should return 204 on success", async () => {
-        req.params = { fileId: "123" };
-        mockDeleteTempFile.mockResolvedValue(undefined);
+      req.params = { fileId: "123" };
+      mockDeleteTempFile.mockResolvedValue(undefined);
 
-        await FileController.deleteTempFile(req as Request, res as Response, next);
+      await FileController.deleteTempFile(
+        req as Request,
+        res as Response,
+        next
+      );
 
-        expect(res.status).toHaveBeenCalledWith(204);
-        expect(res.send).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(204);
+      expect(res.send).toHaveBeenCalled();
     });
 
     it("should return 400 if fileId missing", async () => {
-        req.params = {};
-        await FileController.deleteTempFile(req as Request, res as Response, next);
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ error: "File ID is required" });
+      req.params = {};
+      await FileController.deleteTempFile(
+        req as Request,
+        res as Response,
+        next
+      );
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: "File ID is required" });
     });
 
     it("should return 500 on service error", async () => {
@@ -109,7 +119,11 @@ describe("FileController", () => {
       const err = new EntityMetadataNotFoundError("TempFileDAO");
       mockDeleteTempFile.mockRejectedValue(err);
 
-      await FileController.deleteTempFile(req as Request, res as Response, next);
+      await FileController.deleteTempFile(
+        req as Request,
+        res as Response,
+        next
+      );
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(next).toHaveBeenCalledWith(err);

@@ -107,12 +107,19 @@ class AuthController {
       }
 
       if (req.auth.kind === "citizen") {
-        const citizen = await this.citizenRepository.findByEmail(req.auth.email ?? "");
+        const citizen = await this.citizenRepository.findByEmail(
+          req.auth.email ?? ""
+        );
         if (!citizen) {
           res.status(404).json({ error: "Citizen not found" });
           return;
         }
-        res.status(200).json({ kind: "citizen", profile: await CitizenMapper.toDTO(citizen) });
+        res
+          .status(200)
+          .json({
+            kind: "citizen",
+            profile: await CitizenMapper.toDTO(citizen),
+          });
         return;
       }
 
@@ -122,7 +129,12 @@ class AuthController {
           res.status(404).json({ error: "Internal user not found" });
           return;
         }
-        res.status(200).json({ kind: "internal", profile: InternalUserMapper.toDTO(internal) });
+        res
+          .status(200)
+          .json({
+            kind: "internal",
+            profile: InternalUserMapper.toDTO(internal),
+          });
         return;
       }
 

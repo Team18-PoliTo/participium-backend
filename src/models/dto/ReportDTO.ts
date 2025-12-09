@@ -30,4 +30,3 @@ export class ReportDTO {
   explanation?: string | null;
   assignedTo?: AssignedOfficerDTO | null;
 }
-

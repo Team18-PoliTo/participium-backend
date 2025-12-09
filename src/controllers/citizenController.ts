@@ -7,7 +7,11 @@ import { plainToInstance } from "class-transformer";
 class CitizenController {
   constructor(private citizenService: ICitizenService) {}
 
-  async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async register(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const dto = plainToInstance(RegisterCitizenRequestDTO, req.body);
       const errors = await validate(dto, {
@@ -81,15 +85,14 @@ class CitizenController {
         lastName: lastName ?? undefined,
         telegramUsername: telegramUsername ?? undefined,
         emailNotificationsEnabled:
-            emailNotificationsEnabled !== undefined
-                ? emailNotificationsEnabled === "true" ||
-                emailNotificationsEnabled === true
-                : undefined,
+          emailNotificationsEnabled !== undefined
+            ? emailNotificationsEnabled === "true" ||
+              emailNotificationsEnabled === true
+            : undefined,
         photoPath: accountPhoto ?? undefined,
       });
 
       return res.status(200).json(updated);
-
     } catch (err) {
       next(err);
     }

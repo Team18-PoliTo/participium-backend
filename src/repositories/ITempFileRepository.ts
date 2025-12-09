@@ -6,4 +6,3 @@ export interface ITempFileRepository {
   findExpired(): Promise<TempFileDAO[]>;
   delete(id: number): Promise<void>;
 }
-

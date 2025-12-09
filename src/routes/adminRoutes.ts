@@ -54,7 +54,7 @@ const internalUserController = new InternalUserController(internalUserService);
  *         status:
  *           type: string
  *           enum: [ACTIVE, SUSPENDED, DEACTIVATED]
- *         company: 
+ *         company:
  *           type: object
  *         properties:
  *           id:
@@ -62,7 +62,7 @@ const internalUserController = new InternalUserController(internalUserService);
  *           name:
  *             type: string
  *           description: Company details
- * 
+ *
  */
 
 /**
@@ -189,7 +189,9 @@ router.put("/:id", internalUserController.update.bind(internalUserController));
  *       404:
  *         description: Internal user not found
  */
-router.delete("/:id", internalUserController.delete.bind(internalUserController));
+router.delete(
+  "/:id",
+  internalUserController.delete.bind(internalUserController)
+);
 
 export default router;
-

@@ -16,9 +16,8 @@ export class CompanyService implements ICompanyService {
   }
 
   async getCompaniesByCategory(categoryId: number): Promise<CompanyDTO[]> {
-    const companies = await this.companyCategoryRepository.findCompaniesByCategory(
-      categoryId
-    );
+    const companies =
+      await this.companyCategoryRepository.findCompaniesByCategory(categoryId);
 
     return companies.map((company) => CompanyMapper.toDTO(company));
   }

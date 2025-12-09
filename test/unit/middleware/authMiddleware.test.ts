@@ -1,9 +1,12 @@
-import type { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { requireAuth, requireAdmin } from '../../../src/middleware/authMiddleware';
-import InternalUserRepository from '../../../src/repositories/InternalUserRepository';
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import {
+  requireAuth,
+  requireAdmin,
+} from "../../../src/middleware/authMiddleware";
+import InternalUserRepository from "../../../src/repositories/InternalUserRepository";
 
-const mockFindById = jest.spyOn(InternalUserRepository.prototype, 'findById');
+const mockFindById = jest.spyOn(InternalUserRepository.prototype, "findById");
 
 const mockRes = () => {
   const res = {} as Response;
@@ -14,7 +17,7 @@ const mockRes = () => {
 
 let next: NextFunction;
 
-describe('authMiddleware', () => {
+describe("authMiddleware", () => {
   beforeEach(() => {
     next = jest.fn();
     jest.clearAllMocks();
@@ -24,31 +27,37 @@ describe('authMiddleware', () => {
     mockFindById.mockReset();
   });
 
-  it('requireAuth rejects missing token', () => {
-    const req = { header: () => '' } as unknown as Request;
+  it("requireAuth rejects missing token", () => {
+    const req = { header: () => "" } as unknown as Request;
     const res = mockRes();
 
     requireAuth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized (missing token)' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Unauthorized (missing token)",
+    });
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('requireAuth rejects invalid token', () => {
-    const req = { header: () => 'Bearer invalid.token.value' } as unknown as Request;
+  it("requireAuth rejects invalid token", () => {
+    const req = {
+      header: () => "Bearer invalid.token.value",
+    } as unknown as Request;
     const res = mockRes();
 
     requireAuth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized (invalid token)' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Unauthorized (invalid token)",
+    });
   });
 
-  it('requireAuth accepts valid citizen token', () => {
+  it("requireAuth accepts valid citizen token", () => {
     const token = jwt.sign(
-      { sub: 42, kind: 'citizen', email: 'citizen@city.com' },
-      'dev-secret'
+      { sub: 42, kind: "citizen", email: "citizen@city.com" },
+      "dev-secret"
     );
     const req: any = {
       header: jest.fn().mockReturnValue(`Bearer ${token}`),
@@ -59,36 +68,43 @@ describe('authMiddleware', () => {
 
     expect(res.status).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
-    expect(req.auth).toEqual({ sub: 42, kind: 'citizen', email: 'citizen@city.com', role: undefined });
+    expect(req.auth).toEqual({
+      sub: 42,
+      kind: "citizen",
+      email: "citizen@city.com",
+      role: undefined,
+    });
   });
 
-  it('requireAuth rejects when jwt payload is string', () => {
-    const verifySpy = jest.spyOn(jwt, 'verify').mockReturnValue('payload');
+  it("requireAuth rejects when jwt payload is string", () => {
+    const verifySpy = jest.spyOn(jwt, "verify").mockReturnValue("payload");
     const req = {
-      header: () => 'Bearer whatever',
+      header: () => "Bearer whatever",
     } as unknown as Request;
     const res = mockRes();
 
     requireAuth(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized (invalid token payload)' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Unauthorized (invalid token payload)",
+    });
     verifySpy.mockRestore();
   });
 
-  it('requireAdmin rejects when auth missing', async () => {
+  it("requireAdmin rejects when auth missing", async () => {
     const res = mockRes();
 
     await requireAdmin({} as Request, res, next);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized' });
+    expect(res.json).toHaveBeenCalledWith({ message: "Unauthorized" });
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('requireAdmin allows internal admin', async () => {
+  it("requireAdmin allows internal admin", async () => {
     const req = {
-      auth: { kind: 'internal', role: 'ADMIN' },
+      auth: { kind: "internal", role: "ADMIN" },
     } as unknown as Request;
     const res = mockRes();
 
@@ -98,23 +114,23 @@ describe('authMiddleware', () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  it('requireAdmin fetches role when missing', async () => {
+  it("requireAdmin fetches role when missing", async () => {
     const req = {
-      auth: { kind: 'internal', sub: 5 },
+      auth: { kind: "internal", sub: 5 },
     } as unknown as Request;
     const res = mockRes();
-    mockFindById.mockResolvedValue({ role: { name: 'ADMIN' } } as any);
+    mockFindById.mockResolvedValue({ role: { name: "ADMIN" } } as any);
 
     await requireAdmin(req, res, next);
 
     expect(mockFindById).toHaveBeenCalledWith(5);
     expect(next).toHaveBeenCalled();
-    expect(req.auth?.role).toBe('ADMIN');
+    expect(req.auth?.role).toBe("ADMIN");
   });
 
-  it('requireAdmin rejects when role still missing', async () => {
+  it("requireAdmin rejects when role still missing", async () => {
     const req = {
-      auth: { kind: 'internal', sub: 8 },
+      auth: { kind: "internal", sub: 8 },
     } as unknown as Request;
     const res = mockRes();
     mockFindById.mockResolvedValue(null);
@@ -122,32 +138,36 @@ describe('authMiddleware', () => {
     await requireAdmin(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Forbidden: insufficient permissions' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Forbidden: insufficient permissions",
+    });
   });
 
-  it('requireAdmin handles repository errors with 500', async () => {
+  it("requireAdmin handles repository errors with 500", async () => {
     const req = {
-      auth: { kind: 'internal', sub: 99 },
+      auth: { kind: "internal", sub: 99 },
     } as unknown as Request;
     const res = mockRes();
-    mockFindById.mockRejectedValue(new Error('db down'));
+    mockFindById.mockRejectedValue(new Error("db down"));
 
     await requireAdmin(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Cannot verify role' });
+    expect(res.json).toHaveBeenCalledWith({ message: "Cannot verify role" });
   });
 
-  it('requireAdmin rejects non-admin', async () => {
+  it("requireAdmin rejects non-admin", async () => {
     const req = {
-      auth: { kind: 'internal', role: 'PRO' },
+      auth: { kind: "internal", role: "PRO" },
     } as unknown as Request;
     const res = mockRes();
 
     await requireAdmin(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({ message: 'Forbidden: insufficient permissions' });
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Forbidden: insufficient permissions",
+    });
     expect(next).not.toHaveBeenCalled();
   });
 });

@@ -1,14 +1,14 @@
-import {CitizenMapper} from "../../mappers/CitizenMapper";
-import {CitizenDTO} from "../../models/dto/CitizenDTO";
-import {RegisterCitizenRequestDTO} from "../../models/dto/ValidRequestDTOs";
+import { CitizenMapper } from "../../mappers/CitizenMapper";
+import { CitizenDTO } from "../../models/dto/CitizenDTO";
+import { RegisterCitizenRequestDTO } from "../../models/dto/ValidRequestDTOs";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import {ICitizenRepository} from "../../repositories/ICitizenRepository";
-import {ICitizenService} from "../ICitizenService";
-import {LoginRequestDTO} from "../../models/dto/LoginRequestDTO";
+import { ICitizenRepository } from "../../repositories/ICitizenRepository";
+import { ICitizenService } from "../ICitizenService";
+import { LoginRequestDTO } from "../../models/dto/LoginRequestDTO";
 import MinIoService from "../MinIoService";
-import {PROFILE_BUCKET} from "../../config/minioClient";
+import { PROFILE_BUCKET } from "../../config/minioClient";
 
 class CitizenService implements ICitizenService {
   static updateCitizen: any;
@@ -16,15 +16,12 @@ class CitizenService implements ICitizenService {
     private citizenRepository: ICitizenRepository = new CitizenRepository()
   ) {}
 
-  async register(
-    registerData: RegisterCitizenRequestDTO
-  ): Promise<CitizenDTO> {
+  async register(registerData: RegisterCitizenRequestDTO): Promise<CitizenDTO> {
     const email = registerData.email.trim().toLowerCase();
     const username = registerData.username.trim().toLowerCase();
 
-    const existingCitizenByEmail = await this.citizenRepository.findByEmail(
-      email
-    );
+    const existingCitizenByEmail =
+      await this.citizenRepository.findByEmail(email);
     if (existingCitizenByEmail)
       throw new Error("Citizen with this email already exists");
 
@@ -85,7 +82,12 @@ class CitizenService implements ICitizenService {
 
     const secret = process.env.JWT_SECRET || "dev-secret";
     const token = jwt.sign(
-      { sub: citizen.id, kind: "citizen", email: citizen.email, status: citizen.status },
+      {
+        sub: citizen.id,
+        kind: "citizen",
+        email: citizen.email,
+        status: citizen.status,
+      },
       secret,
       { expiresIn: "1h" }
     );
@@ -94,18 +96,17 @@ class CitizenService implements ICitizenService {
   }
 
   async updateCitizen(
-      id: number,
-      data: {
-        email?: string | null;
-        username?: string | null;
-        firstName?: string | null;
-        lastName?: string | null;
-        telegramUsername?: string | null;
-        emailNotificationsEnabled?: boolean;
-        photoPath?: string | null;
-      }
+    id: number,
+    data: {
+      email?: string | null;
+      username?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+      telegramUsername?: string | null;
+      emailNotificationsEnabled?: boolean;
+      photoPath?: string | null;
+    }
   ): Promise<CitizenDTO> {
-
     const citizen = await this.citizenRepository.findById(id);
     if (!citizen) {
       throw new Error("Citizen not found");
@@ -146,7 +147,10 @@ class CitizenService implements ICitizenService {
         // Delete old photo if it exists (gracefully handle errors)
         if (citizen.accountPhotoUrl) {
           try {
-            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+            await MinIoService.deleteFile(
+              PROFILE_BUCKET,
+              citizen.accountPhotoUrl
+            );
           } catch (error: any) {
             // Log warning but don't fail the update if old photo deletion fails
             // (photo might not exist, or path might be invalid)
@@ -161,7 +165,10 @@ class CitizenService implements ICitizenService {
         // If photoPath is explicitly null, delete existing photo
         if (citizen.accountPhotoUrl) {
           try {
-            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+            await MinIoService.deleteFile(
+              PROFILE_BUCKET,
+              citizen.accountPhotoUrl
+            );
           } catch (error: any) {
             // Log warning but don't fail the update if deletion fails
             console.warn(
@@ -187,5 +194,3 @@ class CitizenService implements ICitizenService {
 
 export const citizenService = new CitizenService();
 export default CitizenService;
-
-

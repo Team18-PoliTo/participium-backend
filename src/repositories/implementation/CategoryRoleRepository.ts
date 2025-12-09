@@ -36,13 +36,15 @@ export class CategoryRoleRepository {
   }
 
   async findCategoriesByOffice(officeId: number) {
-    return this.repo.find({
-      where: {
-        role: {
-          office: { id: officeId },
+    return this.repo
+      .find({
+        where: {
+          role: {
+            office: { id: officeId },
+          },
         },
-      },
-      relations: ["category", "role", "role.office"],
-    }).then(results => results.map(cr => cr.category));
+        relations: ["category", "role", "role.office"],
+      })
+      .then((results) => results.map((cr) => cr.category));
   }
 }
