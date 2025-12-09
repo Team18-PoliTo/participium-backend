@@ -96,4 +96,34 @@ describe("ReportMapper.toDTO", () => {
     expect(MinIoService.getPresignedUrl).not.toHaveBeenCalled();
   });
 
+  // NEW TESTS
+  describe("toDTOforMap", () => {
+    it("should return a simplified object for map display", () => {
+      const reportDAO = {
+        id: 1,
+        citizen: {
+          firstName: "Mario",
+          lastName: "Rossi",
+        },
+        title: "Pothole",
+        status: "Assigned",
+        description: "Big hole",
+        location: '{"latitude": 45.0, "longitude": 9.0}',
+        category: { id: 1, name: "Road" },
+      } as any;
+
+      const result = ReportMapper.toDTOforMap(reportDAO);
+
+      expect(result).toEqual({
+        id: 1,
+        citizenName: "Mario",
+        citizenLastName: "Rossi",
+        title: "Pothole",
+        status: "Assigned",
+        description: "Big hole",
+        location: { latitude: 45.0, longitude: 9.0 },
+        category: { id: 1, name: "Road" },
+      });
+    });
+  });
 });
