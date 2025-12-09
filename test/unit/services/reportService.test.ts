@@ -181,7 +181,7 @@ describe("ReportService", () => {
       const reportDAO = {
         id: 1,
         title: "Test",
-        location: JSON.stringify({ latitude: 45.0, longitude: 9.0 }),
+        location: JSON.stringify({ latitude: 45, longitude: 9 }),
         category: { id: 1, name: "Test", description: "Test" },
         citizen: { id: 123, firstName: "Test", lastName: "Test" },
       };
@@ -210,7 +210,7 @@ describe("ReportService", () => {
           id: 1,
           title: "Test",
           status: "PENDING",
-          location: JSON.stringify({ latitude: 45.0, longitude: 9.0 }),
+          location: JSON.stringify({ latitude: 45, longitude: 9 }),
           category: { id: 1, name: "Test", description: "Test" },
           citizen: { id: 123, firstName: "Test", lastName: "Test" },
         },
@@ -238,7 +238,7 @@ describe("ReportService", () => {
         {
           id: 2,
           title: "Report 2",
-          location: JSON.stringify({ latitude: 46.0, longitude: 10.0 }),
+          location: JSON.stringify({ latitude: 46, longitude: 10 }),
           category: { id: 1, name: "Test", description: "Test" },
           citizen: { id: 123, firstName: "Test", lastName: "Test" },
           status: ReportStatus.ASSIGNED,
@@ -246,7 +246,7 @@ describe("ReportService", () => {
         {
           id: 3,
           title: "Report 3 - Outside",
-          location: JSON.stringify({ latitude: 50.0, longitude: 15.0 }),
+          location: JSON.stringify({ latitude: 50, longitude: 15 }),
           category: { id: 1, name: "Test", description: "Test" },
           citizen: { id: 123, firstName: "Test", lastName: "Test" },
           status: ReportStatus.ASSIGNED,
@@ -255,8 +255,8 @@ describe("ReportService", () => {
       reportRepository.findAllApproved.mockResolvedValue(reportsDAO);
 
       const corners = [
-        { latitude: 45.0, longitude: 9.0 },
-        { latitude: 46.5, longitude: 10.5 },
+        { latitude: 45, longitude: 9 },
+        { latitude: 46, longitude: 10 },
       ];
 
       const result = await service.getAssignedReportsInMap(corners);
@@ -273,7 +273,7 @@ describe("ReportService", () => {
         {
           id: 1,
           title: "Report Outside",
-          location: JSON.stringify({ latitude: 50.0, longitude: 15.0 }),
+          location: JSON.stringify({ latitude: 50, longitude: 15 }),
           category: { id: 1, name: "Test", description: "Test" },
           citizen: { id: 123, firstName: "Test", lastName: "Test" },
           status: ReportStatus.ASSIGNED,
@@ -282,8 +282,8 @@ describe("ReportService", () => {
       reportRepository.findAllApproved.mockResolvedValue(reportsDAO);
 
       const corners = [
-        { latitude: 45.0, longitude: 9.0 },
-        { latitude: 46.0, longitude: 10.0 },
+        { latitude: 45, longitude: 9 },
+        { latitude: 46, longitude: 10 },
       ];
 
       const result = await service.getAssignedReportsInMap(corners);

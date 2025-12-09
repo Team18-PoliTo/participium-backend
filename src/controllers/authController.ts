@@ -8,6 +8,7 @@ import CitizenRepository from "../repositories/implementation/CitizenRepository"
 import InternalUserRepository from "../repositories/InternalUserRepository";
 import { CitizenMapper } from "../mappers/CitizenMapper";
 import { InternalUserMapper } from "../mappers/InternalUserMapper";
+import {ValidationError} from "@nestjs/common";
 
 class AuthController {
   constructor(
@@ -37,10 +38,9 @@ class AuthController {
         forbidNonWhitelisted: true,
       });
       if (errors.length) {
-        const msg = errors
-          .map((e) => Object.values(e.constraints ?? {}))
-          .flat()
-          .join("; ");
+        const msg: string = errors
+            .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
+            .join("; ");
         res.status(400).json({ error: msg });
         return;
       }
@@ -76,10 +76,9 @@ class AuthController {
         forbidNonWhitelisted: true,
       });
       if (errors.length) {
-        const msg = errors
-          .map((e) => Object.values(e.constraints ?? {}))
-          .flat()
-          .join("; ");
+        const msg: string = errors
+            .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
+            .join("; ");
         res.status(400).json({ error: msg });
         return;
       }

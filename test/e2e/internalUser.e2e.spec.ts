@@ -49,7 +49,9 @@ describe("Internal User Management E2E Tests", () => {
     }
 
     const existingAdmin = await userRepo.findOne({ where: { email: "admin@admin.com" }, relations: ["role"] });
-    if (!existingAdmin) {
+    if (existingAdmin) {
+      adminId = existingAdmin.id;
+    } else {
       const adminUser = userRepo.create({
         firstName: "AdminFirstName",
         lastName: "AdminLastName",
@@ -58,12 +60,10 @@ describe("Internal User Management E2E Tests", () => {
         role: adminRole,
         status: "ACTIVE",
       });
+
       const savedAdmin = await userRepo.save(adminUser);
       adminId = savedAdmin.id;
-    } else {
-      adminId = existingAdmin.id;
     }
-
     const adminUser = await userRepo.findOne({ where: { id: adminId }, relations: ["role"] });
     if (!adminUser) {
       throw new Error("Admin user not found after creation");
@@ -410,7 +410,7 @@ describe("Internal User Management E2E Tests", () => {
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
-        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }), 
+        location: JSON.stringify({ latitude: 45, longitude: 14.1 }),
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
@@ -537,7 +537,7 @@ describe("Internal User Management E2E Tests", () => {
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
-        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }), 
+        location: JSON.stringify({ latitude: 45, longitude: 14.1 }),
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });

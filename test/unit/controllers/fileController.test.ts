@@ -45,7 +45,7 @@ describe("FileController", () => {
 
   describe("uploadTemp", () => {
     it("should return 400 if no file provided", async () => {
-      await FileController.uploadTemp(req as Request, res as Response, next);
+        await FileController.uploadTemp(req, res, next);
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ error: "No file provided" });
     });
@@ -56,8 +56,7 @@ describe("FileController", () => {
       const error = new Error("File type undefined is not allowed. Allowed types: ...");
       mockUploadTemp.mockRejectedValue(error);
 
-      await FileController.uploadTemp(req as Request, res as Response, next);
-
+      await FileController.uploadTemp(req, res, next);
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ error: error.message });
     });
@@ -66,8 +65,8 @@ describe("FileController", () => {
         req.file = { originalname: "big.png" } as Express.Multer.File;
         const error = new Error("File size exceeds maximum");
         mockUploadTemp.mockRejectedValue(error);
-  
-        await FileController.uploadTemp(req as Request, res as Response, next);
+
+        await FileController.uploadTemp(req, res, next);
   
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({ error: error.message });
@@ -77,9 +76,9 @@ describe("FileController", () => {
         req.file = { originalname: "ok.png" } as Express.Multer.File;
         const error = new Error("Database connection failed");
         mockUploadTemp.mockRejectedValue(error);
-  
-        await FileController.uploadTemp(req as Request, res as Response, next);
-  
+
+        await FileController.uploadTemp(req, res, next);
+
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith({ error: "Failed to upload file" });
         expect(next).toHaveBeenCalledWith(error);
@@ -91,7 +90,7 @@ describe("FileController", () => {
         req.params = { fileId: "123" };
         mockDeleteTempFile.mockResolvedValue(undefined);
 
-        await FileController.deleteTempFile(req as Request, res as Response, next);
+        await FileController.deleteTempFile(req, res, next);
 
         expect(res.status).toHaveBeenCalledWith(204);
         expect(res.send).toHaveBeenCalled();
@@ -99,7 +98,7 @@ describe("FileController", () => {
 
     it("should return 400 if fileId missing", async () => {
         req.params = {};
-        await FileController.deleteTempFile(req as Request, res as Response, next);
+        await FileController.deleteTempFile(req, res, next);
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({ error: "File ID is required" });
     });
@@ -109,7 +108,7 @@ describe("FileController", () => {
       const err = new EntityMetadataNotFoundError("TempFileDAO");
       mockDeleteTempFile.mockRejectedValue(err);
 
-      await FileController.deleteTempFile(req as Request, res as Response, next);
+      await FileController.deleteTempFile(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(next).toHaveBeenCalledWith(err);

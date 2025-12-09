@@ -318,8 +318,8 @@ describe('AuthController', () => {
                 expect(citizenRepoInstance.findByEmail).toHaveBeenCalledWith('default@city.com');
                 expect(res.status).toHaveBeenCalledWith(200);
                 resolve();
-              } catch (assertErr) {
-                reject(assertErr);
+              } catch (error_) {
+                reject(error_);
               }
             })
             .catch(reject);

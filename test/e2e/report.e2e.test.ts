@@ -316,8 +316,8 @@ describe("Report E2E Tests", () => {
         .set("Authorization", `Bearer ${token}`)
         .send({
             corners: [
-                { latitude: 45.0, longitude: 9.0 },
-                { latitude: 46.0, longitude: 10.0 }
+                { latitude: 45, longitude: 9 },
+                { latitude: 46, longitude: 10 }
             ]
         });
 

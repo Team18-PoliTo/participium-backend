@@ -1,4 +1,4 @@
-import {minioClient, minioClientForPresigned, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
+import {minioClient, minioClientForPresigned, MINIO_BUCKET} from "../config/minioClient";
 
 class MinIoService {
   async uploadFile(
@@ -50,10 +50,11 @@ class MinIoService {
         stat.metaData?.["Content-Type"] ||
         "application/octet-stream";
     } catch (error) {
-      // If stat fails, use default content type
       console.warn(
-        `Could not get metadata for ${sourcePath}, using default content type`
+          `Could not get metadata for ${sourcePath}, using default content type`,
+          error
       );
+      throw new Error(`Failed to fetch metadata for ${sourcePath}: ${String(error)}`);
     }
 
     // Write file to destination
@@ -76,6 +77,7 @@ class MinIoService {
       await minioClient.statObject(MINIO_BUCKET, objectKey);
       return true;
     } catch (error) {
+      console.warn(`[MinIO] File does not exist: ${objectKey}`, error);
       return false;
     }
   }

@@ -28,7 +28,7 @@ export class ReportMapper {
       reportDAO.photo1,
       reportDAO.photo2,
       reportDAO.photo3,
-    ].filter(Boolean) as string[];
+    ].filter((key): key is string => Boolean(key));
 
     // Generate pre-signed URLs for each photo (valid for 7 days)
     const photoUrlsRaw = await Promise.all(
