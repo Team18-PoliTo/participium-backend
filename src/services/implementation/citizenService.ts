@@ -11,6 +11,7 @@ import MinIoService from "../MinIoService";
 import {PROFILE_BUCKET} from "../../config/minioClient";
 
 class CitizenService implements ICitizenService {
+  static updateCitizen: any;
   constructor(
     private citizenRepository: ICitizenRepository = new CitizenRepository()
   ) {}

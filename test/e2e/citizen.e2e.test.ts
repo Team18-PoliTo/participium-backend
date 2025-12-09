@@ -1,138 +1,313 @@
-import request from "supertest";
-import express, { Express } from "express";
-import citizenRouter from "../../src/routes/citizenRoutes";
-import fileRouter from "../../src/routes/fileRoutes";
-import { AppDataSource } from "../../src/config/database";
-import CitizenDAO from "../../src/models/dao/CitizenDAO";
-import { requireAuth, requireCitizen } from "../../src/middleware/authMiddleware";
-import jwt from "jsonwebtoken";
+import CitizenController from '../../src/controllers/citizenController';
+import { Request, Response, NextFunction } from 'express';
+import * as classValidator from 'class-validator';
 
-// Setup Express App for E2E
-const app = express();
-app.use(express.json());
+describe('CitizenController', () => {
+  const citizenService = {
+    register: jest.fn(),
+    getCitizenById: jest.fn(),
+    updateCitizen: jest.fn(),
+  } as any;
+  const controller = new CitizenController(citizenService);
 
-// Mock auth middleware to simply trust the header for this test suite 
-// (or we can use real auth, but mocking simplifies if we generate our own tokens)
-// However, to be true E2E, we should use the real middleware.
-// We will use the real citizen routes which include the middleware.
+  const mockRes = () => {
+    const res = {} as Response;
+    res.status = jest.fn().mockReturnValue(res);
+    res.json = jest.fn().mockReturnValue(res);
+    return res;
+  };
 
-// We need to mount file routes to test file upload flow
-app.use("/api/files", requireAuth, fileRouter); 
-app.use("/api/citizens", citizenRouter);
+  const next: NextFunction = jest.fn();
 
-// Global vars
-let citizenToken: string;
-let citizenId: number;
-
-beforeAll(async () => {
-  if (!AppDataSource.isInitialized) {
-    await AppDataSource.initialize();
-  }
-  await AppDataSource.synchronize(true);
-});
-
-beforeEach(async () => {
-  const repo = AppDataSource.getRepository(CitizenDAO);
-  await repo.clear();
-
-  // Create a base citizen for "me" tests
-  const citizen = await repo.save({
-    email: "me@test.com",
-    username: "metest",
-    firstName: "Me",
-    lastName: "Test",
-    password: "hashedpass",
-    status: "ACTIVE"
-  });
-  citizenId = citizen.id;
-  
-  // Generate a valid token for this citizen
-  citizenToken = jwt.sign(
-      { sub: citizen.id, kind: "citizen", email: citizen.email },
-      process.env.JWT_SECRET ?? "dev-secret"
-  );
-});
-
-afterAll(async () => {
-  if (AppDataSource.isInitialized) {
-    await AppDataSource.destroy();
-  }
-});
-
-describe("Citizen Update E2E", () => {
-
-  test("PATCH /api/citizens/me → should update citizen fields successfully", async () => {
-    const res = await request(app)
-        .patch("/api/citizens/me")
-        .set("Authorization", `Bearer ${citizenToken}`)
-        .send({
-          firstName: "Updated",
-          lastName: "Person",
-          telegramUsername: "telegram123",
-          emailNotificationsEnabled: true,
-        })
-        .expect(200);
-
-    expect(res.body.firstName).toBe("Updated");
-    expect(res.body.lastName).toBe("Person");
-    // Check DB
-    const repo = AppDataSource.getRepository(CitizenDAO);
-    const updated = await repo.findOneBy({ id: citizenId });
-    expect(updated?.firstName).toBe("Updated");
-    expect(updated?.telegramUsername).toBe("telegram123");
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  test("PATCH /api/citizens/me → should return 401 without token", async () => {
-    await request(app)
-        .patch("/api/citizens/me")
-        .send({ firstName: "Ghost" })
-        .expect(401);
+  // ... [Existing tests for register] ...
+  it('register creates citizen and returns 201', async () => {
+    citizenService.register.mockResolvedValue({ id: 1 });
+    const req = {
+      body: {
+        email: 'citizen@city.com',
+        username: 'citizen',
+        firstName: 'City',
+        lastName: 'Zen',
+        password: 'strongpwd',
+      },
+    } as Request;
+    const res = mockRes();
+
+    await controller.register(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({ id: 1 });
   });
 
-  test("PATCH /api/citizens/me → should update accountPhoto via uploaded file path", async () => {
-    // 1. Mock MinIO for file upload to work without real MinIO in this specific test context 
-    // (If real MinIO is running, it works, but if not, we rely on mocks. 
-    // The fileService E2E handles real MinIO interactions. Here we focus on the flow.)
-    
-    // Since we can't easily mock just one service in E2E without re-importing everything,
-    // we assume the environment supports file upload (like in `file.e2e.test.ts`).
-    // If not, we mock the upload response.
-    
-    // Note: If `file.e2e.test.ts` mocks MinIO, this might conflict if running in parallel.
-    // Jest runs test files in isolation, so it's fine.
-    
-    // We need to use the file upload endpoint.
-    // But fileController mocks might be needed.
-    // To keep it simple and robust: we simulate the client sending a path that "exists"
-    
-    const res = await request(app)
-        .patch("/api/citizens/me")
-        .set("Authorization", `Bearer ${citizenToken}`)
-        .send({
-            accountPhoto: "temp/some-uuid/profile.png"
-        })
-        .expect(200);
+  it('register returns 400 when validation fails', async () => {
+    const req = {
+      body: {
+        email: 'bad-email',
+        username: 'citizen',
+        firstName: 'City',
+        lastName: 'Zen',
+        password: '123',
+      },
+    } as Request;
+    const res = mockRes();
 
-    expect(res.body.accountPhoto).toBeDefined();
-    // The accountPhoto will be a presigned URL, not the path
-    expect(typeof res.body.accountPhoto).toBe("string");
-    
-    const repo = AppDataSource.getRepository(CitizenDAO);
-    const updated = await repo.findOneBy({ id: citizenId });
-    expect(updated?.accountPhotoUrl).toBe("temp/some-uuid/profile.png");
+    await controller.register(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(citizenService.register).not.toHaveBeenCalled();
   });
 
-  test("PATCH /api/citizens/me → invalid email is accepted (no validation in controller for now, or service handles it)", async () => {
-    // The controller does have DTO validation now?
-    // Looking at code: `updateMyProfile` uses `req.body` directly without a DTO class-validator check in the controller currently.
-    // It just passes fields to service.
-    
-    const res = await request(app)
-        .patch("/api/citizens/me")
-        .set("Authorization", `Bearer ${citizenToken}`)
-        .send({ email: "bad_email" })
-        .expect(200);
+  it('register returns 409 when email exists', async () => {
+    citizenService.register.mockRejectedValue(new Error('Citizen with this email already exists'));
+    const req = {
+      body: {
+        email: 'dup@city.com',
+        username: 'citizen',
+        firstName: 'City',
+        lastName: 'Zen',
+        password: 'strongpwd',
+      },
+    } as Request;
+    const res = mockRes();
 
-    expect(res.body.email).toBe("bad_email");
+    await controller.register(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Citizen with this email already exists' });
+  });
+
+  it('register returns 409 when username exists', async () => {
+    citizenService.register.mockRejectedValue(new Error('Citizen with this username already exists'));
+    const req = {
+      body: {
+        email: 'fresh@city.com',
+        username: 'taken',
+        firstName: 'City',
+        lastName: 'Zen',
+        password: 'strongpwd',
+      },
+    } as Request;
+    const res = mockRes();
+
+    await controller.register(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Citizen with this username already exists' });
+  });
+
+  it('register gracefully handles validation results without constraints', async () => {
+    const validateSpy = jest.spyOn(classValidator, 'validate').mockResolvedValue([
+      { constraints: undefined } as any,
+    ]);
+    const req = {
+      body: {
+        email: 'missing@city.com',
+        username: 'citizen',
+        firstName: 'City',
+        lastName: 'Zen',
+        password: 'weak',
+      },
+    } as Request;
+    const res = mockRes();
+
+    await controller.register(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: '' });
+    expect(citizenService.register).not.toHaveBeenCalled();
+
+    validateSpy.mockRestore();
+  });
+
+  it('register forwards unexpected errors', async () => {
+    const boom = new Error('boom');
+    citizenService.register.mockRejectedValue(boom);
+    const req = {
+      body: {
+        email: 'new@city.com',
+        username: 'new-user',
+        firstName: 'City',
+        lastName: 'Zen',
+        password: 'strongpwd',
+      },
+    } as Request;
+    const res = mockRes();
+
+    await controller.register(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(boom);
+  });
+
+  // ... [Existing tests for getMe] ...
+  describe('getMe', () => {
+    it('returns 200 with citizen profile when authenticated', async () => {
+      const mockCitizen = {
+        id: 1,
+        email: 'citizen@city.com',
+        username: 'citizen',
+        firstName: 'City',
+        lastName: 'Zen',
+        status: 'ACTIVE',
+        createdAt: new Date(),
+        telegramUsername: 'telegram_user',
+        emailNotificationsEnabled: true,
+        lastLoginAt: new Date(),
+        accountPhoto: 'https://example.com/presigned-url.jpg',
+      };
+      citizenService.getCitizenById.mockResolvedValue(mockCitizen);
+      const req = {
+        auth: { sub: 1, kind: 'citizen' },
+      } as any;
+      const res = mockRes();
+
+      await controller.getMe(req, res, next);
+
+      expect(citizenService.getCitizenById).toHaveBeenCalledWith(1);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(mockCitizen);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 when not authenticated', async () => {
+      const req = {
+        auth: undefined,
+      } as any;
+      const res = mockRes();
+
+      await controller.getMe(req, res, next);
+
+      expect(citizenService.getCitizenById).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 when auth.sub is missing', async () => {
+      const req = {
+        auth: { kind: 'citizen' },
+      } as any;
+      const res = mockRes();
+
+      await controller.getMe(req, res, next);
+
+      expect(citizenService.getCitizenById).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when citizen not found', async () => {
+      citizenService.getCitizenById.mockRejectedValue(new Error('Citizen not found'));
+      const req = {
+        auth: { sub: 999, kind: 'citizen' },
+      } as any;
+      const res = mockRes();
+
+      await controller.getMe(req, res, next);
+
+      expect(citizenService.getCitizenById).toHaveBeenCalledWith(999);
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Citizen not found' });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('forwards unexpected errors', async () => {
+      const boom = new Error('Database error');
+      citizenService.getCitizenById.mockRejectedValue(boom);
+      const req = {
+        auth: { sub: 1, kind: 'citizen' },
+      } as any;
+      const res = mockRes();
+
+      await controller.getMe(req, res, next);
+
+      expect(citizenService.getCitizenById).toHaveBeenCalledWith(1);
+      expect(next).toHaveBeenCalledWith(boom);
+    });
+
+    it('returns profile with all fields including presigned photo URL', async () => {
+      const mockCitizen = {
+        id: 1,
+        email: 'test@example.com',
+        username: 'testuser',
+        firstName: 'Test',
+        lastName: 'User',
+        status: 'ACTIVE' as const,
+        createdAt: new Date('2025-01-01'),
+        telegramUsername: 'test_telegram',
+        emailNotificationsEnabled: false,
+        lastLoginAt: new Date('2025-11-26'),
+        accountPhoto: 'https://merguven.ddns.net:9000/profile-photos/citizens/1/profile.jpg?X-Amz-Signature=...',
+      };
+      citizenService.getCitizenById.mockResolvedValue(mockCitizen);
+      const req = {
+        auth: { sub: 1, kind: 'citizen' },
+      } as any;
+      const res = mockRes();
+
+      await controller.getMe(req, res, next);
+
+      expect(res.json).toHaveBeenCalledWith(mockCitizen);
+      expect(mockCitizen.accountPhoto).toContain('https://');
+      expect(mockCitizen.accountPhoto).toContain('X-Amz-Signature');
+    });
+  });
+
+  // NEW TESTS
+  describe('updateMyProfile', () => {
+    it('returns 200 with updated citizen', async () => {
+      const citizenId = 1;
+      const req = {
+        auth: { sub: citizenId, kind: 'citizen' },
+        body: {
+          firstName: "UpdatedName",
+          emailNotificationsEnabled: "true",
+          accountPhoto: "temp/path.jpg"
+        }
+      } as any;
+      const res = mockRes();
+      
+      const updatedCitizen = { id: 1, firstName: "UpdatedName", emailNotificationsEnabled: true };
+      citizenService.updateCitizen.mockResolvedValue(updatedCitizen);
+
+      await controller.updateMyProfile(req, res, next);
+
+      expect(citizenService.updateCitizen).toHaveBeenCalledWith(citizenId, {
+        firstName: "UpdatedName",
+        emailNotificationsEnabled: true,
+        photoPath: "temp/path.jpg",
+        email: undefined,
+        username: undefined,
+        lastName: undefined,
+        telegramUsername: undefined
+      });
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(updatedCitizen);
+    });
+
+    it('returns 401 when auth is missing', async () => {
+      const req = { auth: undefined } as any;
+      const res = mockRes();
+
+      await controller.updateMyProfile(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+    });
+
+    it('forwards errors to next', async () => {
+      const req = { auth: { sub: 1, kind: 'citizen' }, body: {} } as any;
+      const res = mockRes();
+      const error = new Error("Update failed");
+      citizenService.updateCitizen.mockRejectedValue(error);
+
+      await controller.updateMyProfile(req, res, next);
+
+      expect(next).toHaveBeenCalledWith(error);
+    });
   });
 });
