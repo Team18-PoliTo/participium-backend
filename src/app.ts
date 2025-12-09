@@ -26,7 +26,6 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 
-
 // MinIO initialization is called from server.ts after database is ready
 // This ensures proper initialization order: DB -> MinIO -> Seed Reports
 
@@ -56,5 +55,3 @@ app.use('/api/admin/internal-users', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/admin/roles', requireAuth, requireAdmin, roleRoutes);
 
 export default app;
-
-
