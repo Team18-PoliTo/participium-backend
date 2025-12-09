@@ -11,7 +11,6 @@ import InternalUserRepository from "../../repositories/InternalUserRepository";
 import FileService from "../FileService";
 import { IReportService } from "../IReportService";
 import {v4 as uuidv4} from "uuid";
-import {IReportService} from "../IReportService";
 import {ReportStatus} from "../../constants/ReportStatus";
 import {GeocodingService} from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
