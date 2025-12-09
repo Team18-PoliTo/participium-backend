@@ -9,11 +9,14 @@ import {CategoryRoleRepository} from "../../repositories/implementation/Category
 import {CategoryRepository} from "../../repositories/implementation/CategoryRepository";
 import InternalUserRepository from "../../repositories/InternalUserRepository";
 import FileService from "../FileService";
+import { IReportService } from "../IReportService";
 import {v4 as uuidv4} from "uuid";
 import {IReportService} from "../IReportService";
 import {ReportStatus} from "../../constants/ReportStatus";
 import {GeocodingService} from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
+import { ExternalMaintainerDTO } from "../../models/dto/InternalUserDTO";
+import { ExternalMaintainerMapper } from "../../mappers/InternalUserMapper";
 
 class ReportService implements IReportService {
   constructor(
@@ -119,7 +122,10 @@ class ReportService implements IReportService {
       category: category,
       createdAt: new Date(),
       location: JSON.stringify(data.location),
-      address: await GeocodingService.getAddress(data.location.latitude, data.location.longitude),
+      address: await GeocodingService.getAddress(
+        data.location.latitude,
+        data.location.longitude
+      ),
       status: ReportStatus.PENDING_APPROVAL,
     });
 
@@ -196,11 +202,20 @@ class ReportService implements IReportService {
   async updateReport(
       reportId: number,
       data: UpdateReportRequestDTO,
+      userId: number,
       userRole?: string
   ): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
       throw new Error("Report not found");
+    }
+    if (
+      report.status === ReportStatus.RESOLVED ||
+      report.status === ReportStatus.REJECTED
+    ) {
+      throw new Error(
+        "Cannot update a report that is already Resolved or Rejected"
+      );
     }
 
     if (
@@ -274,13 +289,18 @@ class ReportService implements IReportService {
 
   async delegateReport(
     reportId: number,
+    userId: number,
     companyId: number
-  ): Promise<ReportDTO> {
+  ): Promise<ExternalMaintainerDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
       throw new Error("Report not found");
     }
-
+    if (report.assignedTo?.id !== userId) {
+      throw new Error(
+        "Only the currently assigned officer can delegate this report"
+      );
+    }
     if (
       report.status !== ReportStatus.ASSIGNED &&
       report.status !== ReportStatus.IN_PROGRESS &&
@@ -291,6 +311,8 @@ class ReportService implements IReportService {
       );
     }
 
+    // checks that the category sent actually handles that category
+    // a bit overkill but better to be sure
     const companies =
       await this.companyCategoryRepository.findCompaniesByCategory(
         report.category.id
@@ -302,6 +324,7 @@ class ReportService implements IReportService {
         "The selected company does not handle this report's category"
       );
     }
+    // selects the external maintainer, already increments their active tasks
     const selectedMaintainer = await this.selectUnoccupiedMaintainerByCompany(
       companyId
     );
@@ -320,7 +343,7 @@ class ReportService implements IReportService {
       selectedMaintainer
     );
 
-    return await ReportMapper.toDTO(updatedReport);
+    return ExternalMaintainerMapper.toDTO(report.assignedTo);
   }
 
   async getReportsByUser(citizenId: number): Promise<ReportDTO[]> {

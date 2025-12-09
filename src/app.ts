@@ -17,6 +17,7 @@ import { swaggerSpec } from './config/swagger';
 import reportRoutes from './routes/reportRoutes';
 import categoryRoutes from "./routes/categoryRoutes";
 import fileRoutes from "./routes/fileRoutes";
+import companyRoutes from "./routes/companyRoutes";
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+
 
 // MinIO initialization is called from server.ts after database is ready
 // This ensures proper initialization order: DB -> MinIO -> Seed Reports
@@ -44,6 +46,9 @@ app.use('/api/citizens', requireAuth, requireCitizen, reportRoutes);
 // Categories
 app.use('/api/categories', categoryRoutes);
 
+// Companies
+app.use('/api/companies', requireAuth, requireInternalUser, companyRoutes);
+
 // File upload/management routes (authenticated users)
 app.use('/api/files', requireAuth, fileRoutes);
 
@@ -54,4 +59,8 @@ app.use('/api/internal', requireAuth, requireInternalUser, internalUserRoutes);
 app.use('/api/admin/internal-users', requireAuth, requireAdmin, adminRoutes);
 app.use('/api/admin/roles', requireAuth, requireAdmin, roleRoutes);
 
+
+
 export default app;
+
+

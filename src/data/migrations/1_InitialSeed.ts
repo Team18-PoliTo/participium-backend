@@ -40,7 +40,7 @@ export class InitialSeed1000000000001 implements MigrationInterface {
                     (25, 'Digital Services Technician', 1),
                     (26, 'Emergency Response Liaison', 1),
                     (27, 'Noise and Air Quality Technician', 7),
-                    (28, 'External Mantainer', NULL)`
+                    (28, 'External Maintainer', NULL)`
     );
 
     // Insert Categories (Categorie)
@@ -153,7 +153,7 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         -- 7. Roads and Urban Furnishings
         (15, 7, 8),  -- Manital
         (16, 7, 5),  -- CIDIU
-        (17, 7, 6),  -- Acea Pinerolese contribuisce anche a Roads and Urban Furnishings
+        (17, 7, 6),  -- Acea Pinerolese
 
         -- 8. Public Green Areas and Playgrounds
         (18, 8, 4),  -- AMIAT
@@ -232,9 +232,9 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         company: null,
       },
       {
-        email: "giulio.spina@enelx.it",
+        email: "giulio.spinetti@enelx.it",
         firstName: "Giulio",
-        lastName: "Spina",
+        lastName: "Spinetti",
         roleId: 28,
         company: 9,
       },
@@ -246,11 +246,11 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         company: 3,
       },
       {
-        email: "francesco.magetti@amiat.it",
+        email: "francesco.magetti@manital.it",
         firstName: "Francesco",
         lastName: "Magetti",
         roleId: 28,
-        company: 4,
+        company: 8,
       },
     ];
 

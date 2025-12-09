@@ -113,10 +113,12 @@ export class UpdateReportRequestDTO {
   @IsString({ message: "Explanation must be a string" })
   @IsNotEmpty({ message: "Explanation is required" })
   explanation: string;
+}
 
-  @IsOptional()
+export class DelegateReportRequestDTO {
+  @IsNotEmpty()
   @IsInt({ message: "Company ID must be a number" })
-  companyId?: number; 
+  companyId: number; 
 }
 
 export class GetAssignedReportsForMapRequestDTO {
