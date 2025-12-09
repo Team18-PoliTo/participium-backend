@@ -319,7 +319,24 @@ class InternalUserController {
         return;
       }
 
-      const reports = await this.reportService.getReportsForStaff(staffId);
+      // Optional status filter from query parameter
+      const statusFilter = req.query?.status as string | undefined;
+
+      // Validate status filter if provided
+      if (statusFilter) {
+        const validStatuses = Object.values(ReportStatus);
+        if (!validStatuses.includes(statusFilter as any)) {
+          res.status(400).json({
+            error: `Invalid status filter. Allowed values: ${validStatuses.join(", ")}`,
+          });
+          return;
+        }
+      }
+
+      const reports = await this.reportService.getReportsForStaff(
+        staffId,
+        statusFilter
+      );
 
       res.status(200).json(reports);
     } catch (error) {
