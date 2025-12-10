@@ -1,24 +1,22 @@
-import { ReportMapper } from "../../mappers/ReportMapper";
-import { ReportDTO } from "../../models/dto/ReportDTO";
-import {
-  CreateReportRequestDTO,
-  UpdateReportRequestDTO,
-} from "../../models/dto/ValidRequestDTOs";
-import { IReportRepository } from "../../repositories/IReportRepository";
-import { ReportRepository } from "../../repositories/implementation/ReportRepository";
+import {ReportMapper} from "../../mappers/ReportMapper";
+import {ReportDTO} from "../../models/dto/ReportDTO";
+import {CreateReportRequestDTO, UpdateReportRequestDTO,} from "../../models/dto/ValidRequestDTOs";
+import {IReportRepository} from "../../repositories/IReportRepository";
+import {ReportRepository} from "../../repositories/implementation/ReportRepository";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
-import { ICitizenRepository } from "../../repositories/ICitizenRepository";
-import { CategoryRoleRepository } from "../../repositories/implementation/CategoryRoleRepository";
-import { CategoryRepository } from "../../repositories/implementation/CategoryRepository";
+import {ICitizenRepository} from "../../repositories/ICitizenRepository";
+import {CategoryRoleRepository} from "../../repositories/implementation/CategoryRoleRepository";
+import {CategoryRepository} from "../../repositories/implementation/CategoryRepository";
 import InternalUserRepository from "../../repositories/InternalUserRepository";
 import FileService from "../FileService";
-import { v4 as uuidv4 } from "uuid";
 import { IReportService } from "../IReportService";
-import { ReportStatus } from "../../constants/ReportStatus";
-import { GeocodingService } from "../GeocodingService";
+import {v4 as uuidv4} from "uuid";
+import {ReportStatus} from "../../constants/ReportStatus";
+import {GeocodingService} from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
 import { ExternalMaintainerDTO } from "../../models/dto/InternalUserDTO";
 import { ExternalMaintainerMapper } from "../../mappers/InternalUserMapper";
+
 class ReportService implements IReportService {
   constructor(
     private reportRepository: IReportRepository = new ReportRepository(),
@@ -200,12 +198,11 @@ class ReportService implements IReportService {
     }
     return ReportMapper.toDTO(report);
   }
-
   async updateReport(
-    reportId: number,
-    data: UpdateReportRequestDTO,
-    userId: number,
-    userRole?: string
+      reportId: number,
+      data: UpdateReportRequestDTO,
+      userId: number,
+      userRole?: string
   ): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
@@ -220,98 +217,73 @@ class ReportService implements IReportService {
       );
     }
 
-    /** Authorization:
-     * - ADMIN can update any report
-     * - PR Officers can only update reports with status "Pending Approval"
-     * - Technical Officers can only update reports assigned to them
-     */
     if (
-      userRole === "Public Relations Officer" ||
-      userRole?.includes("Public Relations Officer")
+        userRole === "Public Relations Officer" ||
+        userRole?.includes("Public Relations Officer")
     ) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
-          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
+            `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". ` +
+            `This report status is "${report.status}".`
         );
       }
     }
 
-    if (report.status !== ReportStatus.PENDING_APPROVAL) {
-      const user = await this.internalUserRepository.findById(userId);
-      if (!user) {
-        throw new Error("Internal user not found");
+    let categoryToUse = report.category;
+
+    if (data.categoryId) {
+      const foundCategory = await this.categoryRepository.findById(data.categoryId);
+
+      if (!foundCategory) {
+        throw new Error(`Category not found with ID: ${data.categoryId}`);
       }
-      if (!report.assignedTo || report.assignedTo.id !== user.id) {
-        throw new Error(
-          "Only the currently assigned officer can update this report to the selected status"
-        );
-      }
+
+      categoryToUse = foundCategory;
     }
 
-    // Determine the category to use (use provided categoryId or existing one)
-    const categoryToUse = data.categoryId
-      ? await this.categoryRepository.findById(data.categoryId)
-      : report.category;
+    const categoryNameToUse = categoryToUse.name;
 
-    if (data.categoryId && !categoryToUse) {
-      throw new Error(`Category not found with ID: ${data.categoryId}`);
-    }
-
-    const categoryNameToUse = categoryToUse!.name;
-
-    // If status is "Assigned", validate officer availability BEFORE making any changes
     if (data.status === ReportStatus.ASSIGNED) {
-      // Find role that handles this category
       const categoryRoleMapping =
-        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+          await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+
       if (!categoryRoleMapping) {
         throw new Error(`No role found for category: ${categoryNameToUse}`);
       }
 
-      // Check if officers are available for this role (before updating report)
       const officersWithRole = await this.internalUserRepository.findByRoleId(
-        categoryRoleMapping.role.id
+          categoryRoleMapping.role.id
       );
+
       if (officersWithRole.length === 0) {
         throw new Error(
-          `No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`
+            `No officers available for category: ${categoryNameToUse}. ` +
+            `Report remains in Pending Approval state.`
         );
       }
     }
 
-    // Now that validation is complete, proceed with updates
-    // Update category if provided (if it was wrong)
-    if (data.categoryId && categoryToUse) {
-      report.category = categoryToUse;
-    }
+    let assignedTo = report.assignedTo;
 
-    // Update status
-    report.status = data.status;
-
-    // If status is "Assigned", auto-assign to an officer based on category
     if (data.status === ReportStatus.ASSIGNED) {
-      // Find role that handles this category
       const categoryRoleMapping =
-        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
-      // We already validated this exists in the validation phase above
+          await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+
       if (categoryRoleMapping) {
-        // Randomly select an officer with that role
-        const selectedOfficer = await this.selectUnoccupiedOfficerByRole(
-          categoryRoleMapping.role.id
+        assignedTo = await this.selectUnoccupiedOfficerByRole(
+            categoryRoleMapping.role.id
         );
-        report.assignedTo = selectedOfficer;
       }
     }
 
-    // Save report with updated status, category, and assignment, along with explanation
-    const updatedReport = await this.reportRepository.updateStatus(
-      reportId,
-      data.status,
-      data.explanation,
-      report.assignedTo
-    );
+    const updatedReport = await this.reportRepository.updateReport(reportId, {
+      status: data.status,
+      explanation: data.explanation,
+      assignedTo: assignedTo,
+      categoryId: categoryToUse.id,
+    });
 
-    return await ReportMapper.toDTO(updatedReport);
+    return ReportMapper.toDTO(updatedReport);
   }
 
   async delegateReport(
