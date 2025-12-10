@@ -23,8 +23,7 @@ describe("Category E2E Tests", () => {
 
   describe("GET /api/categories", () => {
     it("should return empty array when no categories exist", async () => {
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);
@@ -32,19 +31,18 @@ describe("Category E2E Tests", () => {
 
     it("should return all categories with correct structure", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
-       await categoryRepo.save({
+
+      await categoryRepo.save({
         name: "Water Supply",
-        description: "Water supply and drinking water issues"
+        description: "Water supply and drinking water issues",
       });
 
-       await categoryRepo.save({
+      await categoryRepo.save({
         name: "Road Maintenance",
-        description: "Road repairs and maintenance"
+        description: "Road repairs and maintenance",
       });
 
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -64,17 +62,16 @@ describe("Category E2E Tests", () => {
 
     it("should handle categories with null descriptions", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
+
       await categoryRepo.save({
         name: "No Description Category",
       });
 
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
-      
+
       const category = res.body[0];
       expect(category.name).toBe("No Description Category");
       expect(category.description).toBeNull();
@@ -82,20 +79,19 @@ describe("Category E2E Tests", () => {
 
     it("should return categories in correct order", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
+
       // Create categories in reverse order
       await categoryRepo.save({
         name: "Category B",
-        description: "Second category"
+        description: "Second category",
       });
 
       await categoryRepo.save({
-        name: "Category A", 
-        description: "First category"
+        name: "Category A",
+        description: "First category",
       });
 
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(2);
@@ -110,18 +106,18 @@ describe("Category E2E Tests", () => {
   describe("Category Data Validation", () => {
     it("should not allow duplicate category names", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
+
       // First category
       await categoryRepo.save({
         name: "Unique Category",
-        description: "First instance"
+        description: "First instance",
       });
 
       // Try to create duplicate - this should fail at database level
       try {
         await categoryRepo.save({
           name: "Unique Category", // Same name
-          description: "Second instance"
+          description: "Second instance",
         });
         // If we reach here, the test should fail because duplicate was allowed
         expect(true).toBe(false); // Force test failure
@@ -131,8 +127,7 @@ describe("Category E2E Tests", () => {
       }
 
       // Verify only one category exists
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
@@ -141,15 +136,14 @@ describe("Category E2E Tests", () => {
 
     it("should handle special characters in category names", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
+
       const categoryName = "Water-Supply & Maintenance (Emergency)";
       await categoryRepo.save({
         name: categoryName,
-        description: "Category with special characters"
+        description: "Category with special characters",
       });
 
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
@@ -158,16 +152,16 @@ describe("Category E2E Tests", () => {
 
     it("should handle long category descriptions", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
-      const longDescription = "This is a very long description for a category that might contain detailed information about what types of reports belong to this category and how they should be handled by the municipal staff.";
-      
+
+      const longDescription =
+        "This is a very long description for a category that might contain detailed information about what types of reports belong to this category and how they should be handled by the municipal staff.";
+
       await categoryRepo.save({
         name: "Detailed Category",
-        description: longDescription
+        description: longDescription,
       });
 
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(1);
@@ -177,8 +171,7 @@ describe("Category E2E Tests", () => {
 
   describe("Error Handling", () => {
     it("should handle database connection issues gracefully", async () => {
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       // Should always return 200 with array (empty or with data)
       expect(res.status).toBe(200);
@@ -186,37 +179,35 @@ describe("Category E2E Tests", () => {
     });
 
     it("should return proper content-type header", async () => {
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
-      expect(res.headers['content-type']).toMatch(/application\/json/);
+      expect(res.headers["content-type"]).toMatch(/application\/json/);
     });
   });
 
   describe("Performance", () => {
     it("should handle large number of categories efficiently", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
+
       // Create multiple categories
       const categories = [];
       for (let i = 0; i < 50; i++) {
         categories.push({
           name: `Category ${i}`,
-          description: `Description for category ${i}`
+          description: `Description for category ${i}`,
         });
       }
-      
+
       await categoryRepo.save(categories);
 
       const startTime = Date.now();
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
       const endTime = Date.now();
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(50);
-      
+
       expect(endTime - startTime).toBeLessThan(1000);
     });
   });
@@ -224,17 +215,22 @@ describe("Category E2E Tests", () => {
   describe("Integration with Report System", () => {
     it("should provide categories that can be used in report creation", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
-      
+
       const reportCategories = [
-        { name: "Infrastructure", description: "Roads, bridges, public buildings" },
+        {
+          name: "Infrastructure",
+          description: "Roads, bridges, public buildings",
+        },
         { name: "Environment", description: "Parks, green spaces, pollution" },
-        { name: "Public Safety", description: "Lighting, traffic signs, emergency" }
+        {
+          name: "Public Safety",
+          description: "Lighting, traffic signs, emergency",
+        },
       ];
 
       await categoryRepo.save(reportCategories);
 
-      const res = await request(app)
-        .get("/api/categories");
+      const res = await request(app).get("/api/categories");
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(3);
@@ -243,7 +239,7 @@ describe("Category E2E Tests", () => {
         expect(category).toMatchObject({
           id: expect.any(Number),
           name: expect.any(String),
-          description: expect.any(String)
+          description: expect.any(String),
         });
       });
 

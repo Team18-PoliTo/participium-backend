@@ -3,7 +3,7 @@ import { DataSource } from "typeorm";
 import * as bcrypt from "bcrypt";
 import { generateCitizenToken } from "../utils/auth";
 
-// DO NOT import app or database globally here. 
+// DO NOT import app or database globally here.
 // We import them dynamically to ensure mocks apply.
 
 describe("File E2E Tests", () => {
@@ -26,24 +26,28 @@ describe("File E2E Tests", () => {
     jest.mock("../../src/services/MinIoService", () => ({
       __esModule: true,
       default: {
-        uploadFile: jest.fn().mockResolvedValue("test-bucket/temp/mock-file-id.png"),
+        uploadFile: jest
+          .fn()
+          .mockResolvedValue("test-bucket/temp/mock-file-id.png"),
         deleteFile: jest.fn().mockResolvedValue(undefined),
         copyFile: jest.fn().mockResolvedValue(undefined),
         fileExists: jest.fn().mockResolvedValue(true),
-        getPresignedUrl: jest.fn().mockResolvedValue("http://mock-minio/presigned-url"),
+        getPresignedUrl: jest
+          .fn()
+          .mockResolvedValue("http://mock-minio/presigned-url"),
       },
     }));
 
     // 4. Import App and DB AFTER mocks are defined
     const appModule = await import("../../src/app");
     app = appModule.default;
-    
+
     const dbModule = await import("../../src/config/database");
     AppDataSource = dbModule.AppDataSource;
-    
+
     const citizenModule = await import("../../src/models/dao/CitizenDAO");
     CitizenDAO = citizenModule.default;
-    
+
     const tempFileModule = await import("../../src/models/dao/TempFileDAO");
     TempFileDAO = tempFileModule.default;
 
@@ -57,7 +61,7 @@ describe("File E2E Tests", () => {
   beforeEach(async () => {
     const citizenRepo = AppDataSource.getRepository(CitizenDAO);
     const tempFileRepo = AppDataSource.getRepository(TempFileDAO);
-    
+
     await citizenRepo.clear();
     await tempFileRepo.clear();
 
@@ -81,7 +85,7 @@ describe("File E2E Tests", () => {
 
   it("should upload a valid image file", async () => {
     const buffer = Buffer.from("fake-image-content");
-    
+
     const res = await request(app)
       .post("/api/files/upload")
       .set("Authorization", `Bearer ${token}`)
@@ -93,13 +97,15 @@ describe("File E2E Tests", () => {
     expect(res.body.tempPath).toContain("temp/");
 
     const tempRepo = AppDataSource.getRepository(TempFileDAO);
-    const dbFile = await tempRepo.findOne({ where: { fileId: res.body.fileId } });
+    const dbFile = await tempRepo.findOne({
+      where: { fileId: res.body.fileId },
+    });
     expect(dbFile).toBeDefined();
   });
 
   it("should reject non-image files", async () => {
     const buffer = Buffer.from("alert('hacked');");
-    
+
     const res = await request(app)
       .post("/api/files/upload")
       .set("Authorization", `Bearer ${token}`)
@@ -115,7 +121,7 @@ describe("File E2E Tests", () => {
       .post("/api/files/upload")
       .set("Authorization", `Bearer ${token}`)
       .attach("file", buffer, "del.png");
-    
+
     const fileId = uploadRes.body.fileId;
 
     await request(app)

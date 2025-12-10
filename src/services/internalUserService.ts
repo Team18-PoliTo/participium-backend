@@ -38,9 +38,8 @@ class InternalUserService {
   ): Promise<InternalUserDTO> {
     const normalizedEmail = data.email.trim().toLowerCase();
     // Check if email already exists
-    const existingInternalUserByEmail = await this.userRepository.findByEmail(
-      normalizedEmail
-    );
+    const existingInternalUserByEmail =
+      await this.userRepository.findByEmail(normalizedEmail);
     if (existingInternalUserByEmail) {
       throw new Error("InternalUser with this email already exists");
     }
@@ -122,14 +121,12 @@ class InternalUserService {
       }
       const externalMaintainer = internalUserDAO;
       externalMaintainer.company = company!;
-      const updatedInternalUser = await this.userRepository.update(
-        externalMaintainer
-      );
+      const updatedInternalUser =
+        await this.userRepository.update(externalMaintainer);
       return ExternalMaintainerMapper.toDTO(updatedInternalUser);
     } else {
-      const updatedInternalUser = await this.userRepository.update(
-        internalUserDAO
-      );
+      const updatedInternalUser =
+        await this.userRepository.update(internalUserDAO);
       return InternalUserMapper.toDTO(updatedInternalUser);
     }
   }

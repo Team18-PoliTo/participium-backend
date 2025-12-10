@@ -39,13 +39,19 @@ describe("External Maintainer Workflow E2E", () => {
     const reportRepo = AppDataSource.getRepository(ReportDAO);
     const citizenRepo = AppDataSource.getRepository(CitizenDAO);
 
-    const maintainerRole = await roleRepo.save({ id: 28, role: "External Maintainer" });
-    const techRole = await roleRepo.save({ id: 4, role: "Technical Office Staff" });
+    const maintainerRole = await roleRepo.save({
+      id: 28,
+      role: "External Maintainer",
+    });
+    const techRole = await roleRepo.save({
+      id: 4,
+      role: "Technical Office Staff",
+    });
 
     const company = await companyRepo.save({
       name: "FixIt Fast",
       email: "contact@fixit.com",
-      description: "General Maintenance"
+      description: "General Maintenance",
     });
 
     const maintainer = await userRepo.save({
@@ -68,20 +74,37 @@ describe("External Maintainer Workflow E2E", () => {
     });
 
     maintainerToken = jwt.sign(
-      { sub: maintainer.id, kind: "internal", email: maintainer.email, role: maintainerRole.role },
+      {
+        sub: maintainer.id,
+        kind: "internal",
+        email: maintainer.email,
+        role: maintainerRole.role,
+      },
       process.env.JWT_SECRET || "dev-secret"
     );
 
     jwt.sign(
-        { sub: otherUser.id, kind: "internal", email: otherUser.email, role: techRole.role },
-        process.env.JWT_SECRET || "dev-secret"
+      {
+        sub: otherUser.id,
+        kind: "internal",
+        email: otherUser.email,
+        role: techRole.role,
+      },
+      process.env.JWT_SECRET || "dev-secret"
     );
 
-    const category = await categoryRepo.save({ name: "Potholes", description: "Road issues" });
+    const category = await categoryRepo.save({
+      name: "Potholes",
+      description: "Road issues",
+    });
     //categoryId = category.id;
-    
+
     const citizen = await citizenRepo.save({
-        email: "c@test.com", username: "c", firstName: "C", lastName: "T", password: "p"
+      email: "c@test.com",
+      username: "c",
+      firstName: "C",
+      lastName: "T",
+      password: "p",
     });
 
     const assignedReport = await reportRepo.save({
@@ -91,7 +114,7 @@ describe("External Maintainer Workflow E2E", () => {
       status: ReportStatus.DELEGATED,
       citizen,
       category,
-      assignedTo: maintainer
+      assignedTo: maintainer,
     });
     assignedReportId = assignedReport.id;
 
@@ -102,7 +125,7 @@ describe("External Maintainer Workflow E2E", () => {
       status: ReportStatus.ASSIGNED,
       citizen,
       category,
-      assignedTo: otherUser
+      assignedTo: otherUser,
     });
     otherReportId = otherReport.id;
   });
@@ -111,13 +134,11 @@ describe("External Maintainer Workflow E2E", () => {
     if (AppDataSource.isInitialized) await AppDataSource.destroy();
   });
 
-
   it("should login as external maintainer", async () => {
-
     const res = await request(app)
       .get("/api/auth/me")
       .set("Authorization", `Bearer ${maintainerToken}`);
-    
+
     expect(res.status).toBe(200);
     expect(res.body.profile.role).toBe("External Maintainer");
   });
@@ -139,13 +160,15 @@ describe("External Maintainer Workflow E2E", () => {
       .set("Authorization", `Bearer ${maintainerToken}`)
       .send({
         status: ReportStatus.IN_PROGRESS,
-        explanation: "Starting work now."
+        explanation: "Starting work now.",
       });
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe(ReportStatus.IN_PROGRESS);
-    
-    const report = await AppDataSource.getRepository(ReportDAO).findOneBy({ id: assignedReportId });
+
+    const report = await AppDataSource.getRepository(ReportDAO).findOneBy({
+      id: assignedReportId,
+    });
     expect(report?.status).toBe(ReportStatus.IN_PROGRESS);
     expect(report?.explanation).toBe("Starting work now.");
   });
@@ -156,7 +179,7 @@ describe("External Maintainer Workflow E2E", () => {
       .set("Authorization", `Bearer ${maintainerToken}`)
       .send({
         status: ReportStatus.RESOLVED,
-        explanation: "Job done."
+        explanation: "Job done.",
       });
 
     expect(res.status).toBe(200);
@@ -165,15 +188,16 @@ describe("External Maintainer Workflow E2E", () => {
 
   it("should return 403 when updating report not assigned to them", async () => {
     const res = await request(app)
-        .patch(`/api/internal/reports/${otherReportId}`)
-        .set("Authorization", `Bearer ${maintainerToken}`)
-        .send({
-          status: ReportStatus.IN_PROGRESS,
-          explanation: "Hacking",
-        });
+      .patch(`/api/internal/reports/${otherReportId}`)
+      .set("Authorization", `Bearer ${maintainerToken}`)
+      .send({
+        status: ReportStatus.IN_PROGRESS,
+        explanation: "Hacking",
+      });
 
     expect([400, 403]).toContain(res.status);
-    expect(res.body.error).toMatch(/External maintainers .* transition reports/i);
+    expect(res.body.error).toMatch(
+      /External maintainers .* transition reports/i
+    );
   });
-
 });

@@ -40,11 +40,17 @@ describe("Internal Reports E2E Tests", () => {
     const userRepo = AppDataSource.getRepository(InternalUserDAO);
     const reportRepo = AppDataSource.getRepository(ReportDAO);
 
-    const office = await officeRepo.save({ name: "Tech Office", description: "Technical" });
+    const office = await officeRepo.save({
+      name: "Tech Office",
+      description: "Technical",
+    });
 
     const role = await roleRepo.save({ role: "Tech Operator", office });
 
-    const category = await categoryRepo.save({ name: "Tech Issues", description: "Tech stuff" });
+    const category = await categoryRepo.save({
+      name: "Tech Issues",
+      description: "Tech stuff",
+    });
 
     await catRoleRepo.save({ category, role });
 
@@ -54,7 +60,7 @@ describe("Internal Reports E2E Tests", () => {
       lastName: "Member",
       password: await bcrypt.hash("test-password", 10),
       role: role,
-      status: "ACTIVE"
+      status: "ACTIVE",
     });
     staffId = staff.id;
 
@@ -68,7 +74,7 @@ describe("Internal Reports E2E Tests", () => {
       username: "c",
       firstName: "C",
       lastName: "Z",
-      password: await bcrypt.hash("test-password", 10)
+      password: await bcrypt.hash("test-password", 10),
     });
 
     await reportRepo.save({
@@ -78,7 +84,7 @@ describe("Internal Reports E2E Tests", () => {
       status: ReportStatus.ASSIGNED,
       citizen,
       category,
-      assignedTo: staff
+      assignedTo: staff,
     });
 
     await reportRepo.save({
@@ -87,7 +93,7 @@ describe("Internal Reports E2E Tests", () => {
       location: JSON.stringify({ lat: 1, lng: 1 }),
       status: ReportStatus.PENDING_APPROVAL,
       citizen,
-      category
+      category,
     });
   });
 
@@ -130,7 +136,7 @@ describe("Internal Reports E2E Tests", () => {
         { sub: 999, kind: "internal", role: "Public Relations Officer" },
         process.env.JWT_SECRET || "dev-secret"
       );
-      
+
       const res = await request(app)
         .get("/api/internal/reports/by-office")
         .set("Authorization", `Bearer ${prToken}`);

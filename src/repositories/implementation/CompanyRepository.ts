@@ -28,7 +28,6 @@ export class CompanyRepository {
       relations: ["categories", "categories.category"],
     });
   }
-
 }
 
 export default CompanyRepository;
