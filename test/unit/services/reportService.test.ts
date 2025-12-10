@@ -352,7 +352,6 @@ describe("ReportService", () => {
         status: ReportStatus.ASSIGNED,
       };
       reportRepository.findById.mockResolvedValue(assignedReport);
-      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
       // Status transition validation kicks in first - PR officer is not assigned to the report
       // so they cannot transition from ASSIGNED to IN_PROGRESS
