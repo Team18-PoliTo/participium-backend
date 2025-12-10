@@ -3,7 +3,7 @@ import { Repository } from "typeorm";
 import OfficeDAO from "../../models/dao/OfficeDAO";
 
 export class OfficeRepository {
-  private repo: Repository<OfficeDAO>;
+  private readonly repo: Repository<OfficeDAO>;
 
   constructor(repo: Repository<OfficeDAO>) {
     this.repo = repo;

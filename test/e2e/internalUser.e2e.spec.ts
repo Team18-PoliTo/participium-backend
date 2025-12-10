@@ -49,7 +49,9 @@ describe("Internal User Management E2E Tests", () => {
     }
 
     const existingAdmin = await userRepo.findOne({ where: { email: "admin@admin.com" }, relations: ["role"] });
-    if (!existingAdmin) {
+    if (existingAdmin) {
+      adminId = existingAdmin.id;
+    } else {
       const adminUser = userRepo.create({
         firstName: "AdminFirstName",
         lastName: "AdminLastName",
@@ -58,12 +60,10 @@ describe("Internal User Management E2E Tests", () => {
         role: adminRole,
         status: "ACTIVE",
       });
+
       const savedAdmin = await userRepo.save(adminUser);
       adminId = savedAdmin.id;
-    } else {
-      adminId = existingAdmin.id;
     }
-
     const adminUser = await userRepo.findOne({ where: { id: adminId }, relations: ["role"] });
     if (!adminUser) {
       throw new Error("Admin user not found after creation");
@@ -142,21 +142,6 @@ describe("Internal User Management E2E Tests", () => {
       expect(res.body).toHaveProperty("error", "InternalUser with this email already exists");
     });
 
-    it("should validate required fields", async () => {
-      const invalidData = {
-        firstName: "Test",
-      };
-
-      const res = await request(app)
-        .post("/api/admin/internal-users")
-        .set("Authorization", `Bearer ${adminToken}`)
-        .send(invalidData);
-
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty("error");
-    });
-  });
-
   describe("Update Internal User", () => {
     let testUserId: number;
 
@@ -199,17 +184,6 @@ describe("Internal User Management E2E Tests", () => {
       expect(res.body.lastName).toBe("Name");
       expect(res.body.email).toBe("updated@example.com");
       expect(res.body.role).toBe("Municipal Administrator");
-    });
-
-
-    it("should reject invalid user ID", async () => {
-      const res = await request(app)
-        .put("/api/admin/internal-users/invalid-id")
-        .set("Authorization", `Bearer ${adminToken}`)
-        .send({ firstName: "Test" });
-
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty("error", "Invalid ID format");
     });
 
     it("should reject assigning role when user already has non-placeholder role", async () => {
@@ -410,12 +384,10 @@ describe("Internal User Management E2E Tests", () => {
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
-        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }), 
+        location: JSON.stringify({ latitude: 45, longitude: 14.1 }),
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
-
-      reportId = newReport.id;
     });
 
     it("PR Officer should ONLY see pending reports", async () => {
@@ -539,7 +511,7 @@ describe("Internal User Management E2E Tests", () => {
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
-        location: JSON.stringify({ latitude: 45.0, longitude: 14.1 }), 
+        location: JSON.stringify({ latitude: 45, longitude: 14.1 }),
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });

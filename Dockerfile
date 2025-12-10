@@ -5,52 +5,34 @@ FROM node:20-alpine
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files (this layer is cached separately for better cache hits)
 COPY package*.json ./
 
-# Install build dependencies for native module compilation
-# py3-setuptools provides distutils (required by node-gyp for Python 3.12+)
-# These are needed for: sqlite3, bcrypt, and any other native modules
-RUN apk add --no-cache python3 py3-setuptools make g++
+# Install required build tools for native modules
+RUN apk add --no-cache g++ make py3-setuptools python3
 
-# Install dependencies - npm will use pre-built binaries for native modules (fast!)
-# This layer is cached separately, so if package.json doesn't change, we skip this
 RUN npm ci --only=production=false --no-audit
 
-# Copy source code
-# Note: .dockerignore ensures sensitive files (.env, node_modules, etc.) are excluded
 COPY src/ ./src/
 COPY tsconfig.json ./
 COPY server.ts ./
 
-# Build TypeScript (needs build tools for any potential native compilation during build)
+# Build the TypeScript project
 RUN npm run build
 
-# Remove build dependencies AFTER everything is built to reduce image size
+# Remove build tools AFTER build is complete
 RUN apk del python3 py3-setuptools make g++
 
-# Create data directory for SQLite database
-# Database path is dist/src/data/database.sqlite (relative to compiled database.js)
+# Prepare SQLite database directory
 RUN mkdir -p /app/dist/src/data && \
     chown -R nodejs:nodejs /app
 
-# Switch to non-root user
 USER nodejs
 
-# Expose port
 EXPOSE 3001
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start server
-# Note: initializeDatabase() in server.ts handles both:
-# 1. synchronize() - creates all tables from entities
-# 2. runMigrations() - runs seed data migrations
-# This ensures tables exist before migrations try to insert data
-CMD npm start
-
+CMD ["npm", "start"]

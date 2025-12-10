@@ -19,12 +19,12 @@ import { ExternalMaintainerMapper } from "../../mappers/InternalUserMapper";
 
 class ReportService implements IReportService {
   constructor(
-    private reportRepository: IReportRepository = new ReportRepository(),
-    private citizenRepository: ICitizenRepository = new CitizenRepository(),
-    private categoryRepository: CategoryRepository = new CategoryRepository(),
-    private categoryRoleRepository: CategoryRoleRepository = new CategoryRoleRepository(),
-    private internalUserRepository: InternalUserRepository = new InternalUserRepository(),
-    private companyCategoryRepository = new CompanyCategoryRepository()
+    private readonly reportRepository: IReportRepository = new ReportRepository(),
+    private readonly citizenRepository: ICitizenRepository = new CitizenRepository(),
+    private readonly categoryRepository: CategoryRepository = new CategoryRepository(),
+    private readonly categoryRoleRepository: CategoryRoleRepository = new CategoryRoleRepository(),
+    private readonly internalUserRepository: InternalUserRepository = new InternalUserRepository(),
+    private readonly companyCategoryRepository = new CompanyCategoryRepository()
   ) {}
 
   /**
@@ -38,9 +38,10 @@ class ReportService implements IReportService {
     if (officersWithRole.length === 0) {
       throw new Error(`No officers found with role ID ${roleId}`);
     }
-    const officers = officersWithRole.sort(
-      (a, b) => a.activeTasks - b.activeTasks
+    const officers = [...officersWithRole].sort(
+        (a, b) => a.activeTasks - b.activeTasks
     );
+
     const minActiveTasks = officers[0].activeTasks;
     // Officers who have the minimum active tasks
     const filteredOfficers = officers.filter(
@@ -270,7 +271,7 @@ class ReportService implements IReportService {
           await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
 
       if (categoryRoleMapping) {
-        assignedTo = await this.selectUnoccupiedOfficerByRole(
+        report.assignedTo = await this.selectUnoccupiedOfficerByRole(
             categoryRoleMapping.role.id
         );
       }

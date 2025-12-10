@@ -5,7 +5,7 @@ import { IReportRepository } from "../IReportRepository";
 import { ReportStatus } from "../../constants/ReportStatus";
 
 export class ReportRepository implements IReportRepository {
-  private repo: Repository<ReportDAO>;
+  private readonly repo: Repository<ReportDAO>;
 
   constructor() {
     this.repo = AppDataSource.getRepository(ReportDAO);

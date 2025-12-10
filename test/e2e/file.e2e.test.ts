@@ -72,7 +72,7 @@ describe("File E2E Tests", () => {
   });
 
   afterAll(async () => {
-    if (AppDataSource && AppDataSource.isInitialized) {
+    if (AppDataSource?.isInitialized) {
       await AppDataSource.destroy();
     }
     jest.clearAllMocks();

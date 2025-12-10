@@ -1,5 +1,4 @@
 import "multer";
-import { Request, Response, NextFunction } from "express";
 
 jest.mock("../../../src/services/MinIoService", () => ({
   __esModule: true,
@@ -35,7 +34,7 @@ describe("FileService", () => {
     
     mockTempRepo = new TempFileRepository() as jest.Mocked<TempFileRepository>;
     
-    (FileService as any).tempFileRepository = mockTempRepo;
+    FileService.tempFileRepository = mockTempRepo;
 
     MinIoService.uploadFile.mockResolvedValue("temp/path");
     MinIoService.fileExists.mockResolvedValue(true);

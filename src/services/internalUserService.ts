@@ -28,8 +28,8 @@ interface IInternalUserRepository {
 
 class InternalUserService {
   constructor(
-    private userRepository: IInternalUserRepository = new InternalUserRepository(),
-    private roleRepository: RoleRepository = new RoleRepository(),
+    private readonly userRepository: IInternalUserRepository = new InternalUserRepository(),
+    private readonly roleRepository: RoleRepository = new RoleRepository(),
     private companyRepository: CompanyRepository = new CompanyRepository()
   ) {}
 

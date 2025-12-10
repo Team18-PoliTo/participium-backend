@@ -1,6 +1,4 @@
 // test/unit/services/minioService.test.ts
-import { minioClient } from "../../../src/config/minioClient";
-
 // Define the mock factory
 jest.mock("../../../src/config/minioClient", () => ({
     minioClient: {

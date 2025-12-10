@@ -4,7 +4,7 @@ import TempFileDAO from "../../models/dao/TempFileDAO";
 import { ITempFileRepository } from "../ITempFileRepository";
 
 export class TempFileRepository implements ITempFileRepository {
-  private repo: Repository<TempFileDAO>;
+  private readonly repo: Repository<TempFileDAO>;
 
   constructor() {
     this.repo = AppDataSource.getRepository(TempFileDAO);

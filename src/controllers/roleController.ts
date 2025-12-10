@@ -5,7 +5,7 @@ import RoleService from "../services/RoleService";
  * Controller for handling internal user roles.
  */
 class RoleController {
-  constructor(private roleService: RoleService) {}
+  constructor(private readonly roleService: RoleService) {}
 
   /**
    * @swagger
