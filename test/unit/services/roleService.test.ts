@@ -10,16 +10,16 @@ describe("RoleService", () => {
     mockRoleRepo = {
       findAll: jest.fn(),
     } as unknown as jest.Mocked<RoleRepository>;
-    
+
     roleService = new RoleService(mockRoleRepo);
   });
 
   it("getAllRoles should return roles from repository", async () => {
     const roles = [
-        { id: 1, role: "ADMIN" }, 
-        { id: 2, role: "USER" }
+      { id: 1, role: "ADMIN" },
+      { id: 2, role: "USER" },
     ] as RoleDAO[];
-    
+
     mockRoleRepo.findAll.mockResolvedValue(roles);
 
     const result = await roleService.getAllRoles();

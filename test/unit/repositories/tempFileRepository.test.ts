@@ -17,7 +17,7 @@ describe("TempFileRepository", () => {
     } as unknown as jest.Mocked<Repository<TempFileDAO>>;
 
     jest.spyOn(AppDataSource, "getRepository").mockReturnValue(mockRepo as any);
-    
+
     repository = new TempFileRepository();
   });
 
@@ -43,7 +43,7 @@ describe("TempFileRepository", () => {
   it("findExpired should find with LessThan date", async () => {
     await repository.findExpired();
     expect(mockRepo.find).toHaveBeenCalledWith({
-      where: { expiresAt: expect.any(Object) } // LessThan matcher check is complex due to TypeORM operator
+      where: { expiresAt: expect.any(Object) }, // LessThan matcher check is complex due to TypeORM operator
     });
   });
 

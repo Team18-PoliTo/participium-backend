@@ -1,6 +1,7 @@
 import request from "supertest";
 import jwt from "jsonwebtoken";
 import app from "../../src/app";
+import * as bcrypt from "bcrypt";
 import { AppDataSource } from "../../src/config/database";
 import InternalUserDAO from "../../src/models/dao/InternalUserDAO";
 import ReportDAO from "../../src/models/dao/ReportDAO";
@@ -22,12 +23,8 @@ jest.mock("../../src/services/MinIoService", () => ({
 
 describe("External Maintainer Workflow E2E", () => {
   let maintainerToken: string;
-  let _otherToken: string;
-  let _maintainerId: number;
-  let _otherUserId: number;
   let assignedReportId: number;
   let otherReportId: number;
-  let _categoryId: number;
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
@@ -42,51 +39,72 @@ describe("External Maintainer Workflow E2E", () => {
     const reportRepo = AppDataSource.getRepository(ReportDAO);
     const citizenRepo = AppDataSource.getRepository(CitizenDAO);
 
-    const maintainerRole = await roleRepo.save({ id: 28, role: "External Maintainer" });
-    const techRole = await roleRepo.save({ id: 4, role: "Technical Office Staff" });
+    const maintainerRole = await roleRepo.save({
+      id: 28,
+      role: "External Maintainer",
+    });
+    const techRole = await roleRepo.save({
+      id: 4,
+      role: "Technical Office Staff",
+    });
 
     const company = await companyRepo.save({
       name: "FixIt Fast",
       email: "contact@fixit.com",
-      description: "General Maintenance"
+      description: "General Maintenance",
     });
 
     const maintainer = await userRepo.save({
       email: "maintainer@fixit.com",
       firstName: "Bob",
       lastName: "Builder",
-      password: "pass",
+      password: await bcrypt.hash("test-password", 10),
       role: maintainerRole,
-      company: company,
-      status: "ACTIVE"
+      company,
+      status: "ACTIVE",
     });
-    maintainerId = maintainer.id;
 
     const otherUser = await userRepo.save({
       email: "tech@city.com",
       firstName: "Tech",
       lastName: "Guy",
-      password: "pass",
+      password: await bcrypt.hash("test-password", 10),
       role: techRole,
-      status: "ACTIVE"
+      status: "ACTIVE",
     });
-    otherUserId = otherUser.id;
 
     maintainerToken = jwt.sign(
-      { sub: maintainer.id, kind: "internal", email: maintainer.email, role: maintainerRole.role },
+      {
+        sub: maintainer.id,
+        kind: "internal",
+        email: maintainer.email,
+        role: maintainerRole.role,
+      },
       process.env.JWT_SECRET || "dev-secret"
     );
 
-    otherToken = jwt.sign(
-        { sub: otherUser.id, kind: "internal", email: otherUser.email, role: techRole.role },
-        process.env.JWT_SECRET || "dev-secret"
+    jwt.sign(
+      {
+        sub: otherUser.id,
+        kind: "internal",
+        email: otherUser.email,
+        role: techRole.role,
+      },
+      process.env.JWT_SECRET || "dev-secret"
     );
 
-    const category = await categoryRepo.save({ name: "Potholes", description: "Road issues" });
-    categoryId = category.id;
-    
+    const category = await categoryRepo.save({
+      name: "Potholes",
+      description: "Road issues",
+    });
+    //categoryId = category.id;
+
     const citizen = await citizenRepo.save({
-        email: "c@test.com", username: "c", firstName: "C", lastName: "T", password: "p"
+      email: "c@test.com",
+      username: "c",
+      firstName: "C",
+      lastName: "T",
+      password: "p",
     });
 
     const assignedReport = await reportRepo.save({
@@ -96,7 +114,7 @@ describe("External Maintainer Workflow E2E", () => {
       status: ReportStatus.DELEGATED,
       citizen,
       category,
-      assignedTo: maintainer
+      assignedTo: maintainer,
     });
     assignedReportId = assignedReport.id;
 
@@ -107,7 +125,7 @@ describe("External Maintainer Workflow E2E", () => {
       status: ReportStatus.ASSIGNED,
       citizen,
       category,
-      assignedTo: otherUser
+      assignedTo: otherUser,
     });
     otherReportId = otherReport.id;
   });
@@ -116,13 +134,11 @@ describe("External Maintainer Workflow E2E", () => {
     if (AppDataSource.isInitialized) await AppDataSource.destroy();
   });
 
-
   it("should login as external maintainer", async () => {
-
     const res = await request(app)
       .get("/api/auth/me")
       .set("Authorization", `Bearer ${maintainerToken}`);
-    
+
     expect(res.status).toBe(200);
     expect(res.body.profile.role).toBe("External Maintainer");
   });
@@ -144,13 +160,15 @@ describe("External Maintainer Workflow E2E", () => {
       .set("Authorization", `Bearer ${maintainerToken}`)
       .send({
         status: ReportStatus.IN_PROGRESS,
-        explanation: "Starting work now."
+        explanation: "Starting work now.",
       });
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe(ReportStatus.IN_PROGRESS);
-    
-    const report = await AppDataSource.getRepository(ReportDAO).findOneBy({ id: assignedReportId });
+
+    const report = await AppDataSource.getRepository(ReportDAO).findOneBy({
+      id: assignedReportId,
+    });
     expect(report?.status).toBe(ReportStatus.IN_PROGRESS);
     expect(report?.explanation).toBe("Starting work now.");
   });
@@ -161,7 +179,7 @@ describe("External Maintainer Workflow E2E", () => {
       .set("Authorization", `Bearer ${maintainerToken}`)
       .send({
         status: ReportStatus.RESOLVED,
-        explanation: "Job done."
+        explanation: "Job done.",
       });
 
     expect(res.status).toBe(200);
@@ -174,30 +192,12 @@ describe("External Maintainer Workflow E2E", () => {
       .set("Authorization", `Bearer ${maintainerToken}`)
       .send({
         status: ReportStatus.IN_PROGRESS,
-        explanation: "Hacking"
+        explanation: "Hacking",
       });
 
-    if (res.status === 400) {
-        expect(res.body.error).toContain("Only the currently assigned officer");
-    }
+    expect([400, 403]).toContain(res.status);
+    expect(res.body.error).toMatch(
+      /External maintainers .* transition reports/i
+    );
   });
-
-  /*
-  it("should return 400 when external maintainer tries to change category", async () => {
-    await AppDataSource.getRepository(ReportDAO).update(assignedReportId, { status: ReportStatus.IN_PROGRESS });
-
-    const res = await request(app)
-      .patch(`/api/internal/reports/${assignedReportId}`)
-      .set("Authorization", `Bearer ${maintainerToken}`)
-      .send({
-        status: ReportStatus.RESOLVED,
-        explanation: "Done",
-        categoryId: categoryId 
-      });
-
-
-    expect(res.status).toBe(400); 
-    expect(res.body.error).toMatch(/cannot change category/i); 
-  }); */
-
 });

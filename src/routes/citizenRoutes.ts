@@ -125,10 +125,10 @@ router.post("/register", citizenController.register.bind(citizenController));
  *         description: Citizen not found
  */
 router.get(
-    "/me",
-    requireAuth,
-    requireCitizen,
-    citizenController.getMe.bind(citizenController)
+  "/me",
+  requireAuth,
+  requireCitizen,
+  citizenController.getMe.bind(citizenController)
 );
 
 /**
@@ -189,10 +189,10 @@ router.get(
  *         description: Citizen not found
  */
 router.patch(
-    "/me",
-    requireAuth,
-    requireCitizen,
-    citizenController.updateMyProfile.bind(citizenController)
+  "/me",
+  requireAuth,
+  requireCitizen,
+  citizenController.updateMyProfile.bind(citizenController)
 );
 
 export default router;

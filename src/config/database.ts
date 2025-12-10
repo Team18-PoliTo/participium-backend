@@ -33,11 +33,11 @@ export async function initializeDatabase() {
   try {
     await AppDataSource.initialize();
     console.log("Database connection established.");
-    
+
     // Create all entity tables first
     await AppDataSource.synchronize();
     console.log("Database schema synchronized.");
-    
+
     // Then run migrations for seed data
     await AppDataSource.runMigrations();
     console.log("Seed data migrations have been run.");

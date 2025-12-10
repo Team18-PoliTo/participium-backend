@@ -11,18 +11,26 @@ export class CitizenMapper {
    */
   static async toDTO(citizenDAO: CitizenDAO): Promise<CitizenDTO> {
     let accountPhoto: string | undefined = undefined;
-    
+
     // If accountPhotoUrl exists, convert it to a presigned URL
     // Profile photos are stored in PROFILE_BUCKET
     if (citizenDAO.accountPhotoUrl) {
       try {
-        accountPhoto = await MinIoService.getPresignedUrl(citizenDAO.accountPhotoUrl, PROFILE_BUCKET);
+        accountPhoto = await MinIoService.getPresignedUrl(
+          citizenDAO.accountPhotoUrl,
+          PROFILE_BUCKET
+        );
         // If presigned URL generation fails, accountPhoto will be undefined
         if (!accountPhoto) {
-          console.warn(`Failed to generate presigned URL for ${citizenDAO.accountPhotoUrl}`);
+          console.warn(
+            `Failed to generate presigned URL for ${citizenDAO.accountPhotoUrl}`
+          );
         }
       } catch (error) {
-        console.warn(`Error generating presigned URL for ${citizenDAO.accountPhotoUrl}:`, error);
+        console.warn(
+          `Error generating presigned URL for ${citizenDAO.accountPhotoUrl}:`,
+          error
+        );
       }
     }
 
@@ -37,7 +45,8 @@ export class CitizenMapper {
       accountPhoto, // Use "accountPhoto" to match PATCH /me field name
       // Convert null to undefined for optional fields
       telegramUsername: citizenDAO.telegramUsername ?? undefined,
-      emailNotificationsEnabled: citizenDAO.emailNotificationsEnabled ?? undefined,
+      emailNotificationsEnabled:
+        citizenDAO.emailNotificationsEnabled ?? undefined,
       lastLoginAt: citizenDAO.lastLoginAt ?? undefined,
     };
   }

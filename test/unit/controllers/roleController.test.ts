@@ -1,7 +1,7 @@
-import RoleController from '../../../src/controllers/roleController';
-import { Request, Response, NextFunction } from 'express';
+import RoleController from "../../../src/controllers/roleController";
+import { Request, Response, NextFunction } from "express";
 
-describe('RoleController', () => {
+describe("RoleController", () => {
   const roleService = {
     getAllRoles: jest.fn(),
   } as any;
@@ -21,32 +21,32 @@ describe('RoleController', () => {
     jest.clearAllMocks();
   });
 
-  it('returns all roles', async () => {
-    roleService.getAllRoles.mockResolvedValue([{ id: 1, role: 'ADMIN' }]);
+  it("returns all roles", async () => {
+    roleService.getAllRoles.mockResolvedValue([{ id: 1, role: "ADMIN" }]);
     const res = mockRes();
 
     await controller.getAll({} as Request, res, next);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith([{ id: 1, role: 'ADMIN' }]);
+    expect(res.json).toHaveBeenCalledWith([{ id: 1, role: "ADMIN" }]);
   });
 
-  it('returns 400 when service fails with Error', async () => {
-    roleService.getAllRoles.mockRejectedValue(new Error('boom'));
+  it("returns 400 when service fails with Error", async () => {
+    roleService.getAllRoles.mockRejectedValue(new Error("boom"));
     const res = mockRes();
 
     await controller.getAll({} as Request, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'boom' });
+    expect(res.json).toHaveBeenCalledWith({ error: "boom" });
   });
 
-  it('forwards non-Error failures to next', async () => {
-    roleService.getAllRoles.mockRejectedValue('fail');
+  it("forwards non-Error failures to next", async () => {
+    roleService.getAllRoles.mockRejectedValue("fail");
     const res = mockRes();
 
     await controller.getAll({} as Request, res, next);
 
-    expect(next).toHaveBeenCalledWith('fail');
+    expect(next).toHaveBeenCalledWith("fail");
   });
 });

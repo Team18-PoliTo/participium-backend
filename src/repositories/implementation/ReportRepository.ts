@@ -44,7 +44,13 @@ export class ReportRepository implements IReportRepository {
 
   async findAllApproved(): Promise<ReportDAO[]> {
     return await this.repo.find({
-      where: { status: In([ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.DELEGATED]) },
+      where: {
+        status: In([
+          ReportStatus.ASSIGNED,
+          ReportStatus.IN_PROGRESS,
+          ReportStatus.DELEGATED,
+        ]),
+      },
       relations: ["citizen"],
       order: { createdAt: "DESC" },
     });
@@ -69,20 +75,19 @@ export class ReportRepository implements IReportRepository {
   }
 
   async updateReport(
-      id: number,
-      updates: {
-        status?: string;
-        explanation?: string;
-        assignedTo?: any;
-        categoryId?: number;
-      }
+    id: number,
+    updates: {
+      status?: string;
+      explanation?: string;
+      assignedTo?: any;
+      categoryId?: number;
+    }
   ): Promise<ReportDAO> {
-
     await this.repo.update(id, {
       status: updates.status,
       explanation: updates.explanation,
       assignedTo: updates.assignedTo,
-      category: updates.categoryId ? { id: updates.categoryId } : undefined
+      category: updates.categoryId ? { id: updates.categoryId } : undefined,
     });
 
     return (await this.findById(id)) as ReportDAO;

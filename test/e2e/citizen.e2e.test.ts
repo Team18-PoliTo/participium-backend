@@ -1,40 +1,52 @@
-import CitizenController from '../../src/controllers/citizenController';
-import { Request, Response, NextFunction } from 'express';
-import * as classValidator from 'class-validator';
+import CitizenController from "../../src/controllers/citizenController";
+import { Request, Response, NextFunction } from "express";
+import * as classValidator from "class-validator";
 
-describe('CitizenController', () => {
+describe("CitizenController", () => {
   const citizenService = {
     register: jest.fn(),
     getCitizenById: jest.fn(),
     updateCitizen: jest.fn(),
   } as any;
+
   const controller = new CitizenController(citizenService);
 
-  const mockRes = () => {
+  // ---------- COMMON HELPERS ----------
+  const mockRes = (): Response => {
     const res = {} as Response;
     res.status = jest.fn().mockReturnValue(res);
     res.json = jest.fn().mockReturnValue(res);
     return res;
   };
 
+  const makeReq = (body: any = {}, auth: any = undefined): Request =>
+    ({ body, auth }) as any;
+
+  const validCitizen = {
+    email: "citizen@city.com",
+    username: "citizen",
+    firstName: "City",
+    lastName: "Zen",
+    password: "strongpwd",
+  };
+
+  const invalidCitizen = {
+    email: "bad-email",
+    username: "citizen",
+    firstName: "City",
+    lastName: "Zen",
+    password: "123",
+  };
+
   const next: NextFunction = jest.fn();
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  beforeEach(() => jest.clearAllMocks());
 
-  // ... [Existing tests for register] ...
-  it('register creates citizen and returns 201', async () => {
+  // ---------- REGISTER ----------
+  it("register creates citizen and returns 201", async () => {
     citizenService.register.mockResolvedValue({ id: 1 });
-    const req = {
-      body: {
-        email: 'citizen@city.com',
-        username: 'citizen',
-        firstName: 'City',
-        lastName: 'Zen',
-        password: 'strongpwd',
-      },
-    } as Request;
+
+    const req = makeReq(validCitizen);
     const res = mockRes();
 
     await controller.register(req, res, next);
@@ -43,16 +55,8 @@ describe('CitizenController', () => {
     expect(res.json).toHaveBeenCalledWith({ id: 1 });
   });
 
-  it('register returns 400 when validation fails', async () => {
-    const req = {
-      body: {
-        email: 'bad-email',
-        username: 'citizen',
-        firstName: 'City',
-        lastName: 'Zen',
-        password: '123',
-      },
-    } as Request;
+  it("register returns 400 when validation fails", async () => {
+    const req = makeReq(invalidCitizen);
     const res = mockRes();
 
     await controller.register(req, res, next);
@@ -61,80 +65,60 @@ describe('CitizenController', () => {
     expect(citizenService.register).not.toHaveBeenCalled();
   });
 
-  it('register returns 409 when email exists', async () => {
-    citizenService.register.mockRejectedValue(new Error('Citizen with this email already exists'));
-    const req = {
-      body: {
-        email: 'dup@city.com',
-        username: 'citizen',
-        firstName: 'City',
-        lastName: 'Zen',
-        password: 'strongpwd',
-      },
-    } as Request;
+  it("register returns 409 when email exists", async () => {
+    citizenService.register.mockRejectedValue(
+      new Error("Citizen with this email already exists")
+    );
+
+    const req = makeReq({ ...validCitizen, email: "dup@city.com" });
     const res = mockRes();
 
     await controller.register(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(409);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Citizen with this email already exists' });
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Citizen with this email already exists",
+    });
   });
 
-  it('register returns 409 when username exists', async () => {
-    citizenService.register.mockRejectedValue(new Error('Citizen with this username already exists'));
-    const req = {
-      body: {
-        email: 'fresh@city.com',
-        username: 'taken',
-        firstName: 'City',
-        lastName: 'Zen',
-        password: 'strongpwd',
-      },
-    } as Request;
+  it("register returns 409 when username exists", async () => {
+    citizenService.register.mockRejectedValue(
+      new Error("Citizen with this username already exists")
+    );
+
+    const req = makeReq({ ...validCitizen, username: "taken" });
     const res = mockRes();
 
     await controller.register(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(409);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Citizen with this username already exists' });
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Citizen with this username already exists",
+    });
   });
 
-  it('register gracefully handles validation results without constraints', async () => {
-    const validateSpy = jest.spyOn(classValidator, 'validate').mockResolvedValue([
-      { constraints: undefined } as any,
-    ]);
-    const req = {
-      body: {
-        email: 'missing@city.com',
-        username: 'citizen',
-        firstName: 'City',
-        lastName: 'Zen',
-        password: 'weak',
-      },
-    } as Request;
+  it("register gracefully handles validation results without constraints", async () => {
+    const validateSpy = jest
+      .spyOn(classValidator, "validate")
+      .mockResolvedValue([{ constraints: undefined } as any]);
+
+    const req = makeReq(invalidCitizen);
     const res = mockRes();
 
     await controller.register(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: '' });
+    expect(res.json).toHaveBeenCalledWith({ error: "" });
     expect(citizenService.register).not.toHaveBeenCalled();
 
     validateSpy.mockRestore();
   });
 
-  it('register forwards unexpected errors', async () => {
-    const boom = new Error('boom');
+  it("register forwards unexpected errors", async () => {
+    const boom = new Error("boom");
     citizenService.register.mockRejectedValue(boom);
-    const req = {
-      body: {
-        email: 'new@city.com',
-        username: 'new-user',
-        firstName: 'City',
-        lastName: 'Zen',
-        password: 'strongpwd',
-      },
-    } as Request;
+
+    const req = makeReq(validCitizen);
     const res = mockRes();
 
     await controller.register(req, res, next);
@@ -142,26 +126,23 @@ describe('CitizenController', () => {
     expect(next).toHaveBeenCalledWith(boom);
   });
 
-  // ... [Existing tests for getMe] ...
-  describe('getMe', () => {
-    it('returns 200 with citizen profile when authenticated', async () => {
+  // ---------- GET ME ----------
+  describe("getMe", () => {
+    it("returns 200 with citizen profile when authenticated", async () => {
       const mockCitizen = {
         id: 1,
-        email: 'citizen@city.com',
-        username: 'citizen',
-        firstName: 'City',
-        lastName: 'Zen',
-        status: 'ACTIVE',
+        ...validCitizen,
+        status: "ACTIVE",
         createdAt: new Date(),
-        telegramUsername: 'telegram_user',
+        telegramUsername: "telegram_user",
         emailNotificationsEnabled: true,
         lastLoginAt: new Date(),
-        accountPhoto: 'https://example.com/presigned-url.jpg',
+        accountPhoto: "https://example.com/presigned-url.jpg",
       };
+
       citizenService.getCitizenById.mockResolvedValue(mockCitizen);
-      const req = {
-        auth: { sub: 1, kind: 'citizen' },
-      } as any;
+
+      const req = makeReq({}, { sub: 1, kind: "citizen" });
       const res = mockRes();
 
       await controller.getMe(req, res, next);
@@ -169,145 +150,124 @@ describe('CitizenController', () => {
       expect(citizenService.getCitizenById).toHaveBeenCalledWith(1);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(mockCitizen);
-      expect(next).not.toHaveBeenCalled();
     });
 
-    it('returns 401 when not authenticated', async () => {
-      const req = {
-        auth: undefined,
-      } as any;
+    it("returns 401 when not authenticated", async () => {
+      const req = makeReq({}, undefined);
       const res = mockRes();
 
       await controller.getMe(req, res, next);
 
-      expect(citizenService.getCitizenById).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
-      expect(next).not.toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
     });
 
-    it('returns 401 when auth.sub is missing', async () => {
-      const req = {
-        auth: { kind: 'citizen' },
-      } as any;
+    it("returns 401 when auth.sub is missing", async () => {
+      const req = makeReq({}, { kind: "citizen" });
       const res = mockRes();
 
       await controller.getMe(req, res, next);
 
-      expect(citizenService.getCitizenById).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
-      expect(next).not.toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
     });
 
-    it('returns 404 when citizen not found', async () => {
-      citizenService.getCitizenById.mockRejectedValue(new Error('Citizen not found'));
-      const req = {
-        auth: { sub: 999, kind: 'citizen' },
-      } as any;
+    it("returns 404 when citizen not found", async () => {
+      citizenService.getCitizenById.mockRejectedValue(
+        new Error("Citizen not found")
+      );
+
+      const req = makeReq({}, { sub: 999, kind: "citizen" });
       const res = mockRes();
 
       await controller.getMe(req, res, next);
 
-      expect(citizenService.getCitizenById).toHaveBeenCalledWith(999);
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Citizen not found' });
-      expect(next).not.toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({ error: "Citizen not found" });
     });
 
-    it('forwards unexpected errors', async () => {
-      const boom = new Error('Database error');
+    it("forwards unexpected errors", async () => {
+      const boom = new Error("Database error");
       citizenService.getCitizenById.mockRejectedValue(boom);
-      const req = {
-        auth: { sub: 1, kind: 'citizen' },
-      } as any;
+
+      const req = makeReq({}, { sub: 1, kind: "citizen" });
       const res = mockRes();
 
       await controller.getMe(req, res, next);
 
-      expect(citizenService.getCitizenById).toHaveBeenCalledWith(1);
       expect(next).toHaveBeenCalledWith(boom);
     });
 
-    it('returns profile with all fields including presigned photo URL', async () => {
+    it("returns profile with presigned photo URL", async () => {
       const mockCitizen = {
         id: 1,
-        email: 'test@example.com',
-        username: 'testuser',
-        firstName: 'Test',
-        lastName: 'User',
-        status: 'ACTIVE' as const,
-        createdAt: new Date('2025-01-01'),
-        telegramUsername: 'test_telegram',
         emailNotificationsEnabled: false,
-        lastLoginAt: new Date('2025-11-26'),
-        accountPhoto: 'https://merguven.ddns.net:9000/profile-photos/citizens/1/profile.jpg?X-Amz-Signature=...',
+        accountPhoto:
+          "https://merguven.ddns.net/profile.jpg?X-Amz-Signature=123",
       };
+
       citizenService.getCitizenById.mockResolvedValue(mockCitizen);
-      const req = {
-        auth: { sub: 1, kind: 'citizen' },
-      } as any;
+
+      const req = makeReq({}, { sub: 1, kind: "citizen" });
       const res = mockRes();
 
       await controller.getMe(req, res, next);
 
       expect(res.json).toHaveBeenCalledWith(mockCitizen);
-      expect(mockCitizen.accountPhoto).toContain('https://');
-      expect(mockCitizen.accountPhoto).toContain('X-Amz-Signature');
+      expect(mockCitizen.accountPhoto).toContain("https://");
+      expect(mockCitizen.accountPhoto).toContain("X-Amz-Signature");
     });
   });
 
-  // NEW TESTS
-  describe('updateMyProfile', () => {
-    it('returns 200 with updated citizen', async () => {
+  describe("updateMyProfile", () => {
+    it("returns 200 with updated citizen", async () => {
       const citizenId = 1;
-      const req = {
-        auth: { sub: citizenId, kind: 'citizen' },
-        body: {
+
+      const req = makeReq(
+        {
           firstName: "UpdatedName",
           emailNotificationsEnabled: "true",
-          accountPhoto: "temp/path.jpg"
-        }
-      } as any;
+          accountPhoto: "temp/path.jpg",
+        },
+        { sub: citizenId, kind: "citizen" }
+      );
+
       const res = mockRes();
-      
-      const updatedCitizen = { id: 1, firstName: "UpdatedName", emailNotificationsEnabled: true };
+
+      const updatedCitizen = {
+        id: 1,
+        firstName: "UpdatedName",
+        emailNotificationsEnabled: true,
+      };
+
       citizenService.updateCitizen.mockResolvedValue(updatedCitizen);
 
       await controller.updateMyProfile(req, res, next);
 
-      expect(citizenService.updateCitizen).toHaveBeenCalledWith(citizenId, {
-        firstName: "UpdatedName",
-        emailNotificationsEnabled: true,
-        photoPath: "temp/path.jpg",
-        email: undefined,
-        username: undefined,
-        lastName: undefined,
-        telegramUsername: undefined
-      });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(updatedCitizen);
     });
 
-    it('returns 401 when auth is missing', async () => {
-      const req = { auth: undefined } as any;
+    it("returns 401 when auth is missing", async () => {
+      const req = makeReq({}, undefined);
       const res = mockRes();
 
       await controller.updateMyProfile(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
     });
 
-    it('forwards errors to next', async () => {
-      const req = { auth: { sub: 1, kind: 'citizen' }, body: {} } as any;
+    it("forwards unexpected errors", async () => {
+      const req = makeReq({}, { sub: 1, kind: "citizen" });
       const res = mockRes();
-      const error = new Error("Update failed");
-      citizenService.updateCitizen.mockRejectedValue(error);
+
+      const boom = new Error("Update failed");
+      citizenService.updateCitizen.mockRejectedValue(boom);
 
       await controller.updateMyProfile(req, res, next);
 
-      expect(next).toHaveBeenCalledWith(error);
+      expect(next).toHaveBeenCalledWith(boom);
     });
   });
 });

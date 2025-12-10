@@ -258,8 +258,8 @@ export class InitialSeed1000000000001 implements MigrationInterface {
       await queryRunner.query(
         `INSERT INTO "internal-users" (email, firstName, lastName, password, roleId, status, companyId)
                  VALUES ('${user.email}', '${user.firstName}', '${
-          user.lastName
-        }', '${hashedPassword}', ${user.roleId},
+                   user.lastName
+                 }', '${hashedPassword}', ${user.roleId},
                          'ACTIVE', ${user.company ? user.company : "NULL"})`
       );
     }

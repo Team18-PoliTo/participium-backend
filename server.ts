@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import dotenv from 'dotenv';
-import app from './src/app';
+import dotenv from "dotenv";
+import app from "./src/app";
 import { initializeDatabase } from "./src/config/database";
 import { initMinio } from "./src/config/initMinio";
 
@@ -11,10 +11,10 @@ async function bootstrap() {
   try {
     // 1. Initialize database and run migrations
     await initializeDatabase();
-    
+
     // 2. Initialize MinIO and seed reports (seeding happens inside initMinio)
     await initMinio();
-    
+
     // 3. Start the server
     const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
@@ -26,7 +26,11 @@ async function bootstrap() {
   }
 }
 
-bootstrap().catch((err) => {
-  console.error("Fatal error during bootstrap:", err);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await bootstrap();
+  } catch (err) {
+    console.error("Fatal error:", err);
+    process.exit(1);
+  }
+})();

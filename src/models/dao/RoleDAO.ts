@@ -1,4 +1,10 @@
-import { Entity, Column, OneToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import {
+  Entity,
+  Column,
+  OneToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 import InternalUserDAO from "./InternalUserDAO";
 import OfficeDAO from "./OfficeDAO";
 import CategoryRoleDAO from "./CategoryRoleDAO";
@@ -27,4 +33,3 @@ class RoleDAO {
 }
 
 export default RoleDAO;
-

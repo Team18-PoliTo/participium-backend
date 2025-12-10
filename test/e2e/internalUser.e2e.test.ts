@@ -12,10 +12,10 @@ beforeAll(async () => {
     await AppDataSource.initialize();
   }
   await AppDataSource.synchronize(true);
- 
+
   const roleRepo = AppDataSource.getRepository(RoleDAO);
   await roleRepo.save({
-    id: 0, 
+    id: 0,
     role: "Unassigned",
   });
 
