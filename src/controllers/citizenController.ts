@@ -3,9 +3,10 @@ import { RegisterCitizenRequestDTO } from "../models/dto/ValidRequestDTOs";
 import { ICitizenService } from "../services/ICitizenService";
 import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
+import {ValidationError} from "@nestjs/common";
 
 class CitizenController {
-  constructor(private citizenService: ICitizenService) {}
+  constructor(private readonly citizenService: ICitizenService) {}
 
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -15,10 +16,9 @@ class CitizenController {
         forbidNonWhitelisted: true,
       });
       if (errors.length) {
-        const msg = errors
-          .map((e) => Object.values(e.constraints ?? {}))
-          .flat()
-          .join("; ");
+        const msg: string = errors
+            .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
+            .join("; ");
         res.status(400).json({ error: msg });
         return;
       }

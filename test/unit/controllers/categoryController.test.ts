@@ -18,7 +18,7 @@ describe("CategoryController.getAllCategories", () => {
         req = {};
 
         res = {
-            status: jest.fn().mockReturnThis(), // allows chaining: res.status().json()
+            status: jest.fn().mockReturnThis(),
             json: jest.fn(),
         };
 
@@ -26,32 +26,40 @@ describe("CategoryController.getAllCategories", () => {
     });
 
     it("should return 200 and the list of categories", async () => {
+        const req = {} as unknown as Request;
+
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        } as unknown as Response;
+
+        const next = jest.fn() as NextFunction;
+
         const categories = [
             { id: 1, name: "Potholes", description: "Road damage" },
             { id: 2, name: "Garbage", description: "Waste issues" },
         ];
         mockCategoryService.getAllCategories.mockResolvedValue(categories);
 
-        await controller.getAllCategories(
-            req as Request,
-            res as Response,
-            next as NextFunction
-        );
+        await controller.getAllCategories(req, res, next);
+
         expect(mockCategoryService.getAllCategories).toHaveBeenCalledTimes(1);
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith(categories);
         expect(next).not.toHaveBeenCalled();
     });
 
+
     it("should call next with an error when the service throws", async () => {
         const error = new Error("Database error");
         mockCategoryService.getAllCategories.mockRejectedValue(error);
 
         await controller.getAllCategories(
-            req as Request,
-            res as Response,
-            next as NextFunction
+            req as unknown as Request,
+            res as unknown as Response,
+            next as unknown as NextFunction
         );
+
         expect(next).toHaveBeenCalledWith(error);
         expect(res.status).not.toHaveBeenCalled();
         expect(res.json).not.toHaveBeenCalled();

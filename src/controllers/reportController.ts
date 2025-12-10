@@ -10,7 +10,7 @@ import { IReportService } from "../services/IReportService";
 import { HttpException } from "@nestjs/common";
 
 class ReportController {
-  constructor(private reportService: IReportService) {}
+  constructor(private readonly reportService: IReportService) {}
   private handleError(error: any, res: Response, next: NextFunction): void {
     if (error instanceof HttpException) {
       const status = error.getStatus();

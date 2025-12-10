@@ -18,7 +18,7 @@ const VALID_TYPES = ["report", "profile"] as const;
 type FileType = typeof VALID_TYPES[number];
 
 class FileService {
-  private tempFileRepository: TempFileRepository;
+  private readonly tempFileRepository: TempFileRepository;
   
   // Allowed MIME types for uploads
   private readonly ALLOWED_MIME_TYPES = [

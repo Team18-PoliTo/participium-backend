@@ -24,8 +24,8 @@ interface IInternalUserService {
 
 class InternalUserController {
   constructor(
-    private internalUserService: IInternalUserService,
-    private reportService?: IReportService
+    private readonly internalUserService: IInternalUserService,
+    private readonly reportService?: IReportService
   ) {}
 
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -61,7 +61,8 @@ class InternalUserController {
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = Number.parseInt(req.params.id, 10);
-      if (isNaN(id)) {
+
+      if (Number.isNaN(id)) {
         res.status(400).json({ error: "Invalid ID format" });
         return;
       }
@@ -319,7 +320,24 @@ class InternalUserController {
         return;
       }
 
-      const reports = await this.reportService.getReportsForStaff(staffId);
+      // Optional status filter from query parameter
+      const statusFilter = req.query?.status as string | undefined;
+
+      // Validate status filter if provided
+      if (statusFilter) {
+        const validStatuses = Object.values(ReportStatus);
+        if (!validStatuses.includes(statusFilter as any)) {
+          res.status(400).json({
+            error: `Invalid status filter. Allowed values: ${validStatuses.join(", ")}`,
+          });
+          return;
+        }
+      }
+
+      const reports = await this.reportService.getReportsForStaff(
+        staffId,
+        statusFilter
+      );
 
       res.status(200).json(reports);
     } catch (error) {

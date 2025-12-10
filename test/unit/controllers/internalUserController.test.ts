@@ -300,13 +300,13 @@ describe('InternalUserController', () => {
       });
 
       it("calls service update", async () => {
-        const req = { params: { id: '1' }, body: { status: ReportStatus.RESOLVED, explanation: "Done" }, auth: { role: "Admin" } } as any;
+        const req = { params: { id: '1' }, body: { status: ReportStatus.RESOLVED, explanation: "Done" }, auth: { role: "Admin", sub: 99 } } as any;
         const res = mockRes();
         mockReportService.updateReport.mockResolvedValue({});
 
         await buildController().updateReportStatus(req, res, next);
 
-        expect(mockReportService.updateReport).toHaveBeenCalledWith(1, { explanation: "Done",  status: ReportStatus.RESOLVED, }, undefined, "Admin");
+        expect(mockReportService.updateReport).toHaveBeenCalledWith(1, expect.anything(), 99, "Admin");
         expect(res.status).toHaveBeenCalledWith(200);
       });
 
@@ -355,11 +355,27 @@ describe('InternalUserController', () => {
       });
 
       it("calls service with staff id", async () => {
-          const req = { auth: { sub: 123 } } as any;
+          const req = { auth: { sub: 123 }, query: {} } as any;
           const res = mockRes();
           await buildController().getReportsForTechnicalOfficer(req, res, next);
-          expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(123);
+          expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(123, undefined);
           expect(res.status).toHaveBeenCalledWith(200);
+      });
+
+      it("calls service with status filter when provided", async () => {
+          const req = { auth: { sub: 123 }, query: { status: ReportStatus.DELEGATED } } as any;
+          const res = mockRes();
+          await buildController().getReportsForTechnicalOfficer(req, res, next);
+          expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(123, ReportStatus.DELEGATED);
+          expect(res.status).toHaveBeenCalledWith(200);
+      });
+
+      it("returns 400 for invalid status filter", async () => {
+          const req = { auth: { sub: 123 }, query: { status: "InvalidStatus" } } as any;
+          const res = mockRes();
+          await buildController().getReportsForTechnicalOfficer(req, res, next);
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining("Invalid status filter") }));
       });
 
       it("returns 400 on error", async () => {

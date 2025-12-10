@@ -14,10 +14,37 @@ const internalUserController = new InternalUserController(internalUserService, r
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *
+ *     InternalReportUpdateResponseDTO:
+ *       type: object
+ *       required:
+ *         - message
+ *         - reportId
+ *         - status
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: "Report updated successfully"
+ *         reportId:
+ *           type: integer
+ *           example: 1
+ *         status:
+ *           type: string
+ *           example: "Assigned"
+ *         assignedTo:
+ *           type: string
+ *           nullable: true
+ *           example: "Andrea Romano"
+ */
+
+/**
+ * @swagger
  * /internal/reports:
  *   get:
  *     summary: Get reports for review
- *     description: Retrieve reports for review. PR Officers can only retrieve pending approval reports. Future - Technical officers will see reports assigned to them.
+ *     description: Retrieve reports for PR officers (pending reports) or technical officers (assigned reports).
  *     tags: [Internal]
  *     security:
  *       - internalPassword: []
@@ -26,7 +53,7 @@ const internalUserController = new InternalUserController(internalUserService, r
  *         name: status
  *         schema:
  *           type: string
- *         description: Filter by report status (PR officers can only retrieve pending reports)
+ *         description: Filter by report status
  *         example: "Pending Approval"
  *     responses:
  *       200:
@@ -48,8 +75,37 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  * @swagger
  * /internal/reports/{id}:
  *   patch:
- *     summary: Review and update report (approve/reject/change category)
- *     description: Allows PR officers to review a report, approve/reject it, optionally correct category, and provide explanation.
+ *     summary: Update report status
+ *     description: |
+ *       Update the status of a report. Different users have different permissions:
+ *
+ *       **PR Officers:**
+ *       - Can approve pending reports (set to "Assigned")
+ *       - Can reject pending reports (set to "Rejected")
+ *       - Can optionally correct the category before approval
+ *
+ *       **Technical Staff (Municipality):**
+ *       - Can update assigned reports to "In Progress"
+ *       - Can delegate reports to external companies
+ *       - Can suspend or resolve reports they are working on
+ *
+ *       **External Maintainers:**
+ *       - Can update delegated reports assigned to them
+ *       - Can set status to "In Progress", "Suspended", or "Resolved"
+ *       - Cannot change the report category
+ *
+ *       **Valid Status Transitions:**
+ *       | From | To | Who |
+ *       |------|-----|-----|
+ *       | Pending Approval | Assigned | PR Officer |
+ *       | Pending Approval | Rejected | PR Officer |
+ *       | Assigned | In Progress | Assigned Staff |
+ *       | Assigned | Delegated | Assigned Staff (via delegate endpoint) |
+ *       | Delegated | In Progress | External Maintainer |
+ *       | In Progress | Suspended | Assigned User |
+ *       | In Progress | Resolved | Assigned User |
+ *       | Suspended | In Progress | Assigned User |
+ *       | Suspended | Resolved | Assigned User |
  *     tags: [Internal]
  *     security:
  *       - internalPassword: []
@@ -72,15 +128,20 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [Pending Approval, Assigned, In Progress, Suspended, Rejected, Resolved]
- *                 example: "Assigned"
+ *                 enum: [Pending Approval, Assigned, In Progress, Suspended, Rejected, Resolved, Delegated]
+ *                 example: "In Progress"
+ *                 description: |
+ *                   The new status for the report. Must be a valid transition from the current status.
  *               categoryId:
  *                 type: integer
- *                 description: Optional corrected category ID
+ *                 description: |
+ *                   Optional corrected category ID. Only PR Officers can change this.
+ *                   External maintainers cannot modify the category.
  *                 example: 3
  *               explanation:
  *                 type: string
- *                 example: "Report approved and assigned for processing."
+ *                 description: Explanation for the status change (captured for audit trail)
+ *                 example: "Starting work on this report."
  *     responses:
  *       200:
  *         description: Update successful
@@ -91,14 +152,30 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: "Report updated successfully"
+ *                 reportId:
+ *                   type: integer
+ *                   example: 42
  *                 status:
  *                   type: string
+ *                   example: "In Progress"
  *                 assignedTo:
  *                   type: string
+ *                   nullable: true
+ *                   example: "Mario Rossi"
+ *       400:
+ *         description: |
+ *           Validation error. Possible reasons:
+ *           - Invalid status value
+ *           - Invalid status transition
+ *           - External maintainer trying to change category
+ *       403:
+ *         description: |
+ *           Forbidden. Possible reasons:
+ *           - User not assigned to this report
+ *           - User role cannot perform this transition
  *       404:
  *         description: Report not found
- *       400:
- *         description: Validation error
  */
 router.patch("/reports/:id", internalUserController.updateReportStatus.bind(internalUserController));
 
@@ -158,16 +235,40 @@ router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind
  * @swagger
  * /internal/reports/assigned:
  *   get:
- *     summary: Get reports assigned to the authenticated technical staff officer
- *     description:
- *       Returns only the reports assigned to the internal technical officer who is making the request.
- *       PR officers cannot use this endpoint.
+ *     summary: Get reports assigned to the authenticated user
+ *     description: |
+ *       Returns reports assigned to the current user.
+ *       Works for both **technical staff** and **external maintainers**.
+ *
+ *       **For Technical Staff:**
+ *       - Returns reports with status: Assigned, In Progress, Suspended, Delegated
+ *       - Includes reports they have delegated (until reassigned)
+ *
+ *       **For External Maintainers:**
+ *       - Returns reports delegated to them (status: Delegated, In Progress, Suspended)
+ *       - These are reports that municipality staff delegated to their company
+ *
+ *       Use the optional `status` query parameter to filter by specific status.
  *     tags: [Internal]
  *     security:
  *       - internalPassword: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [Assigned, In Progress, Suspended, Delegated, Resolved]
+ *         required: false
+ *         description: |
+ *           Optional filter by report status.
+ *           Common filters:
+ *           - "Delegated" - External maintainers: see newly delegated reports
+ *           - "In Progress" - See reports currently being worked on
+ *           - "Suspended" - See paused reports
+ *         example: "Delegated"
  *     responses:
  *       200:
- *         description: List of reports assigned to this officer
+ *         description: List of reports assigned to this user
  *         content:
  *           application/json:
  *             schema:
@@ -175,9 +276,9 @@ router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind
  *               items:
  *                 $ref: '#/components/schemas/ReportDTO'
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized - Missing or invalid token
  *       403:
- *         description: Forbidden
+ *         description: Forbidden - PR Officers cannot access this endpoint
  */
 router.get(
     "/reports/assigned",
@@ -189,15 +290,13 @@ router.get(
  * /internal/reports/by-office:
  *   get:
  *     summary: Get all reports related to the internal user's office
- *     description:
- *       Returns all reports whose categories belong to the office of the authenticated internal staff member.
- *       PR Officers cannot use this endpoint.
+ *     description: Technical officers can retrieve all reports belonging to their assigned office.
  *     tags: [Internal]
  *     security:
  *       - internalPassword: []
  *     responses:
  *       200:
- *         description: List of reports for the user's office
+ *         description: List of reports for this office
  *         content:
  *           application/json:
  *             schema:
@@ -207,7 +306,7 @@ router.get(
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden (PR Officers cannot access)
+ *         description: Forbidden
  */
 router.get(
     "/reports/by-office",

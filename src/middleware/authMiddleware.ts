@@ -63,7 +63,7 @@ export const requireAuth = (
  *   we fetch the role from the database and cache it back into `req.auth.role`.
  */
 export const requireRole = (allowedRoles: string[]) => {
-  const allowed = allowedRoles.map((r) => r.toUpperCase());
+  const allowed = new Set(allowedRoles.map((r) => r.toUpperCase()));
 
   return async (
     req: Request,
@@ -85,7 +85,7 @@ export const requireRole = (allowedRoles: string[]) => {
         if (role) req.auth.role = role;
       }
 
-      if (!role || !allowed.includes(String(role).toUpperCase())) {
+      if (!role || !allowed.has(String(role).toUpperCase())) {
         res
           .status(403)
           .json({ message: "Forbidden: insufficient permissions" });
