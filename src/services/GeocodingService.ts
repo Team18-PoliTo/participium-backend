@@ -25,7 +25,7 @@ export class GeocodingService {
             }
 
             return null;
-        } catch (error) {
+        } catch (_error) {
             return null;
         }
     }

@@ -101,7 +101,7 @@ describe("ReportService", () => {
     it("creates report, uploads provided photos, and returns DTO", async () => {
       const { service, reportRepository, citizenRepository } = buildService();
 
-      const result = await service.create(
+      const _result = await service.create(
           {
             title: "Broken light",
             description: "Lamp not working",

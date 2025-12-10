@@ -22,12 +22,12 @@ jest.mock("../../src/services/MinIoService", () => ({
 
 describe("External Maintainer Workflow E2E", () => {
   let maintainerToken: string;
-  let otherToken: string;
-  let maintainerId: number;
-  let otherUserId: number;
+  let _otherToken: string;
+  let _maintainerId: number;
+  let _otherUserId: number;
   let assignedReportId: number;
   let otherReportId: number;
-  let categoryId: number;
+  let _categoryId: number;
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {

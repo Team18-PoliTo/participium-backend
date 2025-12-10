@@ -14,8 +14,8 @@ export interface UploadedFileDTO {
   expiresAt: string; // ISO string format (Date converted to string for JSON response)
 }
 
-const VALID_TYPES = ["report", "profile"] as const;
-type FileType = typeof VALID_TYPES[number];
+const _VALID_TYPES = ["report", "profile"] as const;
+type FileType = typeof _VALID_TYPES[number];
 
 class FileService {
   private readonly tempFileRepository: TempFileRepository;
@@ -203,7 +203,7 @@ class FileService {
           await MinIoService.deleteFile(bucket, tempFile.tempPath);
           deleted = true;
           break; // Successfully deleted, no need to try other bucket
-        } catch (error) {
+        } catch (_error) {
           // Continue to next bucket if this one fails
         }
       }
@@ -234,7 +234,7 @@ class FileService {
             await MinIoService.deleteFile(bucket, file.tempPath);
             deleted = true;
             break;
-          } catch (error) {
+          } catch (_error) {
             // Continue to next bucket if this one fails
           }
         }

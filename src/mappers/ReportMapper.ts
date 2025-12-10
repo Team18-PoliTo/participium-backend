@@ -54,7 +54,7 @@ export class ReportMapper {
     };
   }
 
-  static toDTOforMap(reportDAO: ReportDAO): Object {
+  static toDTOforMap(reportDAO: ReportDAO): object {
     return {
       id: reportDAO.id,
       citizenName: reportDAO.citizen.firstName,
