@@ -10,48 +10,41 @@ env:
   IMAGE_NAME: participium-backend
 
 jobs:
-  build-and-push:
+  # Calculate version first (runs once)
+  calculate-version:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required to create and push git tags
-    
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_tag: ${{ steps.version.outputs.version_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for tags
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate version
         id: version
         run: |
-          # Get latest git tag (remove 'v' prefix if present)
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          VERSION=${LATEST_TAG#v}  # Remove 'v' prefix
-          
-          # Parse version components
+          VERSION=${LATEST_TAG#v}
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          
-          # Determine branch and increment accordingly
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
           
           if [ "$BRANCH_NAME" = "dev" ]; then
-            # Increment patch for dev
             PATCH=$((PATCH + 1))
             NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           elif [ "$BRANCH_NAME" = "main" ]; then
-            # Increment minor for main
             MINOR=$((MINOR + 1))
             PATCH=0
             NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           else
-            # For other branches, skip versioning (only dev/main get versions)
             echo "Skipping versioning for branch: $BRANCH_NAME"
             exit 0
           fi
           
-          echo "Previous version: $VERSION"
-          echo "New version: $NEW_VERSION"
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "version_tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
 
@@ -60,7 +53,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Check if tag already exists (avoid duplicates)
           if git rev-parse "${{ steps.version.outputs.version_tag }}" >/dev/null 2>&1; then
             echo "Tag ${{ steps.version.outputs.version_tag }} already exists, skipping"
             exit 0
@@ -68,52 +60,142 @@ jobs:
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Configure git to use token for authentication
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
-          
           git tag -a "${{ steps.version.outputs.version_tag }}" -m "Auto-incremented version: ${{ steps.version.outputs.version }}"
           git push origin "${{ steps.version.outputs.version_tag }}"
 
-      - name: Set up QEMU
+  # Build AMD64 platform (native - no QEMU needed)
+  build-amd64:
+    needs: calculate-version
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push AMD64 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.calculate-version.outputs.version }}-amd64
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.calculate-version.outputs.version_tag }}-amd64
+          cache-from: |
+            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache-amd64
+            type=gha
+          cache-to: |
+            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache-amd64,mode=max
+            type=gha,mode=max
+
+  # Build ARM64 platform (using QEMU with optimized settings)
+  build-arm64:
+    needs: calculate-version
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for ARM64
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+        uses: docker/setup-buildx-action@v3
         with:
-          version: latest
+          driver-opts: |
+            image=moby/buildkit:latest
+            network=host
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
+      - name: Build and push ARM64 image
+        uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version_tag }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.calculate-version.outputs.version }}-arm64
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ needs.calculate-version.outputs.version_tag }}-arm64
           cache-from: |
-            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache
+            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache-arm64
             type=gha
           cache-to: |
-            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+            type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:buildcache-arm64,mode=max
             type=gha,mode=max
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
+  # Create multi-platform manifest after both builds complete
+  create-manifest:
+    needs: [calculate-version, build-amd64, build-arm64]
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create and push multi-platform manifests
+        run: |
+          VERSION="${{ needs.calculate-version.outputs.version }}"
+          VERSION_TAG="${{ needs.calculate-version.outputs.version_tag }}"
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}"
+          
+          # Create manifests
+          docker manifest create ${IMAGE}:${VERSION} \
+            --amend ${IMAGE}:${VERSION}-amd64 \
+            --amend ${IMAGE}:${VERSION}-arm64
+          
+          docker manifest create ${IMAGE}:${VERSION_TAG} \
+            --amend ${IMAGE}:${VERSION_TAG}-amd64 \
+            --amend ${IMAGE}:${VERSION_TAG}-arm64
+          
+          docker manifest create ${IMAGE}:latest \
+            --amend ${IMAGE}:${VERSION}-amd64 \
+            --amend ${IMAGE}:${VERSION}-arm64
+          
+          # Push manifests
+          docker manifest push ${IMAGE}:${VERSION}
+          docker manifest push ${IMAGE}:${VERSION_TAG}
+          docker manifest push ${IMAGE}:latest
+
+  # Deploy to server after successful build
+  deploy:
+    needs: [calculate-version, create-manifest]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
       - name: Deploy to server
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-        timeout-minutes: 10
         env:
           DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
@@ -137,4 +219,3 @@ jobs:
             echo "❌ Deployment failed with status $http_code"
             exit 1
           fi
-
