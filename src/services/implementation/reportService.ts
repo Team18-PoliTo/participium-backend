@@ -263,15 +263,6 @@ class ReportService implements IReportService {
     ) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
-          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
-        );
-      }
-    }
-
-    if (report.status !== ReportStatus.PENDING_APPROVAL) {
-      if (!isAssignedUser) {
-        throw new Error(
-          "Only the currently assigned user can update this report"
             `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". ` +
             `This report status is "${report.status}".`
         );
@@ -322,7 +313,6 @@ class ReportService implements IReportService {
         report.assignedTo = await this.selectUnoccupiedOfficerByRole(
             categoryRoleMapping.role.id
         );
-        report.assignedTo = selectedOfficer;
       }
     }
 
