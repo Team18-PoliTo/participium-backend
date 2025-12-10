@@ -30,7 +30,7 @@ class InternalUserService {
   constructor(
     private readonly userRepository: IInternalUserRepository = new InternalUserRepository(),
     private readonly roleRepository: RoleRepository = new RoleRepository(),
-    private companyRepository: CompanyRepository = new CompanyRepository()
+    private readonly companyRepository: CompanyRepository = new CompanyRepository()
   ) {}
 
   async register(

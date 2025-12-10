@@ -41,7 +41,7 @@ describe("Authentication E2E Tests", () => {
     await citizenRepo.clear();
     await internalRepo.clear();
 
-    const citizen = await citizenRepo.save({
+     await citizenRepo.save({
       email: "testcitizen@example.com",
       username: "testcitizen",
       password: await bcrypt.hash("password123", 10),

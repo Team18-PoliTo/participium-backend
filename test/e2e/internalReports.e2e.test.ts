@@ -1,5 +1,6 @@
 import request from "supertest";
 import jwt from "jsonwebtoken";
+import * as bcrypt from "bcrypt";
 import app from "../../src/app";
 import { AppDataSource } from "../../src/config/database";
 import InternalUserDAO from "../../src/models/dao/InternalUserDAO";
@@ -51,7 +52,7 @@ describe("Internal Reports E2E Tests", () => {
       email: "staff@city.com",
       firstName: "Staff",
       lastName: "Member",
-      password: "pass",
+      password: await bcrypt.hash("test-password", 10),
       role: role,
       status: "ACTIVE"
     });
@@ -63,9 +64,12 @@ describe("Internal Reports E2E Tests", () => {
     );
 
     const citizen = await citizenRepo.save({
-      email: "c@c.com", username: "c", firstName: "C", lastName: "Z", password: "p"
+      email: "c@c.com",
+      username: "c",
+      firstName: "C",
+      lastName: "Z",
+      password: await bcrypt.hash("test-password", 10)
     });
-
 
     await reportRepo.save({
       title: "Assigned Report",

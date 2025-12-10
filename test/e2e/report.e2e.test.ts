@@ -19,30 +19,36 @@ jest.mock("../../src/services/MinIoService", () => ({
   },
 }));
 
+let mockCounter = 1;
+
 jest.mock("../../src/services/FileService", () => ({
-  __esModule: true,
-  default: {
-    uploadTemp: jest.fn().mockImplementation(async (file) => ({
-      fileId: "mock-file-id-" + Math.floor(Math.random() * 1000000),
-      filename: file.originalname,
-      size: 1024,
-      mimeType: "image/png",
-      tempPath: "temp/mock-path/" + file.originalname,
-      expiresAt: new Date(Date.now() + 86400000).toISOString()
-    })),
-    validateTempFiles: jest.fn().mockResolvedValue([
-      { fileId: "mock-file-id-1", originalName: "photo1.png", tempPath: "temp/1.png" },
-      { fileId: "mock-file-id-2", originalName: "photo2.png", tempPath: "temp/2.png" },
-      { fileId: "mock-file-id-3", originalName: "photo3.png", tempPath: "temp/3.png" }
-    ]),
-    moveMultipleToPermanent: jest.fn().mockResolvedValue([
-      "reports/1/photo1.png",
-      "reports/1/photo2.png",
-      "reports/1/photo3.png"
-    ]),
-    deleteTempFile: jest.fn().mockResolvedValue(undefined),
-    cleanupExpiredTempFiles: jest.fn().mockResolvedValue(0)
-  }
+    __esModule: true,
+    default: {
+        uploadTemp: jest.fn().mockImplementation(async (file) => ({
+            fileId: `mock-file-id-${mockCounter++}`,
+            filename: file.originalname,
+            size: 1024,
+            mimeType: "image/png",
+            tempPath: `temp/mock-path/${file.originalname}`,
+            expiresAt: new Date(Date.now() + 86400000).toISOString()
+        })),
+
+        validateTempFiles: jest.fn().mockResolvedValue([
+            { fileId: "mock-file-id-1", originalName: "photo1.png", tempPath: "temp/1.png" },
+            { fileId: "mock-file-id-2", originalName: "photo2.png", tempPath: "temp/2.png" },
+            { fileId: "mock-file-id-3", originalName: "photo3.png", tempPath: "temp/3.png" }
+        ]),
+
+        moveMultipleToPermanent: jest.fn().mockResolvedValue([
+            "reports/1/photo1.png",
+            "reports/1/photo2.png",
+            "reports/1/photo3.png"
+        ]),
+
+        deleteTempFile: jest.fn().mockResolvedValue(undefined),
+
+        cleanupExpiredTempFiles: jest.fn().mockResolvedValue(0),
+    }
 }));
 
 describe("Report E2E Tests", () => {

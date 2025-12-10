@@ -26,7 +26,11 @@ async function bootstrap() {
   }
 }
 
-bootstrap().catch((err) => {
-  console.error("Fatal error during bootstrap:", err);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await bootstrap();
+  } catch (err) {
+    console.error("Fatal error:", err);
+    process.exit(1);
+  }
+})();

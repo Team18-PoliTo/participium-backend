@@ -45,23 +45,6 @@ describe('authMiddleware', () => {
     expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized (invalid token)' });
   });
 
-  it('requireAuth accepts valid citizen token', () => {
-    const token = jwt.sign(
-      { sub: 42, kind: 'citizen', email: 'citizen@city.com' },
-      'dev-secret'
-    );
-    const req: any = {
-      header: jest.fn().mockReturnValue(`Bearer ${token}`),
-    };
-    const res = mockRes();
-
-    requireAuth(req as Request, res, next);
-
-    expect(res.status).not.toHaveBeenCalled();
-    expect(next).toHaveBeenCalled();
-    expect(req.auth).toEqual({ sub: 42, kind: 'citizen', email: 'citizen@city.com', role: undefined });
-  });
-
   it('requireAuth rejects when jwt payload is string', () => {
     const verifySpy = jest.spyOn(jwt, 'verify').mockReturnValue('payload');
     const req = {

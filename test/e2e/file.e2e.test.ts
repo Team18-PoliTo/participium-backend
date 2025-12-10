@@ -1,5 +1,6 @@
 import request from "supertest";
 import { DataSource } from "typeorm";
+import * as bcrypt from "bcrypt";
 import { generateCitizenToken } from "../utils/auth";
 
 // DO NOT import app or database globally here. 
@@ -66,7 +67,7 @@ describe("File E2E Tests", () => {
       username: `filetester_${timestamp}`,
       firstName: "File",
       lastName: "Tester",
-      password: "pass",
+      password: await bcrypt.hash("test-password", 10),
     });
     token = generateCitizenToken(citizen.id, citizen.email);
   });

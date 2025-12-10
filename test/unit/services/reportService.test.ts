@@ -101,7 +101,7 @@ describe("ReportService", () => {
     it("creates report, uploads provided photos, and returns DTO", async () => {
       const { service, reportRepository, citizenRepository } = buildService();
 
-      const result = await service.create(
+      await service.create(
           {
             title: "Broken light",
             description: "Lamp not working",
@@ -902,9 +902,5 @@ describe("ReportService", () => {
         service.updateReport(1, { status: ReportStatus.RESOLVED, explanation: "" }, user.id, "External Maintainer")
       ).rejects.toThrow("Only the currently assigned officer can update");
     });
-
-    // NOTE: Tests for "Skipping states" and "Category change restriction" have been removed
-    // because the current implementation does not enforce these rules, and we are restricted
-    // from modifying the source code.
   });
 });

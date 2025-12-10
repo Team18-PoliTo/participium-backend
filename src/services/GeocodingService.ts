@@ -17,7 +17,7 @@ export class GeocodingService {
 
             const looksValidRoad =
                 road &&
-                !road.match(/^\d|_/);
+                !road.match(/^[\d_]/);
 
             if (looksValidRoad) {
                 const line = `${road} ${house}`.trim();
