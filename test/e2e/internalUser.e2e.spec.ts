@@ -141,6 +141,7 @@ describe("Internal User Management E2E Tests", () => {
       expect(res.status).toBe(409);
       expect(res.body).toHaveProperty("error", "InternalUser with this email already exists");
     });
+  });
 
   describe("Update Internal User", () => {
     let testUserId: number;
@@ -308,7 +309,7 @@ describe("Internal User Management E2E Tests", () => {
   describe("Get Reports", () => {
     let techToken: string;
     let prToken: string;
-    let reportId: number;
+    let _reportId: number;
 
     beforeAll(async () => {
       const roleRepo = AppDataSource.getRepository(RoleDAO);
@@ -388,6 +389,7 @@ describe("Internal User Management E2E Tests", () => {
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
+      reportId = newReport.id;
     });
 
     it("PR Officer should ONLY see pending reports", async () => {

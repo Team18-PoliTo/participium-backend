@@ -174,7 +174,7 @@ class ReportService implements IReportService {
   }
 
   async getAssignedReportsInMap(
-    corners: Object[]
+    corners: object[]
   ): Promise<Partial<ReportDTO>[]> {
     const reports = await this.reportRepository.findAllApproved();
     const [corner1, corner2] = corners as {
@@ -303,7 +303,7 @@ class ReportService implements IReportService {
       }
     }
 
-    let assignedTo = report.assignedTo;
+    const assignedTo = report.assignedTo;
 
     if (data.status === ReportStatus.ASSIGNED) {
       const categoryRoleMapping =
@@ -383,7 +383,7 @@ class ReportService implements IReportService {
     report.status = ReportStatus.DELEGATED;
     report.assignedTo = selectedMaintainer;
 
-    const updatedReport = await this.reportRepository.updateStatus(
+    await this.reportRepository.updateStatus(
       reportId,
       ReportStatus.DELEGATED,
       undefined,

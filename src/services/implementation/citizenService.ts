@@ -141,7 +141,7 @@ class CitizenService implements ICitizenService {
     assignNormalized("lastName", data.lastName);
     assignNormalized("telegramUsername", data.telegramUsername);
 
-    if (data.emailNotificationsEnabled != null) {
+    if (data.emailNotificationsEnabled !== null) {
       updatePayload.emailNotificationsEnabled = data.emailNotificationsEnabled;
     }
 

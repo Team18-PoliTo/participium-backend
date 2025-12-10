@@ -57,7 +57,6 @@ describe("External Maintainer Workflow E2E", () => {
       company,
       status: "ACTIVE",
     });
-    //maintainerId = maintainer.id;
 
     const otherUser = await userRepo.save({
       email: "tech@city.com",
@@ -67,7 +66,6 @@ describe("External Maintainer Workflow E2E", () => {
       role: techRole,
       status: "ACTIVE",
     });
-    //otherUserId = otherUser.id;
 
     maintainerToken = jwt.sign(
       { sub: maintainer.id, kind: "internal", email: maintainer.email, role: maintainerRole.role },
