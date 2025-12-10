@@ -3,24 +3,21 @@ import ReportDAO from "../../../src/models/dao/ReportDAO";
 import MinIoService from "../../../src/services/MinIoService";
 import { ReportStatus } from "../../../src/constants/ReportStatus";
 
-
 jest.mock("../../../src/services/MinIoService", () => {
   return {
     __esModule: true,
     default: {
-      getPresignedUrl: jest.fn(async (key) => `http://minio/${key}`)
-    }
+      getPresignedUrl: jest.fn(async (key) => `http://minio/${key}`),
+    },
   };
 });
 
 describe("ReportMapper.toDTO", () => {
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("should map all fields correctly and generate presigned URLs", async () => {
-
     const mockDate = new Date();
 
     const reportDAO = {

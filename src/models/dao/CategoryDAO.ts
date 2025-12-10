@@ -19,12 +19,15 @@ class CategoryDAO {
   })
   categoryRoles: CategoryRoleDAO[];
 
-  @OneToMany(() => CompanyCategoryDAO, (categoryCompany) => categoryCompany.category, {
-    cascade: true,
-    eager: false,
-  })
+  @OneToMany(
+    () => CompanyCategoryDAO,
+    (categoryCompany) => categoryCompany.category,
+    {
+      cascade: true,
+      eager: false,
+    }
+  )
   companies: CompanyCategoryDAO[];
 }
 
 export default CategoryDAO;
-

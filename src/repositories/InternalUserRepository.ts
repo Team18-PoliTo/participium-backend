@@ -4,15 +4,20 @@ import InternalUserDAO from "../models/dao/InternalUserDAO";
 
 interface IInternalUserRepository {
   create(user: InternalUserDAO): Promise<InternalUserDAO>;
-  findByEmail(email: string, opts?: { withPassword?: boolean }): Promise<InternalUserDAO | null>;
+  findByEmail(
+    email: string,
+    opts?: { withPassword?: boolean }
+  ): Promise<InternalUserDAO | null>;
   findById(id: number): Promise<InternalUserDAO | null>;
   update(user: InternalUserDAO): Promise<InternalUserDAO>;
-  fetchAll(): Promise<InternalUserDAO []>;
+  fetchAll(): Promise<InternalUserDAO[]>;
   findByRoleId(roleId: number): Promise<InternalUserDAO[]>;
   incrementActiveTasks(userId: number): Promise<void>;
   decrementActiveTasks(userId: number): Promise<void>;
   findByIdWithRoleAndOffice(id: number): Promise<InternalUserDAO | null>;
-  findExternalMaintainersByCompany(companyId: number): Promise<InternalUserDAO[]>;
+  findExternalMaintainersByCompany(
+    companyId: number
+  ): Promise<InternalUserDAO[]>;
 }
 
 export class InternalUserRepository implements IInternalUserRepository {
@@ -42,9 +47,9 @@ export class InternalUserRepository implements IInternalUserRepository {
 
   async findById(id: number): Promise<InternalUserDAO | null> {
     // include role and company relations so callers receive the entities populated
-    return await this.repo.findOne({ 
-      where: { id }, 
-      relations: ["role", "company"] 
+    return await this.repo.findOne({
+      where: { id },
+      relations: ["role", "company"],
     });
   }
 
@@ -52,10 +57,10 @@ export class InternalUserRepository implements IInternalUserRepository {
     return await this.repo.save(user);
   }
 
-  async fetchAll(): Promise<InternalUserDAO []> {
-    return await this.repo.find({ 
-      relations: ["role", "company"] 
-    }); 
+  async fetchAll(): Promise<InternalUserDAO[]> {
+    return await this.repo.find({
+      relations: ["role", "company"],
+    });
   }
 
   async findByRoleId(roleId: number): Promise<InternalUserDAO[]> {
@@ -90,8 +95,9 @@ export class InternalUserRepository implements IInternalUserRepository {
     });
   }
 
-
-  async findExternalMaintainersByCompany(companyId: number): Promise<InternalUserDAO[]> {
+  async findExternalMaintainersByCompany(
+    companyId: number
+  ): Promise<InternalUserDAO[]> {
     return await this.repo.find({
       where: {
         role: { id: 28 },

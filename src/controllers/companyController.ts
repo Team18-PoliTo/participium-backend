@@ -31,9 +31,8 @@ class CompanyController {
   ): Promise<void> {
     try {
       const categoryId = Number.parseInt(req.params.categoryId, 10);
-      const companies = await this.companyService.getCompaniesByCategory(
-        categoryId
-      );
+      const companies =
+        await this.companyService.getCompaniesByCategory(categoryId);
       const response = companies.map((company) => ({
         id: company.id,
         name: company.name,

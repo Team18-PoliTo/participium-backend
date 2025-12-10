@@ -163,9 +163,8 @@ class InternalUserController {
         status = status || ReportStatus.PENDING_APPROVAL;
       }
 
-      const reports: ReportDTO[] = await this.reportService.getReportsByStatus(
-        status
-      );
+      const reports: ReportDTO[] =
+        await this.reportService.getReportsByStatus(status);
       res.status(200).json(reports);
     } catch (error) {
       if (error instanceof Error) {

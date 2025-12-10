@@ -1,14 +1,14 @@
-import {CitizenMapper} from "../../mappers/CitizenMapper";
-import {CitizenDTO} from "../../models/dto/CitizenDTO";
-import {RegisterCitizenRequestDTO} from "../../models/dto/ValidRequestDTOs";
+import { CitizenMapper } from "../../mappers/CitizenMapper";
+import { CitizenDTO } from "../../models/dto/CitizenDTO";
+import { RegisterCitizenRequestDTO } from "../../models/dto/ValidRequestDTOs";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import {ICitizenRepository} from "../../repositories/ICitizenRepository";
-import {ICitizenService} from "../ICitizenService";
-import {LoginRequestDTO} from "../../models/dto/LoginRequestDTO";
+import { ICitizenRepository } from "../../repositories/ICitizenRepository";
+import { ICitizenService } from "../ICitizenService";
+import { LoginRequestDTO } from "../../models/dto/LoginRequestDTO";
 import MinIoService from "../MinIoService";
-import {PROFILE_BUCKET} from "../../config/minioClient";
+import { PROFILE_BUCKET } from "../../config/minioClient";
 
 class CitizenService implements ICitizenService {
   static updateCitizen: any;
@@ -16,15 +16,12 @@ class CitizenService implements ICitizenService {
     private readonly citizenRepository: ICitizenRepository = new CitizenRepository()
   ) {}
 
-  async register(
-    registerData: RegisterCitizenRequestDTO
-  ): Promise<CitizenDTO> {
+  async register(registerData: RegisterCitizenRequestDTO): Promise<CitizenDTO> {
     const email = registerData.email.trim().toLowerCase();
     const username = registerData.username.trim().toLowerCase();
 
-    const existingCitizenByEmail = await this.citizenRepository.findByEmail(
-      email
-    );
+    const existingCitizenByEmail =
+      await this.citizenRepository.findByEmail(email);
     if (existingCitizenByEmail)
       throw new Error("Citizen with this email already exists");
 
@@ -85,7 +82,12 @@ class CitizenService implements ICitizenService {
 
     const secret = process.env.JWT_SECRET || "dev-secret";
     const token = jwt.sign(
-      { sub: citizen.id, kind: "citizen", email: citizen.email, status: citizen.status },
+      {
+        sub: citizen.id,
+        kind: "citizen",
+        email: citizen.email,
+        status: citizen.status,
+      },
       secret,
       { expiresIn: "1h" }
     );
@@ -94,18 +96,17 @@ class CitizenService implements ICitizenService {
   }
 
   async updateCitizen(
-      id: number,
-      data: {
-        email?: string | null;
-        username?: string | null;
-        firstName?: string | null;
-        lastName?: string | null;
-        telegramUsername?: string | null;
-        emailNotificationsEnabled?: boolean;
-        photoPath?: string | null;
-      }
+    id: number,
+    data: {
+      email?: string | null;
+      username?: string | null;
+      firstName?: string | null;
+      lastName?: string | null;
+      telegramUsername?: string | null;
+      emailNotificationsEnabled?: boolean;
+      photoPath?: string | null;
+    }
   ): Promise<CitizenDTO> {
-
     const citizen = await this.citizenRepository.findById(id);
     if (!citizen) throw new Error("Citizen not found");
 
@@ -115,7 +116,11 @@ class CitizenService implements ICitizenService {
       return v;
     };
 
-    const assignNormalized = (key: string, val: any, transform?: (v: any) => any) => {
+    const assignNormalized = (
+      key: string,
+      val: any,
+      transform?: (v: any) => any
+    ) => {
       if (val === undefined) return;
       const normalized = normalize(val);
       updatePayload[key] = transform ? transform(normalized) : normalized;
@@ -127,16 +132,18 @@ class CitizenService implements ICitizenService {
         await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
       } catch (err: any) {
         console.warn(
-            `[CitizenService] Failed to delete profile photo ${citizen.accountPhotoUrl}:`,
-            err?.message || err
+          `[CitizenService] Failed to delete profile photo ${citizen.accountPhotoUrl}:`,
+          err?.message || err
         );
       }
     };
 
     const updatePayload: any = {};
 
-    assignNormalized("email", data.email, v => v ? v.toLowerCase() : null);
-    assignNormalized("username", data.username, v => v ? v.toLowerCase() : null);
+    assignNormalized("email", data.email, (v) => (v ? v.toLowerCase() : null));
+    assignNormalized("username", data.username, (v) =>
+      v ? v.toLowerCase() : null
+    );
     assignNormalized("firstName", data.firstName);
     assignNormalized("lastName", data.lastName);
     assignNormalized("telegramUsername", data.telegramUsername);
@@ -144,7 +151,6 @@ class CitizenService implements ICitizenService {
     if (data.emailNotificationsEnabled !== null) {
       updatePayload.emailNotificationsEnabled = data.emailNotificationsEnabled;
     }
-
 
     // PHOTO SECTION (reduced complexity)
     if (data.photoPath !== undefined) {
@@ -159,10 +165,7 @@ class CitizenService implements ICitizenService {
 
     return await CitizenMapper.toDTO(updatedCitizen);
   }
-
 }
 
 export const citizenService = new CitizenService();
 export default CitizenService;
-
-

@@ -76,15 +76,15 @@ export class UpdateInternalUserRequestDTO {
 }
 
 export class CreateReportRequestDTO {
-  @IsString({message: "Title must be a string"})
+  @IsString({ message: "Title must be a string" })
   @IsNotEmpty({ message: "Title is required" })
   title: string;
-  
-  @IsString({message: "Description must be a string"})
+
+  @IsString({ message: "Description must be a string" })
   @IsNotEmpty({ message: "Description is required" })
   description: string;
 
-  @IsInt({message: "Category ID must be a number"})
+  @IsInt({ message: "Category ID must be a number" })
   @IsNotEmpty({ message: "Category is required" })
   categoryId: number;
 
@@ -118,12 +118,15 @@ export class UpdateReportRequestDTO {
 export class DelegateReportRequestDTO {
   @IsNotEmpty()
   @IsInt({ message: "Company ID must be a number" })
-  companyId: number; 
+  companyId: number;
 }
 
 export class GetAssignedReportsForMapRequestDTO {
   @IsNotEmpty({ message: "Corners are required" })
-  @IsObject({ each: true, message: "Each corner must be an object with longitude and latitude" })
+  @IsObject({
+    each: true,
+    message: "Each corner must be an object with longitude and latitude",
+  })
   @IsArray({ message: "Corners must be an array" })
   corners: {
     latitude: number;

@@ -12,20 +12,20 @@ import { ValidationError } from "@nestjs/common";
 
 class AuthController {
   constructor(
-      private readonly citizenService: ICitizenService,
-      private readonly internalUserService: InternalUserService,
-      private readonly citizenRepository: CitizenRepository = new CitizenRepository(),
-      private readonly internalRepository: InternalUserRepository = new InternalUserRepository()
+    private readonly citizenService: ICitizenService,
+    private readonly internalUserService: InternalUserService,
+    private readonly citizenRepository: CitizenRepository = new CitizenRepository(),
+    private readonly internalRepository: InternalUserRepository = new InternalUserRepository()
   ) {}
 
   /**
    * Shared login handler for both citizen and internal users.
    */
   private async handleLogin(
-      req: Request,
-      res: Response,
-      next: NextFunction,
-      loginFn: (dto: LoginRequestDTO) => Promise<any>
+    req: Request,
+    res: Response,
+    next: NextFunction,
+    loginFn: (dto: LoginRequestDTO) => Promise<any>
   ): Promise<void> {
     try {
       const normalized = {
@@ -38,19 +38,21 @@ class AuthController {
         password: normalized.password,
       });
 
-      const errors = await validate(dto, { whitelist: true, forbidNonWhitelisted: true });
+      const errors = await validate(dto, {
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      });
 
       if (errors.length > 0) {
         const message = errors
-            .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
-            .join("; ");
+          .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
+          .join("; ");
         res.status(400).json({ error: message });
         return;
       }
 
       const result = await loginFn(dto);
       res.status(200).json(result);
-
     } catch (err) {
       if (err instanceof Error && err.message === "Invalid credentials") {
         res.status(401).json({ error: "Invalid credentials" });
@@ -61,16 +63,24 @@ class AuthController {
   }
 
   /** Citizen login */
-  async loginCitizen(req: Request, res: Response, next: NextFunction): Promise<void> {
-    return this.handleLogin(req, res, next, dto =>
-        this.citizenService.login(dto)
+  async loginCitizen(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    return this.handleLogin(req, res, next, (dto) =>
+      this.citizenService.login(dto)
     );
   }
 
   /** Internal user login */
-  async loginInternal(req: Request, res: Response, next: NextFunction): Promise<void> {
-    return this.handleLogin(req, res, next, dto =>
-        this.internalUserService.login(dto)
+  async loginInternal(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    return this.handleLogin(req, res, next, (dto) =>
+      this.internalUserService.login(dto)
     );
   }
 
@@ -86,7 +96,9 @@ class AuthController {
       }
 
       if (req.auth.kind === "citizen") {
-        const citizen = await this.citizenRepository.findByEmail(req.auth.email ?? "");
+        const citizen = await this.citizenRepository.findByEmail(
+          req.auth.email ?? ""
+        );
         if (!citizen) {
           res.status(404).json({ error: "Citizen not found" });
           return;
@@ -112,7 +124,6 @@ class AuthController {
       }
 
       res.status(400).json({ error: "Unknown authentication kind" });
-
     } catch (err) {
       next(err);
     }
@@ -120,4 +131,3 @@ class AuthController {
 }
 
 export default AuthController;
-

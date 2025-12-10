@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  OneToMany,
+} from "typeorm";
 import ReportDAO from "./ReportDAO";
 
 export type CitizenStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
@@ -44,7 +50,10 @@ class CitizenDAO {
   @Column({ type: "varchar", nullable: true })
   accountPhotoUrl?: string;
 
-  @OneToMany(() => ReportDAO, (report) => report.citizen, { nullable: true, onDelete: "CASCADE" })
+  @OneToMany(() => ReportDAO, (report) => report.citizen, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   reports: ReportDAO[];
 }
 

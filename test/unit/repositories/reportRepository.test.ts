@@ -138,11 +138,15 @@ describe("ReportRepository", () => {
       const result = await repo.findAllApproved();
 
       expect(find).toHaveBeenCalledWith({
-        where: { 
+        where: {
           status: expect.objectContaining({
             _type: "in",
-            _value: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.DELEGATED]
-          })
+            _value: [
+              ReportStatus.ASSIGNED,
+              ReportStatus.IN_PROGRESS,
+              ReportStatus.DELEGATED,
+            ],
+          }),
         },
         relations: ["citizen"],
         order: { createdAt: "DESC" },
@@ -317,11 +321,11 @@ describe("ReportRepository", () => {
 
       expect(find).toHaveBeenCalledWith({
         where: {
-          category: { 
+          category: {
             id: expect.objectContaining({
               _type: "in",
-              _value: [1, 2]
-            })
+              _value: [1, 2],
+            }),
           },
         },
         relations: ["assignedTo", "category"],
@@ -352,11 +356,11 @@ describe("ReportRepository", () => {
 
       expect(find).toHaveBeenCalledWith({
         where: {
-          category: { 
+          category: {
             id: expect.objectContaining({
               _type: "in",
-              _value: [1, 2, 3]
-            })
+              _value: [1, 2, 3],
+            }),
           },
         },
         relations: ["assignedTo", "category"],

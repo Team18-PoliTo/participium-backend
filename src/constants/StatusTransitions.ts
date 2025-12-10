@@ -2,13 +2,13 @@ import { ReportStatus, ReportStatusType } from "./ReportStatus";
 
 /**
  * Status Transition Rules
- * 
+ *
  * Defines valid status transitions based on:
  * - Current status
- * - Target status  
+ * - Target status
  * - User role
  * - Whether user is an external maintainer
- * 
+ *
  * | From              | To           | Who                                    |
  * |-------------------|--------------|----------------------------------------|
  * | PENDING_APPROVAL  | ASSIGNED     | PR Officer                             |
@@ -113,7 +113,7 @@ export interface TransitionValidationResult {
 
 /**
  * Validates if a status transition is allowed based on role and current status
- * 
+ *
  * @param currentStatus - The current status of the report
  * @param newStatus - The target status to transition to
  * @param userRole - The role of the user attempting the transition
@@ -212,4 +212,3 @@ export function getValidNextStatuses(
     }
   }).map((rule) => rule.to);
 }
-

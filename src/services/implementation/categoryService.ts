@@ -4,17 +4,17 @@ import { ICategoryService } from "../ICategoryService";
 import CategoryRepository from "../../repositories/implementation/CategoryRepository";
 
 export class CategoryService implements ICategoryService {
-    constructor(private readonly categoryRepository: CategoryRepository) {}
+  constructor(private readonly categoryRepository: CategoryRepository) {}
 
-    async getAllCategories(): Promise<CategoryDTO[]> {
-        const categories: CategoryDAO[] = await this.categoryRepository.findAll();
+  async getAllCategories(): Promise<CategoryDTO[]> {
+    const categories: CategoryDAO[] = await this.categoryRepository.findAll();
 
-        return categories.map((c) => ({
-            id: c.id,
-            name: c.name,
-            description: c.description,
-        }));
-    }
+    return categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description,
+    }));
+  }
 }
 
 export default CategoryService;
