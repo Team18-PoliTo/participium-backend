@@ -39,7 +39,6 @@ describe('InternalUserController', () => {
     jest.clearAllMocks();
   });
 
-  // --- CREATE ---
   describe("create", () => {
       const validCreateBody = {
           email: 'test@test.com',
@@ -94,7 +93,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- UPDATE ---
   describe("update", () => {
       it('update returns 200 on success', async () => {
           mockInternalService.update.mockResolvedValue({ id: 1 });
@@ -147,7 +145,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- FETCH ---
   describe("fetch", () => {
       it('fetch returns 200 with users', async () => {
           mockInternalService.fetchUsers.mockResolvedValue([]);
@@ -173,7 +170,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- DELETE ---
   describe("delete", () => {
       it('delete returns 204 on success', async () => {
           mockInternalService.disableById.mockResolvedValue('ok');
@@ -218,7 +214,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- GET REPORTS ---
   describe("getReports", () => {
       it("returns 500 if reportService missing", async () => {
           const c = buildController(false); // no report service
@@ -272,7 +267,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- UPDATE REPORT STATUS ---
   describe("updateReportStatus", () => {
       it("returns 500 if reportService missing", async () => {
           const c = buildController(false);
@@ -290,7 +284,6 @@ describe('InternalUserController', () => {
       });
 
       it("returns 400 on validation error (missing explanation)", async () => {
-          // Explanation is required in UpdateReportRequestDTO
           const req = { params: { id: '1' }, body: { status: ReportStatus.RESOLVED } } as any;
           const res = mockRes();
           await buildController().updateReportStatus(req, res, next);
@@ -313,7 +306,7 @@ describe('InternalUserController', () => {
 
         await buildController().updateReportStatus(req, res, next);
 
-        expect(mockReportService.updateReport).toHaveBeenCalledWith(1, expect.anything(), "Admin");
+        expect(mockReportService.updateReport).toHaveBeenCalledWith(1, { explanation: "Done",  status: ReportStatus.RESOLVED, }, undefined, "Admin");
         expect(res.status).toHaveBeenCalledWith(200);
       });
 
