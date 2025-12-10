@@ -170,23 +170,18 @@ jobs:
           VERSION_TAG="${{ needs.calculate-version.outputs.version_tag }}"
           IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}"
           
-          # Create manifests
-          docker manifest create ${IMAGE}:${VERSION} \
-            --amend ${IMAGE}:${VERSION}-amd64 \
-            --amend ${IMAGE}:${VERSION}-arm64
+          # Use buildx imagetools to create multi-platform manifests
+          docker buildx imagetools create -t ${IMAGE}:${VERSION} \
+            ${IMAGE}:${VERSION}-amd64 \
+            ${IMAGE}:${VERSION}-arm64
           
-          docker manifest create ${IMAGE}:${VERSION_TAG} \
-            --amend ${IMAGE}:${VERSION_TAG}-amd64 \
-            --amend ${IMAGE}:${VERSION_TAG}-arm64
+          docker buildx imagetools create -t ${IMAGE}:${VERSION_TAG} \
+            ${IMAGE}:${VERSION_TAG}-amd64 \
+            ${IMAGE}:${VERSION_TAG}-arm64
           
-          docker manifest create ${IMAGE}:latest \
-            --amend ${IMAGE}:${VERSION}-amd64 \
-            --amend ${IMAGE}:${VERSION}-arm64
-          
-          # Push manifests
-          docker manifest push ${IMAGE}:${VERSION}
-          docker manifest push ${IMAGE}:${VERSION_TAG}
-          docker manifest push ${IMAGE}:latest
+          docker buildx imagetools create -t ${IMAGE}:latest \
+            ${IMAGE}:${VERSION}-amd64 \
+            ${IMAGE}:${VERSION}-arm64
 
   # Deploy to server after successful build
   deploy:
