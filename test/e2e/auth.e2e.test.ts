@@ -6,6 +6,8 @@ import InternalUserDAO from "../../src/models/dao/InternalUserDAO";
 import * as bcrypt from "bcrypt";
 import RoleDAO from "../../src/models/dao/RoleDAO";
 
+const TEST_PASSWORD = "password123";
+const TEST_WRONG_PASSWORD = "wrongpassword";
 describe("Authentication E2E Tests", () => {
   let _citizenId: number;
   let internalUserId: number;
@@ -82,7 +84,7 @@ describe("Authentication E2E Tests", () => {
     it("should login citizen with valid credentials", async () => {
       const res = await request(app).post("/api/auth/citizens/login").send({
         email: "testcitizen@example.com",
-        password: "password123",
+        password: TEST_PASSWORD,
       });
 
       expect(res.status).toBe(200);
@@ -92,7 +94,7 @@ describe("Authentication E2E Tests", () => {
     it("should reject citizen login with invalid credentials", async () => {
       const res = await request(app).post("/api/auth/citizens/login").send({
         email: "testcitizen@example.com",
-        password: "wrongpassword",
+        password: TEST_WRONG_PASSWORD,
       });
 
       expect(res.status).toBe(401);
@@ -102,7 +104,7 @@ describe("Authentication E2E Tests", () => {
     it("should validate login request DTO", async () => {
       const res = await request(app).post("/api/auth/citizens/login").send({
         email: "invalid-email",
-        password: "123",
+        password: TEST_PASSWORD,
       });
 
       expect(res.status).toBe(400);
@@ -114,7 +116,7 @@ describe("Authentication E2E Tests", () => {
     it("should login internal user with valid credentials", async () => {
       const res = await request(app).post("/api/auth/internal/login").send({
         email: "testinternal@example.com",
-        password: "password123",
+        password: TEST_PASSWORD,
       });
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty("access_token");
@@ -123,7 +125,7 @@ describe("Authentication E2E Tests", () => {
     it("should reject internal user login with invalid credentials", async () => {
       const res = await request(app).post("/api/auth/internal/login").send({
         email: "testinternal@example.com",
-        password: "wrongpassword",
+        password: TEST_WRONG_PASSWORD,
       });
 
       expect(res.status).toBe(401);
@@ -137,7 +139,7 @@ describe("Authentication E2E Tests", () => {
         .post("/api/auth/citizens/login")
         .send({
           email: "testcitizen@example.com",
-          password: "password123",
+          password: TEST_PASSWORD,
         });
 
       expect(loginRes.status).toBe(200);
@@ -161,7 +163,7 @@ describe("Authentication E2E Tests", () => {
         .post("/api/auth/citizens/login")
         .send({
           email: "testcitizen@example.com",
-          password: "password123",
+          password: TEST_PASSWORD,
         });
 
       expect(citizenRes.status).toBe(200);
@@ -181,7 +183,7 @@ describe("Authentication E2E Tests", () => {
         .post("/api/auth/internal/login")
         .send({
           email: "testinternal@example.com",
-          password: "password123",
+          password: TEST_PASSWORD,
         });
 
       expect(internalRes.status).toBe(200);

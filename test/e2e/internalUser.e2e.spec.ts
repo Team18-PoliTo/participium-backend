@@ -12,6 +12,7 @@ import CitizenDAO from "../../src/models/dao/CitizenDAO";
 
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+const TEST_PASSWORD = "password123";
 
 describe("Internal User Management E2E Tests", () => {
   let adminToken: string;
@@ -113,7 +114,7 @@ describe("Internal User Management E2E Tests", () => {
         firstName: "Test",
         lastName: "User",
         email: "testuser@example.com",
-        password: "password123",
+        password: TEST_PASSWORD,
         roleId: proRoleId,
       };
 
@@ -134,7 +135,7 @@ describe("Internal User Management E2E Tests", () => {
         firstName: "Test",
         lastName: "User",
         email: "admin@admin.com",
-        password: "password123",
+        password: TEST_PASSWORD,
         roleId: proRoleId,
       };
 
@@ -404,7 +405,7 @@ describe("Internal User Management E2E Tests", () => {
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
-      reportId = newReport.id;
+     // reportId = newReport.id;
     });
 
     it("PR Officer should ONLY see pending reports", async () => {

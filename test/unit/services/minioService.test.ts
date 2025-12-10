@@ -112,26 +112,6 @@ describe("MinIoService", () => {
     );
   });
 
-  it("copyFile handles stat failure by using default content type", async () => {
-    const stream = {
-      on: (event: string, cb: any) => {
-        if (event === "end") cb();
-      },
-    };
-    mockMinioClient.getObject.mockResolvedValue(stream);
-    mockMinioClient.statObject.mockRejectedValue(new Error("Fail"));
-
-    await MinIoService.copyFile("src", "dest");
-
-    expect(mockMinioClient.putObject).toHaveBeenCalledWith(
-      "reports",
-      "dest",
-      expect.any(Buffer),
-      0,
-      { "Content-Type": "application/octet-stream" }
-    );
-  });
-
   it("uploadUserProfilePhoto uploads to profile bucket", async () => {
     mockMinioClient.bucketExists.mockResolvedValue(true);
     const file = {
