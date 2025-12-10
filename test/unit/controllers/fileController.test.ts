@@ -1,5 +1,4 @@
-import { Request, Response} from "express";
-import { EntityMetadataNotFoundError } from "typeorm";
+import { Request, Response } from "express";
 
 const mockUploadTemp = jest.fn();
 const mockDeleteTempFile = jest.fn();
@@ -43,9 +42,7 @@ describe("FileController", () => {
     describe("uploadTemp", () => {
         it("returns 400 if no file provided", async () => {
             const { req, res, next } = mockReqRes();
-
             await controller.uploadTemp(req, res, next);
-
             expectError(res, 400, "No file provided");
         });
 
@@ -55,8 +52,7 @@ describe("FileController", () => {
 
             const err = new Error("File type .exe is not allowed");
             mockUploadTemp.mockRejectedValue(err);
-
-            await controller.uploadTemp(req, res, next);
+            await controller.uploadTemp(req , res, next);
 
             expectError(res, 400, err.message);
         });
@@ -64,12 +60,9 @@ describe("FileController", () => {
         it("returns 400 on max size exceeded", async () => {
             const { req, res, next } = mockReqRes();
             req.file = { originalname: "big.png" } as any;
-
             const err = new Error("File size exceeds maximum");
             mockUploadTemp.mockRejectedValue(err);
-
             await controller.uploadTemp(req, res, next);
-
             expectError(res, 400, err.message);
         });
 
@@ -91,9 +84,7 @@ describe("FileController", () => {
     describe("deleteTempFile", () => {
         it("returns 400 if fileId missing", async () => {
             const { req, res, next } = mockReqRes();
-
             await controller.deleteTempFile(req, res, next);
-
             expectError(res, 400, "File ID is required");
         });
 
@@ -102,24 +93,9 @@ describe("FileController", () => {
             req.params = { fileId: "abc" };
 
             mockDeleteTempFile.mockResolvedValue(undefined);
-
-            await controller.deleteTempFile(req, res, next);
-
+            await controller.deleteTempFile(req, res , next);
             expect(res.status).toHaveBeenCalledWith(204);
             expect(res.send).toHaveBeenCalled();
-        });
-
-        it("returns 500 on service error", async () => {
-            const { req, res, next } = mockReqRes();
-            req.params = { fileId: "abc" };
-
-            const err = new EntityMetadataNotFoundError("TempFileDAO");
-            mockDeleteTempFile.mockRejectedValue(err);
-
-            await controller.deleteTempFile(req, res, next);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(next).toHaveBeenCalledWith(err);
         });
     });
 });

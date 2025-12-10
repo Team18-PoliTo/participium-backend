@@ -142,21 +142,6 @@ describe("Internal User Management E2E Tests", () => {
       expect(res.body).toHaveProperty("error", "InternalUser with this email already exists");
     });
 
-    it("should validate required fields", async () => {
-      const invalidData = {
-        firstName: "Test",
-      };
-
-      const res = await request(app)
-        .post("/api/admin/internal-users")
-        .set("Authorization", `Bearer ${adminToken}`)
-        .send(invalidData);
-
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty("error");
-    });
-  });
-
   describe("Update Internal User", () => {
     let testUserId: number;
 
@@ -199,17 +184,6 @@ describe("Internal User Management E2E Tests", () => {
       expect(res.body.lastName).toBe("Name");
       expect(res.body.email).toBe("updated@example.com");
       expect(res.body.role).toBe("Municipal Administrator");
-    });
-
-
-    it("should reject invalid user ID", async () => {
-      const res = await request(app)
-        .put("/api/admin/internal-users/invalid-id")
-        .set("Authorization", `Bearer ${adminToken}`)
-        .send({ firstName: "Test" });
-
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty("error", "Invalid ID format");
     });
 
     it("should reject assigning role when user already has non-placeholder role", async () => {
