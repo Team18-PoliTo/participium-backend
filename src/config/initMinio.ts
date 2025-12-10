@@ -20,17 +20,18 @@ export const initMinio = async () => {
       console.log(`[MinIO] Created bucket: ${bucket}`);
     }
 
-
     const buckets = await minioClient.listBuckets();
-    console.log("[MinIO] Buckets:", buckets.map(b => b.name));
+    console.log(
+      "[MinIO] Buckets:",
+      buckets.map((b) => b.name)
+    );
 
     // Seed reports with images after MinIO is ready
     // Only seed if database is initialized
     if (AppDataSource.isInitialized) {
-      const forceSeed = process.env.FORCE_SEED === 'true';
+      const forceSeed = process.env.FORCE_SEED === "true";
       await seedReports(AppDataSource, forceSeed);
     }
-
   } catch (error: any) {
     console.error("[MinIO] Initialization failed:", error);
   }

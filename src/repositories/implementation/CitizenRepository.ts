@@ -1,7 +1,7 @@
-import { Repository, DataSource } from 'typeorm';
-import CitizenDAO from '../../models/dao/CitizenDAO';
-import { AppDataSource } from '../../config/database';
-import { ICitizenRepository } from '../ICitizenRepository';
+import { Repository, DataSource } from "typeorm";
+import CitizenDAO from "../../models/dao/CitizenDAO";
+import { AppDataSource } from "../../config/database";
+import { ICitizenRepository } from "../ICitizenRepository";
 
 export class CitizenRepository implements ICitizenRepository {
   private readonly repo: Repository<CitizenDAO>;

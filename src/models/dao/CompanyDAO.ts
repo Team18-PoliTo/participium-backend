@@ -1,12 +1,6 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm";
 import InternalUserDAO from "./InternalUserDAO";
 import CompanyCategoryDAO from "./CompanyCategoryDAO";
-
 
 @Entity("companies")
 class CompanyDAO {
@@ -27,10 +21,14 @@ class CompanyDAO {
   })
   internalUsers: InternalUserDAO[];
 
-  @OneToMany(() => CompanyCategoryDAO, (categoryCompany) => categoryCompany.company, {
-    cascade: true,
-    eager: false,
-  })
+  @OneToMany(
+    () => CompanyCategoryDAO,
+    (categoryCompany) => categoryCompany.company,
+    {
+      cascade: true,
+      eager: false,
+    }
+  )
   categories: CompanyCategoryDAO[];
 }
 

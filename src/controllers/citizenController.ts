@@ -3,12 +3,16 @@ import { RegisterCitizenRequestDTO } from "../models/dto/ValidRequestDTOs";
 import { ICitizenService } from "../services/ICitizenService";
 import { validate } from "class-validator";
 import { plainToInstance } from "class-transformer";
-import {ValidationError} from "@nestjs/common";
+import { ValidationError } from "@nestjs/common";
 
 class CitizenController {
   constructor(private readonly citizenService: ICitizenService) {}
 
-  async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async register(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const dto = plainToInstance(RegisterCitizenRequestDTO, req.body);
       const errors = await validate(dto, {
@@ -17,8 +21,8 @@ class CitizenController {
       });
       if (errors.length) {
         const msg: string = errors
-            .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
-            .join("; ");
+          .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
+          .join("; ");
         res.status(400).json({ error: msg });
         return;
       }
@@ -81,15 +85,14 @@ class CitizenController {
         lastName: lastName ?? undefined,
         telegramUsername: telegramUsername ?? undefined,
         emailNotificationsEnabled:
-            emailNotificationsEnabled !== undefined
-                ? emailNotificationsEnabled === "true" ||
-                emailNotificationsEnabled === true
-                : undefined,
+          emailNotificationsEnabled !== undefined
+            ? emailNotificationsEnabled === "true" ||
+              emailNotificationsEnabled === true
+            : undefined,
         photoPath: accountPhoto ?? undefined,
       });
 
       return res.status(200).json(updated);
-
     } catch (err) {
       next(err);
     }

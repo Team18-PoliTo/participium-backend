@@ -8,7 +8,6 @@ export const ReportStatus = {
   DELEGATED: "Delegated",
 } as const;
 
-export type ReportStatusType = typeof ReportStatus[keyof typeof ReportStatus];
+export type ReportStatusType = (typeof ReportStatus)[keyof typeof ReportStatus];
 
 export const ReportStatusValues = Object.values(ReportStatus);
-

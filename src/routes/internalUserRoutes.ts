@@ -10,7 +10,10 @@ const router = Router();
 const internalUserRepository = new InternalUserRepository();
 const internalUserService = new InternalUserService(internalUserRepository);
 const reportService = new ReportService();
-const internalUserController = new InternalUserController(internalUserService, reportService);
+const internalUserController = new InternalUserController(
+  internalUserService,
+  reportService
+);
 
 /**
  * @swagger
@@ -69,7 +72,10 @@ const internalUserController = new InternalUserController(internalUserService, r
  *       401:
  *         description: Unauthorized
  */
-router.get("/reports", internalUserController.getReports.bind(internalUserController));
+router.get(
+  "/reports",
+  internalUserController.getReports.bind(internalUserController)
+);
 
 /**
  * @swagger
@@ -177,7 +183,10 @@ router.get("/reports", internalUserController.getReports.bind(internalUserContro
  *       404:
  *         description: Report not found
  */
-router.patch("/reports/:id", internalUserController.updateReportStatus.bind(internalUserController));
+router.patch(
+  "/reports/:id",
+  internalUserController.updateReportStatus.bind(internalUserController)
+);
 
 /**
  * @swagger
@@ -229,7 +238,10 @@ router.patch("/reports/:id", internalUserController.updateReportStatus.bind(inte
  *       400:
  *         description: Validation error
  */
-router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind(internalUserController));
+router.patch(
+  "/reports/:id/delegate",
+  internalUserController.delegateReport.bind(internalUserController)
+);
 
 /**
  * @swagger
@@ -281,8 +293,10 @@ router.patch("/reports/:id/delegate", internalUserController.delegateReport.bind
  *         description: Forbidden - PR Officers cannot access this endpoint
  */
 router.get(
-    "/reports/assigned",
-    internalUserController.getReportsForTechnicalOfficer.bind(internalUserController)
+  "/reports/assigned",
+  internalUserController.getReportsForTechnicalOfficer.bind(
+    internalUserController
+  )
 );
 
 /**
@@ -309,8 +323,8 @@ router.get(
  *         description: Forbidden
  */
 router.get(
-    "/reports/by-office",
-    internalUserController.getReportsByOffice.bind(internalUserController)
+  "/reports/by-office",
+  internalUserController.getReportsByOffice.bind(internalUserController)
 );
 
 export default router;

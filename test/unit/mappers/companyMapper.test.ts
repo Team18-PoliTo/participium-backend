@@ -1,5 +1,5 @@
 import { CompanyMapper } from "../../../src/mappers/CompanyMapper";
-import { ExternalMaintainerMapper } from "../../../src/mappers/InternalUserMapper";
+import { ExternalMaintainerMapper as _ExternalMaintainerMapper } from "../../../src/mappers/InternalUserMapper";
 
 // Mock InternalUserMapper to isolate tests
 jest.mock("../../../src/mappers/InternalUserMapper", () => ({

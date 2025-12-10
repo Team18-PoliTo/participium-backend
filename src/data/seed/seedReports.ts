@@ -1,14 +1,14 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { DataSource } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
-import ReportDAO from '../../models/dao/ReportDAO';
-import CitizenDAO from '../../models/dao/CitizenDAO';
-import CategoryDAO from '../../models/dao/CategoryDAO';
-import InternalUserDAO from '../../models/dao/InternalUserDAO';
-import MinIoService from '../../services/MinIoService';
-import { MINIO_BUCKET } from '../../config/minioClient';
-import {SeedReport} from "./seedReport";
+import { DataSource } from "typeorm";
+import { v4 as uuidv4 } from "uuid";
+import ReportDAO from "../../models/dao/ReportDAO";
+import CitizenDAO from "../../models/dao/CitizenDAO";
+import CategoryDAO from "../../models/dao/CategoryDAO";
+import InternalUserDAO from "../../models/dao/InternalUserDAO";
+import MinIoService from "../../services/MinIoService";
+import { MINIO_BUCKET } from "../../config/minioClient";
+import { SeedReport } from "./seedReport";
 
 /**
  * Seeds the database with sample reports and uploads images to MinIO.
@@ -17,28 +17,38 @@ import {SeedReport} from "./seedReport";
  * @param dataSource - The TypeORM DataSource instance
  * @param forceSeed - If true, will seed even if reports already exist
  */
-export async function seedReports(dataSource: DataSource, forceSeed: boolean = false): Promise<void> {
+export async function seedReports(
+  dataSource: DataSource,
+  forceSeed: boolean = false
+): Promise<void> {
   const reportRepo = dataSource.getRepository(ReportDAO);
 
   // Check if reports already exist
   const existingCount = await reportRepo.count();
   if (existingCount > 0 && !forceSeed) {
-    console.log(`[Seed] Reports already exist (${existingCount}). Skipping report seeding.`);
+    console.log(
+      `[Seed] Reports already exist (${existingCount}). Skipping report seeding.`
+    );
     return;
   }
 
   // If force seeding, delete existing reports first
   if (forceSeed && existingCount > 0) {
-    console.log(`[Seed] Force seed enabled. Deleting ${existingCount} existing reports...`);
+    console.log(
+      `[Seed] Force seed enabled. Deleting ${existingCount} existing reports...`
+    );
     await reportRepo.clear();
   }
 
   // Load seed data
-  let seedDataPath = path.join(__dirname, 'seed-reports.json');
+  let seedDataPath = path.join(__dirname, "seed-reports.json");
 
   // Handle both src and dist paths
-  if (!fs.existsSync(seedDataPath) && __dirname.includes('/dist/')) {
-    seedDataPath = path.join(__dirname, '../../../../src/data/seed/seed-reports.json');
+  if (!fs.existsSync(seedDataPath) && __dirname.includes("/dist/")) {
+    seedDataPath = path.join(
+      __dirname,
+      "../../../../src/data/seed/seed-reports.json"
+    );
   }
 
   if (!fs.existsSync(seedDataPath)) {
@@ -46,14 +56,18 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
     return;
   }
 
-  const seedData: SeedReport[] = JSON.parse(fs.readFileSync(seedDataPath, 'utf-8'));
+  const seedData: SeedReport[] = JSON.parse(
+    fs.readFileSync(seedDataPath, "utf-8")
+  );
   console.log(`[Seed] Loaded ${seedData.length} reports from seed data.`);
 
   // Get citizen 1 (default test citizen)
   const citizenRepo = dataSource.getRepository(CitizenDAO);
   const citizen = await citizenRepo.findOne({ where: { id: 1 } });
   if (!citizen) {
-    console.error('[Seed] Citizen with ID 1 not found. Skipping report seeding.');
+    console.error(
+      "[Seed] Citizen with ID 1 not found. Skipping report seeding."
+    );
     return;
   }
 
@@ -62,9 +76,9 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
   const internalUserRepo = dataSource.getRepository(InternalUserDAO);
 
   // Determine images directory (handle both src and dist)
-  let imagesDir = path.join(__dirname, 'images');
-  if (!fs.existsSync(imagesDir) && __dirname.includes('/dist/')) {
-    imagesDir = path.join(__dirname, '../../../../src/data/seed/images');
+  let imagesDir = path.join(__dirname, "images");
+  if (!fs.existsSync(imagesDir) && __dirname.includes("/dist/")) {
+    imagesDir = path.join(__dirname, "../../../../src/data/seed/images");
   }
 
   if (!fs.existsSync(imagesDir)) {
@@ -72,7 +86,7 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
     return;
   }
 
-  console.log('[Seed] Looking for images in:', imagesDir);
+  console.log("[Seed] Looking for images in:", imagesDir);
 
   let successCount = 0;
 
@@ -82,18 +96,26 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
 
     try {
       // Get category
-      const category = await categoryRepo.findOne({ where: { id: seedReport.categoryId } });
+      const category = await categoryRepo.findOne({
+        where: { id: seedReport.categoryId },
+      });
       if (!category) {
-        console.warn(`[Seed] Category ${seedReport.categoryId} not found. Skipping report: ${seedReport.title}`);
+        console.warn(
+          `[Seed] Category ${seedReport.categoryId} not found. Skipping report: ${seedReport.title}`
+        );
         continue;
       }
 
       // Get assigned user if specified
       let assignedTo: InternalUserDAO | null = null;
       if (seedReport.assignedToId) {
-        assignedTo = await internalUserRepo.findOne({ where: { id: seedReport.assignedToId } });
+        assignedTo = await internalUserRepo.findOne({
+          where: { id: seedReport.assignedToId },
+        });
         if (!assignedTo) {
-          console.warn(`[Seed] Assigned user ${seedReport.assignedToId} not found. Setting to null.`);
+          console.warn(
+            `[Seed] Assigned user ${seedReport.assignedToId} not found. Setting to null.`
+          );
         }
       }
 
@@ -127,7 +149,11 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
 
       const uploadedPaths: string[] = [];
 
-      for (let imgIdx = 0; imgIdx < seedReport.images.length && imgIdx < 3; imgIdx++) {
+      for (
+        let imgIdx = 0;
+        imgIdx < seedReport.images.length && imgIdx < 3;
+        imgIdx++
+      ) {
         const imageName = seedReport.images[imgIdx];
         const imagePath = path.join(imageFolder, imageName);
 
@@ -139,13 +165,18 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
         try {
           const imageBuffer = fs.readFileSync(imagePath);
           const ext = path.extname(imageName).toLowerCase();
-          const mimeType = ext === '.png' ? 'image/png' : 'image/jpeg';
+          const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
 
           // Generate MinIO path matching the app's pattern
           const minioPath = `reports/${savedReport.id}/photo${imgIdx + 1}_${uuidv4()}${ext}`;
 
           // Upload to MinIO
-          await MinIoService.uploadFile(MINIO_BUCKET, minioPath, imageBuffer, mimeType);
+          await MinIoService.uploadFile(
+            MINIO_BUCKET,
+            minioPath,
+            imageBuffer,
+            mimeType
+          );
           uploadedPaths.push(minioPath);
 
           console.log(`[Seed] Uploaded: ${imageName} -> ${minioPath}`);
@@ -160,16 +191,21 @@ export async function seedReports(dataSource: DataSource, forceSeed: boolean = f
       if (uploadedPaths[2]) savedReport.photo3 = uploadedPaths[2];
 
       await reportRepo.save(savedReport);
-      console.log(`[Seed] Created report ${savedReport.id}: ${savedReport.title} (${uploadedPaths.length} images)`);
+      console.log(
+        `[Seed] Created report ${savedReport.id}: ${savedReport.title} (${uploadedPaths.length} images)`
+      );
       successCount++;
-
     } catch (error) {
-      console.error(`[Seed] Failed to create report "${seedReport.title}":`, error);
+      console.error(
+        `[Seed] Failed to create report "${seedReport.title}":`,
+        error
+      );
     }
   }
 
-  console.log(`[Seed] Successfully created ${successCount}/${seedData.length} reports with images.`);
+  console.log(
+    `[Seed] Successfully created ${successCount}/${seedData.length} reports with images.`
+  );
 }
 
 export default seedReports;
-

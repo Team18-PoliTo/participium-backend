@@ -1,18 +1,21 @@
-import {ReportMapper} from "../../mappers/ReportMapper";
-import {ReportDTO} from "../../models/dto/ReportDTO";
-import {CreateReportRequestDTO, UpdateReportRequestDTO,} from "../../models/dto/ValidRequestDTOs";
-import {IReportRepository} from "../../repositories/IReportRepository";
-import {ReportRepository} from "../../repositories/implementation/ReportRepository";
+import { ReportMapper } from "../../mappers/ReportMapper";
+import { ReportDTO } from "../../models/dto/ReportDTO";
+import {
+  CreateReportRequestDTO,
+  UpdateReportRequestDTO,
+} from "../../models/dto/ValidRequestDTOs";
+import { IReportRepository } from "../../repositories/IReportRepository";
+import { ReportRepository } from "../../repositories/implementation/ReportRepository";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
-import {ICitizenRepository} from "../../repositories/ICitizenRepository";
-import {CategoryRoleRepository} from "../../repositories/implementation/CategoryRoleRepository";
-import {CategoryRepository} from "../../repositories/implementation/CategoryRepository";
+import { ICitizenRepository } from "../../repositories/ICitizenRepository";
+import { CategoryRoleRepository } from "../../repositories/implementation/CategoryRoleRepository";
+import { CategoryRepository } from "../../repositories/implementation/CategoryRepository";
 import InternalUserRepository from "../../repositories/InternalUserRepository";
 import FileService from "../FileService";
 import { IReportService } from "../IReportService";
-import {v4 as uuidv4} from "uuid";
-import {ReportStatus} from "../../constants/ReportStatus";
-import {GeocodingService} from "../GeocodingService";
+import { v4 as uuidv4 } from "uuid";
+import { ReportStatus } from "../../constants/ReportStatus";
+import { GeocodingService } from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
 import { ExternalMaintainerDTO } from "../../models/dto/InternalUserDTO";
 import { ExternalMaintainerMapper } from "../../mappers/InternalUserMapper";
@@ -36,14 +39,13 @@ class ReportService implements IReportService {
    * If multiple officers have the same minimum number of active tasks, one is selected randomly.
    */
   private async selectUnoccupiedOfficerByRole(roleId: number) {
-    const officersWithRole = await this.internalUserRepository.findByRoleId(
-      roleId
-    );
+    const officersWithRole =
+      await this.internalUserRepository.findByRoleId(roleId);
     if (officersWithRole.length === 0) {
       throw new Error(`No officers found with role ID ${roleId}`);
     }
     const officers = [...officersWithRole].sort(
-        (a, b) => a.activeTasks - b.activeTasks
+      (a, b) => a.activeTasks - b.activeTasks
     );
 
     const minActiveTasks = officers[0].activeTasks;
@@ -174,7 +176,7 @@ class ReportService implements IReportService {
   }
 
   async getAssignedReportsInMap(
-    corners: Object[]
+    corners: object[]
   ): Promise<Partial<ReportDTO>[]> {
     const reports = await this.reportRepository.findAllApproved();
     const [corner1, corner2] = corners as {
@@ -204,10 +206,10 @@ class ReportService implements IReportService {
     return ReportMapper.toDTO(report);
   }
   async updateReport(
-      reportId: number,
-      data: UpdateReportRequestDTO,
-      userId: number,
-      userRole?: string
+    reportId: number,
+    data: UpdateReportRequestDTO,
+    userId: number,
+    userRole?: string
   ): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
@@ -258,12 +260,12 @@ class ReportService implements IReportService {
      * - Technical Officers/External Maintainers can only update reports assigned to them
      */
     if (
-        userRole === "Public Relations Officer" ||
-        userRole?.includes("Public Relations Officer")
+      userRole === "Public Relations Officer" ||
+      userRole?.includes("Public Relations Officer")
     ) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
-            `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". ` +
+          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". ` +
             `This report status is "${report.status}".`
         );
       }
@@ -272,7 +274,9 @@ class ReportService implements IReportService {
     let categoryToUse = report.category;
 
     if (data.categoryId) {
-      const foundCategory = await this.categoryRepository.findById(data.categoryId);
+      const foundCategory = await this.categoryRepository.findById(
+        data.categoryId
+      );
 
       if (!foundCategory) {
         throw new Error(`Category not found with ID: ${data.categoryId}`);
@@ -285,33 +289,33 @@ class ReportService implements IReportService {
 
     if (data.status === ReportStatus.ASSIGNED) {
       const categoryRoleMapping =
-          await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
 
       if (!categoryRoleMapping) {
         throw new Error(`No role found for category: ${categoryNameToUse}`);
       }
 
       const officersWithRole = await this.internalUserRepository.findByRoleId(
-          categoryRoleMapping.role.id
+        categoryRoleMapping.role.id
       );
 
       if (officersWithRole.length === 0) {
         throw new Error(
-            `No officers available for category: ${categoryNameToUse}. ` +
+          `No officers available for category: ${categoryNameToUse}. ` +
             `Report remains in Pending Approval state.`
         );
       }
     }
 
-    let assignedTo = report.assignedTo;
+    const assignedTo = report.assignedTo;
 
     if (data.status === ReportStatus.ASSIGNED) {
       const categoryRoleMapping =
-          await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
 
       if (categoryRoleMapping) {
         report.assignedTo = await this.selectUnoccupiedOfficerByRole(
-            categoryRoleMapping.role.id
+          categoryRoleMapping.role.id
         );
       }
     }
@@ -324,14 +328,14 @@ class ReportService implements IReportService {
     }
 
     // Save report with updated status, category, and assignment, along with explanation
-      const updatedReport = await this.reportRepository.updateReport(reportId, {
-          status: data.status,
-          explanation: data.explanation,
-          assignedTo: assignedTo,
-          categoryId: categoryToUse.id,
-      });
+    const updatedReport = await this.reportRepository.updateReport(reportId, {
+      status: data.status,
+      explanation: data.explanation,
+      assignedTo: assignedTo,
+      categoryId: categoryToUse.id,
+    });
 
-      return ReportMapper.toDTO(updatedReport);
+    return ReportMapper.toDTO(updatedReport);
   }
 
   async delegateReport(
@@ -372,9 +376,8 @@ class ReportService implements IReportService {
       );
     }
     // selects the external maintainer, already increments their active tasks
-    const selectedMaintainer = await this.selectUnoccupiedMaintainerByCompany(
-      companyId
-    );
+    const selectedMaintainer =
+      await this.selectUnoccupiedMaintainerByCompany(companyId);
 
     await this.internalUserRepository.decrementActiveTasks(
       report.assignedTo!.id
@@ -383,7 +386,7 @@ class ReportService implements IReportService {
     report.status = ReportStatus.DELEGATED;
     report.assignedTo = selectedMaintainer;
 
-    const updatedReport = await this.reportRepository.updateStatus(
+    await this.reportRepository.updateStatus(
       reportId,
       ReportStatus.DELEGATED,
       undefined,
@@ -401,7 +404,10 @@ class ReportService implements IReportService {
     );
   }
 
-  async getReportsForStaff(staffId: number, statusFilter?: string): Promise<ReportDTO[]> {
+  async getReportsForStaff(
+    staffId: number,
+    statusFilter?: string
+  ): Promise<ReportDTO[]> {
     let reports = await this.reportRepository.findByAssignedStaff(staffId);
 
     // Apply optional status filter
@@ -415,9 +421,8 @@ class ReportService implements IReportService {
   }
 
   async getReportsByOffice(staffId: number): Promise<ReportDTO[]> {
-    const staff = await this.internalUserRepository.findByIdWithRoleAndOffice(
-      staffId
-    );
+    const staff =
+      await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
     if (!staff) {
       throw new Error("Internal user not found");
     }
@@ -427,9 +432,8 @@ class ReportService implements IReportService {
       return [];
     }
 
-    const categories = await this.categoryRoleRepository.findCategoriesByOffice(
-      officeId
-    );
+    const categories =
+      await this.categoryRoleRepository.findCategoriesByOffice(officeId);
     const categoryIds = categories.map((c) => c.id);
 
     if (categoryIds.length === 0) {

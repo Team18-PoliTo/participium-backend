@@ -1,5 +1,5 @@
-import ReportController from '../../../src/controllers/reportController';
-import { Response, NextFunction } from 'express';
+import ReportController from "../../../src/controllers/reportController";
+import { Response, NextFunction } from "express";
 
 // Helper to build controller with specific service mocks
 const buildController = (serviceOverrides: Record<string, jest.Mock> = {}) => {
@@ -10,7 +10,10 @@ const buildController = (serviceOverrides: Record<string, jest.Mock> = {}) => {
     getAssignedReportsInMap: jest.fn(),
     ...serviceOverrides,
   };
-  return { controller: new ReportController(reportService as any), reportService };
+  return {
+    controller: new ReportController(reportService as any),
+    reportService,
+  };
 };
 
 const mockRes = () => {
@@ -22,24 +25,24 @@ const mockRes = () => {
 
 let next: NextFunction;
 
-describe('ReportController', () => {
+describe("ReportController", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     next = jest.fn();
   });
 
   // --- create ---
-  it('create returns 201 on success', async () => {
+  it("create returns 201 on success", async () => {
     const { controller, reportService } = buildController();
     const req = {
       body: {
-        title: 'Issue',
-        description: 'Desc',
+        title: "Issue",
+        description: "Desc",
         categoryId: 1,
-        photoIds: ['file1', 'file2'],
+        photoIds: ["file1", "file2"],
         location: { latitude: 1, longitude: 2 },
       },
-      auth: { sub: 1, kind: 'citizen' },
+      auth: { sub: 1, kind: "citizen" },
     } as any;
     const res = mockRes();
     const dto = { id: 5 };
@@ -52,91 +55,91 @@ describe('ReportController', () => {
     expect(res.json).toHaveBeenCalledWith(dto);
   });
 
-  it('create returns 400 on validation errors', async () => {
+  it("create returns 400 on validation errors", async () => {
     const { controller, reportService } = buildController();
-    const req = { body: {}, auth: { sub: 1, kind: 'citizen' } } as any;
+    const req = { body: {}, auth: { sub: 1, kind: "citizen" } } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      error: expect.stringContaining('Title is required'),
+      error: expect.stringContaining("Title is required"),
     });
     expect(reportService.create).not.toHaveBeenCalled();
   });
 
-  it('create returns 404 when citizen is missing', async () => {
-    const error = new Error('Citizen not found');
+  it("create returns 404 when citizen is missing", async () => {
+    const error = new Error("Citizen not found");
     const { controller } = buildController({
       create: jest.fn().mockRejectedValue(error),
     });
     const req = {
       body: {
-        title: 'Issue',
-        description: 'Desc',
+        title: "Issue",
+        description: "Desc",
         categoryId: 1,
-        photoIds: ['file1'],
+        photoIds: ["file1"],
         location: { latitude: 1, longitude: 2 },
       },
-      auth: { sub: 1, kind: 'citizen' },
+      auth: { sub: 1, kind: "citizen" },
     } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Citizen not found' });
+    expect(res.json).toHaveBeenCalledWith({ error: "Citizen not found" });
   });
 
-  it('create returns 400 when category is not found', async () => {
-    const error = new Error('Category not found');
+  it("create returns 400 when category is not found", async () => {
+    const error = new Error("Category not found");
     const { controller } = buildController({
       create: jest.fn().mockRejectedValue(error),
     });
     const req = {
       body: {
-        title: 'Issue',
-        description: 'Desc',
+        title: "Issue",
+        description: "Desc",
         categoryId: 999,
-        photoIds: ['file1'],
+        photoIds: ["file1"],
         location: { latitude: 1, longitude: 2 },
       },
-      auth: { sub: 1, kind: 'citizen' },
+      auth: { sub: 1, kind: "citizen" },
     } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Category not found' });
+    expect(res.json).toHaveBeenCalledWith({ error: "Category not found" });
   });
 
-  it('create returns 500 and forwards unexpected errors', async () => {
-    const boom = new Error('boom');
+  it("create returns 500 and forwards unexpected errors", async () => {
+    const boom = new Error("boom");
     const { controller } = buildController({
       create: jest.fn().mockRejectedValue(boom),
     });
     const req = {
       body: {
-        title: 'Issue',
-        description: 'Desc',
+        title: "Issue",
+        description: "Desc",
         categoryId: 1,
-        photoIds: ['file1'],
+        photoIds: ["file1"],
         location: { latitude: 1, longitude: 2 },
       },
-      auth: { sub: 1, kind: 'citizen' },
+      auth: { sub: 1, kind: "citizen" },
     } as any;
     const res = mockRes();
 
     await controller.create(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Internal Server Error' });
+    expect(res.json).toHaveBeenCalledWith({ error: "Internal Server Error" });
   });
 
   // --- getMyReports ---
-  it('getMyReports returns 200 with reports', async () => {
+  it("getMyReports returns 200 with reports", async () => {
     const { controller, reportService } = buildController();
     const req = { auth: { sub: 42 } } as any;
     const res = mockRes();
@@ -150,7 +153,7 @@ describe('ReportController', () => {
     expect(res.json).toHaveBeenCalledWith(reports);
   });
 
-  it('getMyReports returns 401 if sub missing', async () => {
+  it("getMyReports returns 401 if sub missing", async () => {
     const { controller } = buildController();
     const req = { auth: {} } as any;
     const res = mockRes();
@@ -161,10 +164,10 @@ describe('ReportController', () => {
     expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
   });
 
-  it('getMyReports handles errors', async () => {
+  it("getMyReports handles errors", async () => {
     const error = new Error("Fail");
     const { controller } = buildController({
-        getReportsByUser: jest.fn().mockRejectedValue(error)
+      getReportsByUser: jest.fn().mockRejectedValue(error),
     });
     const req = { auth: { sub: 42 } } as any;
     const res = mockRes();
@@ -176,7 +179,7 @@ describe('ReportController', () => {
   });
 
   // --- getById ---
-  it('getById returns 200 with report', async () => {
+  it("getById returns 200 with report", async () => {
     const { controller, reportService } = buildController();
     const req = { params: { id: "10" } } as any;
     const res = mockRes();
@@ -190,7 +193,7 @@ describe('ReportController', () => {
     expect(res.json).toHaveBeenCalledWith(report);
   });
 
-  it('getById returns 400 for invalid ID', async () => {
+  it("getById returns 400 for invalid ID", async () => {
     const { controller } = buildController();
     const req = { params: { id: "abc" } } as any;
     const res = mockRes();
@@ -201,10 +204,10 @@ describe('ReportController', () => {
     expect(res.json).toHaveBeenCalledWith({ error: "Invalid report ID" });
   });
 
-  it('getById returns 404 if report not found', async () => {
+  it("getById returns 404 if report not found", async () => {
     const error = new Error("Report not found");
     const { controller } = buildController({
-        getReportById: jest.fn().mockRejectedValue(error)
+      getReportById: jest.fn().mockRejectedValue(error),
     });
     const req = { params: { id: "99" } } as any;
     const res = mockRes();
@@ -215,10 +218,10 @@ describe('ReportController', () => {
     expect(res.json).toHaveBeenCalledWith({ error: "Report not found" });
   });
 
-  it('getById forwards unexpected errors', async () => {
+  it("getById forwards unexpected errors", async () => {
     const error = new Error("DB Error");
     const { controller } = buildController({
-        getReportById: jest.fn().mockRejectedValue(error)
+      getReportById: jest.fn().mockRejectedValue(error),
     });
     const req = { params: { id: "10" } } as any;
     const res = mockRes();
@@ -229,9 +232,12 @@ describe('ReportController', () => {
   });
 
   // --- getAssignedReportsInMap ---
-  it('getAssignedReportsInMap returns 200 with reports', async () => {
+  it("getAssignedReportsInMap returns 200 with reports", async () => {
     const { controller, reportService } = buildController();
-    const corners = [{ latitude: 1, longitude: 1 }, { latitude: 2, longitude: 2 }];
+    const corners = [
+      { latitude: 1, longitude: 1 },
+      { latitude: 2, longitude: 2 },
+    ];
     const req = { body: { corners } } as any;
     const res = mockRes();
     const reports = [{ id: 1 }];
@@ -244,7 +250,7 @@ describe('ReportController', () => {
     expect(res.json).toHaveBeenCalledWith(reports);
   });
 
-  it('getAssignedReportsInMap returns 400 on validation error', async () => {
+  it("getAssignedReportsInMap returns 400 on validation error", async () => {
     const { controller } = buildController();
     const req = { body: { corners: "invalid" } } as any;
     const res = mockRes();
@@ -252,10 +258,12 @@ describe('ReportController', () => {
     await controller.getAssignedReportsInMap(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.anything() }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: expect.anything() })
+    );
   });
 
-  it('getAssignedReportsInMap returns 400 if wrong number of corners', async () => {
+  it("getAssignedReportsInMap returns 400 if wrong number of corners", async () => {
     const { controller } = buildController();
     const req = { body: { corners: [{ latitude: 1, longitude: 1 }] } } as any;
     const res = mockRes();
@@ -263,15 +271,24 @@ describe('ReportController', () => {
     await controller.getAssignedReportsInMap(req, res, next);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: "Exactly 2 corners are required" });
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Exactly 2 corners are required",
+    });
   });
 
-  it('getAssignedReportsInMap returns 400 if service throws Error', async () => {
+  it("getAssignedReportsInMap returns 400 if service throws Error", async () => {
     const error = new Error("Logic error");
     const { controller } = buildController({
-        getAssignedReportsInMap: jest.fn().mockRejectedValue(error)
+      getAssignedReportsInMap: jest.fn().mockRejectedValue(error),
     });
-    const req = { body: { corners: [{ latitude: 1, longitude: 1 }, { latitude: 2, longitude: 2 }] } } as any;
+    const req = {
+      body: {
+        corners: [
+          { latitude: 1, longitude: 1 },
+          { latitude: 2, longitude: 2 },
+        ],
+      },
+    } as any;
     const res = mockRes();
 
     await controller.getAssignedReportsInMap(req, res, next);

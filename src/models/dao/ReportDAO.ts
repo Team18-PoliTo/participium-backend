@@ -3,7 +3,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne,
+  JoinColumn,
 } from "typeorm";
 import CitizenDAO from "./CitizenDAO";
 import InternalUserDAO from "./InternalUserDAO";
@@ -14,7 +15,6 @@ import { ReportStatus } from "../../constants/ReportStatus";
 class ReportDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
   id: number;
-
 
   @ManyToOne(() => CitizenDAO, (citizen) => citizen.reports, {
     nullable: false,
@@ -74,4 +74,3 @@ class ReportDAO {
 }
 
 export default ReportDAO;
-

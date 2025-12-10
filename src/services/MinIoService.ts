@@ -1,18 +1,22 @@
-import {minioClient, minioClientForPresigned, MINIO_BUCKET} from "../config/minioClient";
+import {
+  minioClient,
+  minioClientForPresigned,
+  MINIO_BUCKET,
+} from "../config/minioClient";
 
 class MinIoService {
   async uploadFile(
-      bucket: string,
-      objectKey: string,
-      fileBuffer: Buffer,
-      mimeType: string
+    bucket: string,
+    objectKey: string,
+    fileBuffer: Buffer,
+    mimeType: string
   ): Promise<string> {
     await minioClient.putObject(
-        bucket,
-        objectKey,
-        fileBuffer,
-        fileBuffer.length,
-        { "Content-Type": mimeType }
+      bucket,
+      objectKey,
+      fileBuffer,
+      fileBuffer.length,
+      { "Content-Type": mimeType }
     );
 
     return objectKey;
@@ -51,10 +55,12 @@ class MinIoService {
         "application/octet-stream";
     } catch (error) {
       console.warn(
-          `Could not get metadata for ${sourcePath}, using default content type`,
-          error
+        `Could not get metadata for ${sourcePath}, using default content type`,
+        error
       );
-      throw new Error(`Failed to fetch metadata for ${sourcePath}: ${String(error)}`);
+      throw new Error(
+        `Failed to fetch metadata for ${sourcePath}: ${String(error)}`
+      );
     }
 
     // Write file to destination
@@ -82,11 +88,15 @@ class MinIoService {
     }
   }
 
-  async uploadUserProfilePhoto(userId: number, file: Express.Multer.File): Promise<string> {
+  async uploadUserProfilePhoto(
+    userId: number,
+    file: Express.Multer.File
+  ): Promise<string> {
     if (!file) {
       throw new Error("No file provided");
     }
-    const extension = file.originalname.split(".").pop()?.toLowerCase() || "jpg";
+    const extension =
+      file.originalname.split(".").pop()?.toLowerCase() || "jpg";
     const mimeType = file.mimetype || "application/octet-stream";
     const objectKey = `citizens/${userId}/profile.${extension}`;
     const PROFILE_BUCKET = process.env.MINIO_PROFILE_BUCKET || "profile-photos";
@@ -95,11 +105,11 @@ class MinIoService {
       await minioClient.makeBucket(PROFILE_BUCKET);
     }
     await minioClient.putObject(
-        PROFILE_BUCKET,
-        objectKey,
-        file.buffer,
-        file.buffer.length,
-        { "Content-Type": mimeType }
+      PROFILE_BUCKET,
+      objectKey,
+      file.buffer,
+      file.buffer.length,
+      { "Content-Type": mimeType }
     );
 
     return objectKey;
@@ -135,8 +145,8 @@ class MinIoService {
       // If we get a connection error, it means external endpoint is not reachable from Docker
       // In that case, we might need to make it reachable or use a different approach
       console.warn(
-          `[MinIO] Could not generate presigned URL for ${objectKey} in bucket ${bucket}:`,
-          error?.message ?? error
+        `[MinIO] Could not generate presigned URL for ${objectKey} in bucket ${bucket}:`,
+        error?.message ?? error
       );
       // return empty string as fallback so callers can filter falsy values
       return "";

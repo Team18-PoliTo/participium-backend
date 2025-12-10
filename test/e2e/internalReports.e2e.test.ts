@@ -1,5 +1,6 @@
 import request from "supertest";
 import jwt from "jsonwebtoken";
+import * as bcrypt from "bcrypt";
 import app from "../../src/app";
 import { AppDataSource } from "../../src/config/database";
 import InternalUserDAO from "../../src/models/dao/InternalUserDAO";
@@ -39,11 +40,17 @@ describe("Internal Reports E2E Tests", () => {
     const userRepo = AppDataSource.getRepository(InternalUserDAO);
     const reportRepo = AppDataSource.getRepository(ReportDAO);
 
-    const office = await officeRepo.save({ name: "Tech Office", description: "Technical" });
+    const office = await officeRepo.save({
+      name: "Tech Office",
+      description: "Technical",
+    });
 
     const role = await roleRepo.save({ role: "Tech Operator", office });
 
-    const category = await categoryRepo.save({ name: "Tech Issues", description: "Tech stuff" });
+    const category = await categoryRepo.save({
+      name: "Tech Issues",
+      description: "Tech stuff",
+    });
 
     await catRoleRepo.save({ category, role });
 
@@ -51,9 +58,9 @@ describe("Internal Reports E2E Tests", () => {
       email: "staff@city.com",
       firstName: "Staff",
       lastName: "Member",
-      password: "pass",
+      password: await bcrypt.hash("test-password", 10),
       role: role,
-      status: "ACTIVE"
+      status: "ACTIVE",
     });
     staffId = staff.id;
 
@@ -63,9 +70,12 @@ describe("Internal Reports E2E Tests", () => {
     );
 
     const citizen = await citizenRepo.save({
-      email: "c@c.com", username: "c", firstName: "C", lastName: "Z", password: "p"
+      email: "c@c.com",
+      username: "c",
+      firstName: "C",
+      lastName: "Z",
+      password: await bcrypt.hash("test-password", 10),
     });
-
 
     await reportRepo.save({
       title: "Assigned Report",
@@ -74,7 +84,7 @@ describe("Internal Reports E2E Tests", () => {
       status: ReportStatus.ASSIGNED,
       citizen,
       category,
-      assignedTo: staff
+      assignedTo: staff,
     });
 
     await reportRepo.save({
@@ -83,7 +93,7 @@ describe("Internal Reports E2E Tests", () => {
       location: JSON.stringify({ lat: 1, lng: 1 }),
       status: ReportStatus.PENDING_APPROVAL,
       citizen,
-      category
+      category,
     });
   });
 
@@ -126,7 +136,7 @@ describe("Internal Reports E2E Tests", () => {
         { sub: 999, kind: "internal", role: "Public Relations Officer" },
         process.env.JWT_SECRET || "dev-secret"
       );
-      
+
       const res = await request(app)
         .get("/api/internal/reports/by-office")
         .set("Authorization", `Bearer ${prToken}`);
