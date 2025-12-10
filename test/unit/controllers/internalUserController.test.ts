@@ -39,7 +39,6 @@ describe('InternalUserController', () => {
     jest.clearAllMocks();
   });
 
-  // --- CREATE ---
   describe("create", () => {
       const validCreateBody = {
           email: 'test@test.com',
@@ -94,7 +93,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- UPDATE ---
   describe("update", () => {
       it('update returns 200 on success', async () => {
           mockInternalService.update.mockResolvedValue({ id: 1 });
@@ -147,7 +145,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- FETCH ---
   describe("fetch", () => {
       it('fetch returns 200 with users', async () => {
           mockInternalService.fetchUsers.mockResolvedValue([]);
@@ -173,7 +170,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- DELETE ---
   describe("delete", () => {
       it('delete returns 204 on success', async () => {
           mockInternalService.disableById.mockResolvedValue('ok');
@@ -218,7 +214,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- GET REPORTS ---
   describe("getReports", () => {
       it("returns 500 if reportService missing", async () => {
           const c = buildController(false); // no report service
@@ -272,7 +267,6 @@ describe('InternalUserController', () => {
       });
   });
 
-  // --- UPDATE REPORT STATUS ---
   describe("updateReportStatus", () => {
       it("returns 500 if reportService missing", async () => {
           const c = buildController(false);
@@ -290,7 +284,6 @@ describe('InternalUserController', () => {
       });
 
       it("returns 400 on validation error (missing explanation)", async () => {
-          // Explanation is required in UpdateReportRequestDTO
           const req = { params: { id: '1' }, body: { status: ReportStatus.RESOLVED } } as any;
           const res = mockRes();
           await buildController().updateReportStatus(req, res, next);
@@ -307,13 +300,13 @@ describe('InternalUserController', () => {
       });
 
       it("calls service update", async () => {
-        const req = { params: { id: '1' }, body: { status: ReportStatus.RESOLVED, explanation: "Done" }, auth: { role: "Admin" } } as any;
+        const req = { params: { id: '1' }, body: { status: ReportStatus.RESOLVED, explanation: "Done" }, auth: { role: "Admin", sub: 99 } } as any;
         const res = mockRes();
         mockReportService.updateReport.mockResolvedValue({});
 
         await buildController().updateReportStatus(req, res, next);
 
-        expect(mockReportService.updateReport).toHaveBeenCalledWith(1, expect.anything(), "Admin");
+        expect(mockReportService.updateReport).toHaveBeenCalledWith(1, expect.anything(), 99, "Admin");
         expect(res.status).toHaveBeenCalledWith(200);
       });
 
@@ -362,11 +355,27 @@ describe('InternalUserController', () => {
       });
 
       it("calls service with staff id", async () => {
-          const req = { auth: { sub: 123 } } as any;
+          const req = { auth: { sub: 123 }, query: {} } as any;
           const res = mockRes();
           await buildController().getReportsForTechnicalOfficer(req, res, next);
-          expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(123);
+          expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(123, undefined);
           expect(res.status).toHaveBeenCalledWith(200);
+      });
+
+      it("calls service with status filter when provided", async () => {
+          const req = { auth: { sub: 123 }, query: { status: ReportStatus.DELEGATED } } as any;
+          const res = mockRes();
+          await buildController().getReportsForTechnicalOfficer(req, res, next);
+          expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(123, ReportStatus.DELEGATED);
+          expect(res.status).toHaveBeenCalledWith(200);
+      });
+
+      it("returns 400 for invalid status filter", async () => {
+          const req = { auth: { sub: 123 }, query: { status: "InvalidStatus" } } as any;
+          const res = mockRes();
+          await buildController().getReportsForTechnicalOfficer(req, res, next);
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining("Invalid status filter") }));
       });
 
       it("returns 400 on error", async () => {

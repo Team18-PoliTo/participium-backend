@@ -15,7 +15,7 @@ export class ReportDTO {
   id: number;
   citizenId: number;
   citizenName: string;
-  citizenSurname: string;
+  citizenLastName: string;
   title: string;
   description: string;
   category: CategoryDTO;
@@ -25,8 +25,8 @@ export class ReportDTO {
     latitude: number;
     longitude: number;
   };
+  address: string | null;
   status: string;
   explanation?: string | null;
   assignedTo?: AssignedOfficerDTO | null;
 }
-

@@ -11,8 +11,9 @@ import MinIoService from "../MinIoService";
 import {PROFILE_BUCKET} from "../../config/minioClient";
 
 class CitizenService implements ICitizenService {
+  static updateCitizen: any;
   constructor(
-    private citizenRepository: ICitizenRepository = new CitizenRepository()
+    private readonly citizenRepository: ICitizenRepository = new CitizenRepository()
   ) {}
 
   async register(
@@ -106,9 +107,7 @@ class CitizenService implements ICitizenService {
   ): Promise<CitizenDTO> {
 
     const citizen = await this.citizenRepository.findById(id);
-    if (!citizen) {
-      throw new Error("Citizen not found");
-    }
+    if (!citizen) throw new Error("Citizen not found");
 
     const normalize = (v: any) => {
       if (v === undefined) return undefined;
@@ -116,72 +115,51 @@ class CitizenService implements ICitizenService {
       return v;
     };
 
+    const assignNormalized = (key: string, val: any, transform?: (v: any) => any) => {
+      if (val === undefined) return;
+      const normalized = normalize(val);
+      updatePayload[key] = transform ? transform(normalized) : normalized;
+    };
+
+    const deletePhotoIfExists = async () => {
+      if (!citizen.accountPhotoUrl) return;
+      try {
+        await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
+      } catch (err: any) {
+        console.warn(
+            `[CitizenService] Failed to delete profile photo ${citizen.accountPhotoUrl}:`,
+            err?.message || err
+        );
+      }
+    };
+
     const updatePayload: any = {};
 
-    if (data.email !== undefined) {
-      const normalized = normalize(data.email);
-      updatePayload.email = normalized ? normalized.toLowerCase() : null;
-    }
+    assignNormalized("email", data.email, v => v ? v.toLowerCase() : null);
+    assignNormalized("username", data.username, v => v ? v.toLowerCase() : null);
+    assignNormalized("firstName", data.firstName);
+    assignNormalized("lastName", data.lastName);
+    assignNormalized("telegramUsername", data.telegramUsername);
 
-    if (data.username !== undefined) {
-      const normalized = normalize(data.username);
-      updatePayload.username = normalized ? normalized.toLowerCase() : null;
-    }
-
-    if (data.firstName !== undefined)
-      updatePayload.firstName = normalize(data.firstName);
-
-    if (data.lastName !== undefined)
-      updatePayload.lastName = normalize(data.lastName);
-
-    if (data.telegramUsername !== undefined)
-      updatePayload.telegramUsername = normalize(data.telegramUsername);
-
-    if (data.emailNotificationsEnabled !== undefined)
+    if (data.emailNotificationsEnabled != null) {
       updatePayload.emailNotificationsEnabled = data.emailNotificationsEnabled;
+    }
 
+
+    // PHOTO SECTION (reduced complexity)
     if (data.photoPath !== undefined) {
-      if (data.photoPath !== null) {
-        // Delete old photo if it exists (gracefully handle errors)
-        if (citizen.accountPhotoUrl) {
-          try {
-            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
-          } catch (error: any) {
-            // Log warning but don't fail the update if old photo deletion fails
-            // (photo might not exist, or path might be invalid)
-            console.warn(
-              `[CitizenService] Failed to delete old profile photo ${citizen.accountPhotoUrl}:`,
-              error?.message || error
-            );
-          }
-        }
-        updatePayload.accountPhotoUrl = data.photoPath;
-      } else {
-        // If photoPath is explicitly null, delete existing photo
-        if (citizen.accountPhotoUrl) {
-          try {
-            await MinIoService.deleteFile(PROFILE_BUCKET, citizen.accountPhotoUrl);
-          } catch (error: any) {
-            // Log warning but don't fail the update if deletion fails
-            console.warn(
-              `[CitizenService] Failed to delete profile photo ${citizen.accountPhotoUrl}:`,
-              error?.message || error
-            );
-          }
-        }
-        updatePayload.accountPhotoUrl = null;
-      }
+      await deletePhotoIfExists();
+      updatePayload.accountPhotoUrl = data.photoPath ?? null;
     }
 
     await this.citizenRepository.update(id, updatePayload);
 
     const updatedCitizen = await this.citizenRepository.findById(id);
-    if (!updatedCitizen) {
-      throw new Error("Citizen not found after update");
-    }
+    if (!updatedCitizen) throw new Error("Citizen not found after update");
 
     return await CitizenMapper.toDTO(updatedCitizen);
   }
+
 }
 
 export const citizenService = new CitizenService();

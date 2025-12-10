@@ -11,14 +11,15 @@ export const initMinio = async () => {
     for (const bucket of bucketsToCreate) {
       const exists = await minioClient.bucketExists(bucket).catch(() => false);
 
-      if (!exists) {
-        console.log(`[MinIO] Bucket "${bucket}" does not exist. Creating...`);
-        await minioClient.makeBucket(bucket, "us-east-1");
-        console.log(`[MinIO] Created bucket: ${bucket}`);
-      } else {
+      if (exists) {
         console.log(`[MinIO] Bucket already exists: ${bucket}`);
+        continue;
       }
+      console.log(`[MinIO] Bucket "${bucket}" does not exist. Creating...`);
+      await minioClient.makeBucket(bucket, "us-east-1");
+      console.log(`[MinIO] Created bucket: ${bucket}`);
     }
+
 
     const buckets = await minioClient.listBuckets();
     console.log("[MinIO] Buckets:", buckets.map(b => b.name));

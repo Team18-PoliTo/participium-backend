@@ -10,67 +10,167 @@ const reportRepository = new ReportRepository();
 const reportService = new ReportService(reportRepository);
 const reportController = new ReportController(reportService);
 
-// DTOs
 /**
  * @swagger
  * components:
  *   schemas:
+ *
  *     ReportDTO:
  *       type: object
  *       required:
  *         - id
  *         - citizenId
+ *         - citizenName
+ *         - citizenLastName
  *         - title
  *         - description
  *         - category
  *         - photos
  *         - createdAt
  *         - location
+ *         - address
+ *         - status
  *       properties:
  *         id:
  *           type: integer
  *           example: 1
+ *
  *         citizenId:
  *           type: integer
- *           example: 123
+ *           example: 1
+ *         citizenName:
+ *           type: string
+ *           example: Alex
+ *         citizenLastName:
+ *           type: string
+ *           example: Morgan
+ *
  *         title:
  *           type: string
- *           example: Pothole in the street
+ *           example: Gas coming out
  *         description:
  *           type: string
- *           example: Large pothole near my house
+ *           example: There is some gas coming out from the street.
+ *
  *         category:
  *           type: object
  *           properties:
  *             id:
  *               type: integer
- *               example: 1
+ *               example: 3
  *             name:
  *               type: string
- *               example: Roads and Urban Furnishings
+ *               example: Sewer System
  *             description:
  *               type: string
- *               example: Issues related to roads and urban furniture
+ *               example: Sistema Fognario
+ *
  *         photos:
  *           type: array
  *           items:
  *             type: string
- *             format: uri
- *             example: https://minio.example.com/reports/123/photo1.png?signature=abc123
- *           description: Pre-signed URLs to report photos (valid for 7 days)
+ *           example:
+ *             - "http://localhost:9000/reports/reports/1/photo1_xxx.jpg?...signed"
+ *
  *         createdAt:
  *           type: string
  *           format: date-time
- *           example: 2025-11-11T21:00:00Z
+ *           example: "2025-11-24T22:22:16.487Z"
+ *
  *         location:
  *           type: object
  *           properties:
  *             latitude:
  *               type: number
- *               example: 45.4642
+ *               example: 45.060729719938735
  *             longitude:
  *               type: number
- *               example: 9.1900
+ *               example: 7.657942771911622
+ *
+ *         address:
+ *           type: string
+ *           example: "Via Saverio Mercadante, 10154 Torino"
+ *
+ *         status:
+ *           type: string
+ *           example: "Pending Approval"
+ *
+ *         explanation:
+ *           type: string
+ *           nullable: true
+ *           example: null
+ *
+ *         assignedTo:
+ *           type: object
+ *           nullable: true
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 3
+ *             email:
+ *               type: string
+ *               example: "giovanni.ferrari@participium.com"
+ *             firstName:
+ *               type: string
+ *               example: "Giovanni"
+ *             lastName:
+ *               type: string
+ *               example: "Ferrari"
+ *
+ *
+ *     MapReportDTO:
+ *       type: object
+ *       required:
+ *         - id
+ *         - citizenName
+ *         - citizenLastName
+ *         - title
+ *         - status
+ *         - description
+ *         - category
+ *         - location
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         citizenName:
+ *           type: string
+ *           example: Alex
+ *         citizenLastName:
+ *           type: string
+ *           example: Morgan
+ *         title:
+ *           type: string
+ *           example: Gas coming out
+ *         status:
+ *           type: string
+ *           example: Pending Approval
+ *         description:
+ *           type: string
+ *           example: There is some gas coming out from the street.
+ *         location:
+ *           type: object
+ *           properties:
+ *             latitude:
+ *               type: number
+ *               example: 45.0607297
+ *             longitude:
+ *               type: number
+ *               example: 7.6579427
+ *         category:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 3
+ *             name:
+ *               type: string
+ *               example: Sewer System
+ *             description:
+ *               type: string
+ *               example: Sistema Fognario
+ *
+ *
  *     CreateReportRequestDTO:
  *       type: object
  *       required:
@@ -89,7 +189,6 @@ const reportController = new ReportController(reportService);
  *         categoryId:
  *           type: integer
  *           example: 1
- *           description: ID of the category (obtained from GET /api/categories)
  *         photoIds:
  *           type: array
  *           minItems: 1
@@ -97,8 +196,7 @@ const reportController = new ReportController(reportService);
  *           items:
  *             type: string
  *             format: uuid
- *           example: ["550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440001"]
- *           description: Array of file IDs from temporary uploads (obtained from POST /api/files/upload)
+ *           example: ["550e8400-e29b-41d4-a716-446655440000"]
  *         location:
  *           type: object
  *           required:
@@ -111,6 +209,8 @@ const reportController = new ReportController(reportService);
  *             longitude:
  *               type: number
  *               example: 9.1900
+ *
+ *
  *     GetAssignedReportsForMapRequestDTO:
  *       type: object
  *       required:
@@ -125,16 +225,17 @@ const reportController = new ReportController(reportService);
  *                 type: number
  *               longitude:
  *                 type: number
- *           example: [
- *             { "latitude": 45.4650, "longitude": 9.1890 },
- *             { "latitude": 20.463, "longitude": 15.1910 },
- *           ]
- *
+ *           example:
+ *             [
+ *               { "latitude": 45.4650, "longitude": 9.1890 },
+ *               { "latitude": 45.4630, "longitude": 9.1910 }
+ *             ]
  */
+
 
 /**
  * @swagger
- * /citizens/reports:
+ * /citizens/report:
  *   post:
  *     summary: Create a new report
  *     tags: [Citizens]
@@ -145,45 +246,7 @@ const reportController = new ReportController(reportService);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - title
- *               - description
- *               - categoryId
- *               - photoIds
- *               - location
- *             properties:
- *               title:
- *                 type: string
- *                 example: Pothole in the street
- *               description:
- *                 type: string
- *                 example: Large pothole near my house
- *               categoryId:
- *                 type: integer
- *                 example: 1
- *                 description: ID of the category (obtained from GET /api/categories)
- *               photoIds:
- *                 type: array
- *                 minItems: 1
- *                 maxItems: 3
- *                 items:
- *                   type: string
- *                   format: uuid
- *                 example: ["550e8400-e29b-41d4-a716-446655440000", "550e8400-e29b-41d4-a716-446655440001"]
- *                 description: Array of file IDs from temporary uploads (obtained from POST /api/files/upload)
- *               location:
- *                 type: object
- *                 required:
- *                   - latitude
- *                   - longitude
- *                 properties:
- *                   latitude:
- *                     type: number
- *                     example: 45.4642
- *                   longitude:
- *                     type: number
- *                     example: 9.1900
+ *             $ref: '#/components/schemas/CreateReportRequestDTO'
  *     responses:
  *       201:
  *         description: Report created successfully
@@ -192,14 +255,14 @@ const reportController = new ReportController(reportService);
  *             schema:
  *               $ref: '#/components/schemas/ReportDTO'
  *       400:
- *         description: Validation error (e.g., invalid categoryId, photoIds not found or expired, missing required fields)
+ *         description: Validation error
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
  */
+router.post("/report", reportController.create.bind(reportController));
 
-router.post("/", reportController.create.bind(reportController));
 
 /**
  * @swagger
@@ -223,50 +286,16 @@ router.post("/", reportController.create.bind(reportController));
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     example: 1
- *                   citizenName:
- *                     type: string
- *                     example: Marco
- *                   citizenLastName:
- *                     type: string
- *                     example: Rossi
- *                   title:
- *                     type: string
- *                     example: Pothole in the street
- *                   status:
- *                    type: string
- *                    example: In progress
- *                   description:
- *                     type: string
- *                     example: Large pothole near my house
- *                   category:
- *                     type: string
- *                     example: Roads and Urban Furnishings
- *                   location:
- *                     type: object
- *                     properties:
- *                       latitude:
- *                         type: number
- *                         example: 45.4642
- *                       longitude:
- *                         type: number
- *                         example: 9.1900
+ *                 $ref: '#/components/schemas/MapReportDTO'
  *       400:
  *         description: Validation error
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
- *
  */
-router.post(
-  "/map",
-  reportController.getAssignedReportsInMap.bind(reportController)
-);
+router.post("/reports/map", reportController.getAssignedReportsInMap.bind(reportController));
+
 
 /**
  * @swagger
@@ -279,7 +308,6 @@ router.post(
  *     parameters:
  *       - in: path
  *         name: id
- *         description: The report ID
  *         required: true
  *         schema:
  *           type: integer
@@ -300,7 +328,8 @@ router.post(
  *       403:
  *         description: Forbidden
  */
-router.get("/getById/:id", reportController.getById.bind(reportController));
+router.get("/reports/getById/:id", reportController.getById.bind(reportController));
+
 
 /**
  * @swagger
@@ -310,7 +339,6 @@ router.get("/getById/:id", reportController.getById.bind(reportController));
  *     tags: [Citizens]
  *     security:
  *       - citizenPassword: []
- *     description: Returns a list of all reports created by the current citizen.
  *     responses:
  *       200:
  *         description: List of citizen's reports
@@ -325,6 +353,6 @@ router.get("/getById/:id", reportController.getById.bind(reportController));
  *       403:
  *         description: Forbidden
  */
-router.get("/myReports", reportController.getMyReports.bind(reportController));
+router.get("/reports/myReports", reportController.getMyReports.bind(reportController));
 
 export default router;

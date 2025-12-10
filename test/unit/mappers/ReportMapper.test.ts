@@ -3,24 +3,26 @@ import ReportDAO from "../../../src/models/dao/ReportDAO";
 import MinIoService from "../../../src/services/MinIoService";
 import { ReportStatus } from "../../../src/constants/ReportStatus";
 
-// Mock MinIoService: Correctly mock the DEFAULT export
-jest.mock("../../../src/services/MinIoService", () => ({
-  __esModule: true, // This is crucial for mocking default exports
-  default: {
-    getPresignedUrl: jest.fn(),
-  },
-}));
 
-describe("ReportMapper", () => {
+jest.mock("../../../src/services/MinIoService", () => {
+  return {
+    __esModule: true,
+    default: {
+      getPresignedUrl: jest.fn(async (key) => `http://minio/${key}`)
+    }
+  };
+});
+
+describe("ReportMapper.toDTO", () => {
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
-  
-  /*
-  it("toDTO should map all fields correctly and generate presigned URLs", async () => {
-    (MinIoService.getPresignedUrl as jest.Mock).mockImplementation(async (key) => `http://minio/${key}`);
+
+  it("should map all fields correctly and generate presigned URLs", async () => {
 
     const mockDate = new Date();
+
     const reportDAO = {
       id: 1,
       citizen: {
@@ -56,17 +58,13 @@ describe("ReportMapper", () => {
     expect(dto.citizenId).toBe(10);
     expect(dto.citizenName).toBe("John");
     expect(dto.category.name).toBe("Roads");
-    
-    // Check photos
-    expect(dto.photos).toHaveLength(2);
-    expect(dto.photos).toContain("http://minio/photos/p1.jpg");
-    expect(dto.photos).toContain("http://minio/photos/p2.jpg");
-    expect(MinIoService.getPresignedUrl).toHaveBeenCalledTimes(2);
 
-    // Check location parsing
+    expect(dto.photos).toHaveLength(2);
+    expect(dto.photos[0]).toContain("photos/p1.jpg");
+    expect(dto.photos[1]).toContain("photos/p2.jpg");
+
     expect(dto.location).toEqual({ latitude: 45.0, longitude: 9.0 });
 
-    // Check assignedTo
     expect(dto.assignedTo).toEqual({
       id: 99,
       email: "officer@city.com",
@@ -74,9 +72,8 @@ describe("ReportMapper", () => {
       lastName: "Smith",
     });
   });
-  */
 
-  it("toDTO should handle null assignments and photos", async () => {
+  it("should handle null assignments and photos", async () => {
     const reportDAO = {
       id: 2,
       citizen: { id: 10, firstName: "Jane", lastName: "Doe" },
@@ -97,5 +94,36 @@ describe("ReportMapper", () => {
     expect(dto.assignedTo).toBeNull();
     expect(dto.photos).toEqual([]);
     expect(MinIoService.getPresignedUrl).not.toHaveBeenCalled();
+  });
+
+  // NEW TESTS
+  describe("toDTOforMap", () => {
+    it("should return a simplified object for map display", () => {
+      const reportDAO = {
+        id: 1,
+        citizen: {
+          firstName: "Mario",
+          lastName: "Rossi",
+        },
+        title: "Pothole",
+        status: "Assigned",
+        description: "Big hole",
+        location: '{"latitude": 45.0, "longitude": 9.0}',
+        category: { id: 1, name: "Road" },
+      } as any;
+
+      const result = ReportMapper.toDTOforMap(reportDAO);
+
+      expect(result).toEqual({
+        id: 1,
+        citizenName: "Mario",
+        citizenLastName: "Rossi",
+        title: "Pothole",
+        status: "Assigned",
+        description: "Big hole",
+        location: { latitude: 45.0, longitude: 9.0 },
+        category: { id: 1, name: "Road" },
+      });
+    });
   });
 });

@@ -2,7 +2,8 @@
   {
     "title": "Gas coming out",
     "description": "There is some gas coming out from the street.",
-    "location": {"latitude": 45.060729719938735, "longitude": 7.657942771911622},
+    "location": { "latitude": 45.060729719938735, "longitude": 7.657942771911622 },
+    "address": "Via Saverio Mercadante, 10154 Torino",
     "categoryId": 3,
     "status": "Pending Approval",
     "explanation": null,
@@ -12,7 +13,8 @@
   {
     "title": "Faded crossings",
     "description": "These crossing are almost visible, I think they need to be fixed",
-    "location": {"latitude": 45.06344271824201, "longitude": 7.651355266571046},
+    "location": { "latitude": 45.06344271824201, "longitude": 7.651355266571046 },
+    "address": "Via Cigna, 10152 Torino",
     "categoryId": 6,
     "status": "Pending Approval",
     "explanation": null,
@@ -22,7 +24,8 @@
   {
     "title": "Broken pole",
     "description": "There is a pole that is almost falling off. It could be dangerous. Please fix it",
-    "location": {"latitude": 45.068580390175946, "longitude": 7.65275001525879},
+    "location": { "latitude": 45.068580390175946, "longitude": 7.65275001525879 },
+    "address": "Corso Vercelli, 10155 Torino",
     "categoryId": 5,
     "status": "Assigned",
     "explanation": "No explanation required",
@@ -32,7 +35,8 @@
   {
     "title": "Broken light",
     "description": "This light is broken, can you check it?",
-    "location": {"latitude": 45.08006649345792, "longitude": 7.638759613037109},
+    "location": { "latitude": 45.08006649345792, "longitude": 7.638759613037109 },
+    "address": "Corso Grosseto, 10147 Torino",
     "categoryId": 4,
     "status": "Assigned",
     "explanation": "No explanation required",
@@ -42,17 +46,19 @@
   {
     "title": "Garbage on the street",
     "description": "There is garbage left on the street",
-    "location": {"latitude": 45.06105642969861, "longitude": 7.658168077468873},
+    "location": { "latitude": 45.06105642969861, "longitude": 7.658168077468873 },
+    "address": "Via Gottardo, 10154 Torino",
     "categoryId": 5,
-    "status": "Assigned",
+    "status": "Delegated",
     "explanation": "No explanation required",
-    "assignedToId": 5,
+    "assignedToId": 12,
     "images": ["photo1_58aa6e56-56ac-4fa2-bee2-a9a92369f2b2.jpg"]
   },
   {
     "title": "Broken street",
     "description": "The pavement is broken, it's dangerous",
-    "location": {"latitude": 45.058336183679764, "longitude": 7.65673041343689},
+    "location": { "latitude": 45.058336183679764, "longitude": 7.65673041343689 },
+    "address": "Via Feletto, 10153 Torino",
     "categoryId": 7,
     "status": "Assigned",
     "explanation": "No explanation required",
@@ -62,7 +68,8 @@
   {
     "title": "Fallen sign",
     "description": "This sign has fallen, it's very hard to see now because it's on the ground",
-    "location": {"latitude": 45.05508669194515, "longitude": 7.654970884323121},
+    "location": { "latitude": 45.05508669194515, "longitude": 7.654970884323121 },
+    "address": "Via Cigna, 10152 Torino",
     "categoryId": 6,
     "status": "Assigned",
     "explanation": "No explanation required",
@@ -76,7 +83,8 @@
   {
     "title": "Branch fallen off",
     "description": "There is a branch fallen off the tree, please check these trees",
-    "location": {"latitude": 45.05396373730661, "longitude": 7.655228376388551},
+    "location": { "latitude": 45.05396373730661, "longitude": 7.655228376388551 },
+    "address": "Via Cigna, 10152 Torino",
     "categoryId": 8,
     "status": "Assigned",
     "explanation": "No explanation required",
@@ -85,6 +93,38 @@
       "photo1_bda7a486-90fa-4537-adee-2006db068fe9.jpg",
       "photo2_bf13fbe0-8e96-4c40-b4a5-3e02981493e6.jpg"
     ]
+  },
+  {
+    "title": "Accumulated garbage near the building",
+    "description": "A large amount of garbage bags has been abandoned near the building wall. The waste blocks ventilation grilles and creates an unsanitary environment. Please arrange cleanup.",
+    "location": {
+      "latitude": 45.089742,
+      "longitude": 7.685912
+    },
+    "address": "Via Francesco Cigna, 96, 10155 Torino",
+    "categoryId": 5,
+    "status": "Assigned",
+    "explanation": "No explanation required",
+    "assignedToId": 7,
+    "images": [
+      "photo1_f3d8e7d2-1c4b-4b8c-9e2f-0c3a2c1b7a5d.jpeg",
+      "photo2_t3d8e7d2-1c4b-4a8c-9k2f-0c3a2c1b7a6q.jpeg"
+    ]
+  },
+  {
+    "title": "Graffiti vandalism on building facade",
+    "description": "The exterior wall of the building has been vandalized with large graffiti tags in multiple colors. It significantly affects the appearance of the street and requires cleaning or repainting.",
+    "location": {
+      "latitude": 45.065181,
+      "longitude": 7.693842
+    },
+    "address": "Via degli Artisti, 34, 10124 Torino",
+    "categoryId": 7,
+    "status": "Assigned",
+    "explanation": "No explanation required",
+    "assignedToId": 7,
+    "images": [
+      "photo1_h3d1y7d2-1c4b-1d8c-9e2f-0c3q21lb7a6d.jpeg"
+    ]
   }
 ]
-

@@ -49,7 +49,6 @@ describe("Authentication E2E Tests", () => {
       lastName: "Citizen",
       status: "ACTIVE",
     });
-    citizenId = citizen.id;
 
     const testRole = await roleRepo.findOne({ where: { id: 99 } });
     if (!testRole) {

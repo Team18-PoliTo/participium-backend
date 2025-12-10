@@ -126,11 +126,12 @@ describe("ReportRepository", () => {
   });
 
   describe("findAllApproved", () => {
-    it("should find reports with ASSIGNED or IN_PROGRESS status", async () => {
+    it("should find reports with ASSIGNED or IN_PROGRESS or DELEGATED status", async () => {
       const repo = new ReportRepository();
       const mockReports = [
         { id: 1, status: ReportStatus.ASSIGNED, title: "Report 1" },
         { id: 2, status: ReportStatus.IN_PROGRESS, title: "Report 2" },
+        { id: 3, status: ReportStatus.DELEGATED, title: "Report 3" },
       ];
       find.mockResolvedValue(mockReports);
 
@@ -140,7 +141,7 @@ describe("ReportRepository", () => {
         where: { 
           status: expect.objectContaining({
             _type: "in",
-            _value: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS]
+            _value: [ReportStatus.ASSIGNED, ReportStatus.IN_PROGRESS, ReportStatus.DELEGATED]
           })
         },
         relations: ["citizen"],

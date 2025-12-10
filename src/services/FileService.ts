@@ -3,6 +3,7 @@ import MinIoService from "./MinIoService";
 import TempFileRepository from "../repositories/implementation/TempFileRepository";
 import TempFileDAO from "../models/dao/TempFileDAO";
 import {MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
+import {BadRequestException, NotFoundException} from "@nestjs/common";
 
 export interface UploadedFileDTO {
   fileId: string;
@@ -17,7 +18,7 @@ const VALID_TYPES = ["report", "profile"] as const;
 type FileType = typeof VALID_TYPES[number];
 
 class FileService {
-  private tempFileRepository: TempFileRepository;
+  private readonly tempFileRepository: TempFileRepository;
   
   // Allowed MIME types for uploads
   private readonly ALLOWED_MIME_TYPES = [
@@ -98,7 +99,7 @@ class FileService {
       size: tempFile.size,
       mimeType: tempFile.mimeType,
       tempPath: tempFile.tempPath,
-      expiresAt: tempFile.expiresAt.toISOString(), // Convert Date to ISO string for JSON response
+      expiresAt: tempFile.expiresAt.toISOString(),
     };
   }
 
@@ -113,21 +114,21 @@ class FileService {
 
     for (const fileId of fileIds) {
       const tempFile = await this.tempFileRepository.findByFileId(fileId);
-      
+
       if (!tempFile) {
-        throw new Error(`Temp file with ID ${fileId} not found`);
+        throw new NotFoundException(`Temp file with ID ${fileId} not found`);
       }
-      
+
       if (tempFile.expiresAt < now) {
-        throw new Error(`Temp file with ID ${fileId} has expired`);
+        throw new BadRequestException(`Temp file with ID ${fileId} has expired`);
       }
 
       // Verify file exists in MinIO
       const exists = await MinIoService.fileExists(tempFile.tempPath);
       if (!exists) {
-        throw new Error(`Temp file with ID ${fileId} not found in storage`);
+        throw new NotFoundException(`Temp file with ID ${fileId} not found in storage`);
       }
-      
+
       tempFiles.push(tempFile);
     }
 
@@ -232,7 +233,7 @@ class FileService {
           try {
             await MinIoService.deleteFile(bucket, file.tempPath);
             deleted = true;
-            break; // Successfully deleted, no need to try other bucket
+            break;
           } catch (error) {
             // Continue to next bucket if this one fails
           }

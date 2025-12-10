@@ -33,12 +33,12 @@ describe("Category E2E Tests", () => {
     it("should return all categories with correct structure", async () => {
       const categoryRepo = AppDataSource.getRepository(CategoryDAO);
       
-      const category1 = await categoryRepo.save({
+       await categoryRepo.save({
         name: "Water Supply",
         description: "Water supply and drinking water issues"
       });
 
-      const category2 = await categoryRepo.save({
+       await categoryRepo.save({
         name: "Road Maintenance",
         description: "Road repairs and maintenance"
       });
