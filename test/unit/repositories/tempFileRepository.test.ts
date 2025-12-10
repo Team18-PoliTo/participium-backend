@@ -1,4 +1,4 @@
-import { Repository, LessThan } from "typeorm";
+import { Repository } from "typeorm";
 import TempFileRepository from "../../../src/repositories/implementation/TempFileRepository";
 import TempFileDAO from "../../../src/models/dao/TempFileDAO";
 import { AppDataSource } from "../../../src/config/database";

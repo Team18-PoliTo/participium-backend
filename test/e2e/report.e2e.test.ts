@@ -115,10 +115,10 @@ describe("Report E2E Tests", () => {
   });
 
   afterAll(async () => {
-    if (AppDataSource && AppDataSource.isInitialized) {
-      await AppDataSource.destroy();
-    }
-    jest.clearAllMocks();
+      if (AppDataSource?.isInitialized) {
+          await AppDataSource.destroy();
+      }
+      jest.clearAllMocks();
   });
 
   it("should create a report with 3 photos", async () => {
@@ -316,8 +316,8 @@ describe("Report E2E Tests", () => {
         .set("Authorization", `Bearer ${token}`)
         .send({
             corners: [
-                { latitude: 45.0, longitude: 9.0 },
-                { latitude: 46.0, longitude: 10.0 }
+                { latitude: 45, longitude: 9 },
+                { latitude: 46, longitude: 10 }
             ]
         });
 

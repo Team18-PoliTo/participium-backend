@@ -5,7 +5,7 @@ import { IReportRepository } from "../IReportRepository";
 import { ReportStatus } from "../../constants/ReportStatus";
 
 export class ReportRepository implements IReportRepository {
-  private repo: Repository<ReportDAO>;
+  private readonly repo: Repository<ReportDAO>;
 
   constructor() {
     this.repo = AppDataSource.getRepository(ReportDAO);
@@ -66,6 +66,26 @@ export class ReportRepository implements IReportRepository {
         citizen: { id: citizenId },
       },
     });
+  }
+
+  async updateReport(
+      id: number,
+      updates: {
+        status?: string;
+        explanation?: string;
+        assignedTo?: any;
+        categoryId?: number;
+      }
+  ): Promise<ReportDAO> {
+
+    await this.repo.update(id, {
+      status: updates.status,
+      explanation: updates.explanation,
+      assignedTo: updates.assignedTo,
+      category: updates.categoryId ? { id: updates.categoryId } : undefined
+    });
+
+    return (await this.findById(id)) as ReportDAO;
   }
 
   async findByAssignedStaff(staffId: number): Promise<ReportDAO[]> {

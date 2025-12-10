@@ -3,7 +3,7 @@ import { AppDataSource } from "../../config/database";
 import CategoryRoleDAO from "../../models/dao/CategoryRoleDAO";
 
 export class CategoryRoleRepository {
-  private repo: Repository<CategoryRoleDAO>;
+  private readonly repo: Repository<CategoryRoleDAO>;
 
   constructor(repo?: Repository<CategoryRoleDAO>) {
     this.repo = repo ?? AppDataSource.getRepository(CategoryRoleDAO);

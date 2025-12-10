@@ -1,4 +1,4 @@
-import {minioClient, minioClientForPresigned, MINIO_BUCKET, PROFILE_BUCKET} from "../config/minioClient";
+import {minioClient, minioClientForPresigned, MINIO_BUCKET} from "../config/minioClient";
 
 class MinIoService {
   async uploadFile(
@@ -50,10 +50,11 @@ class MinIoService {
         stat.metaData?.["Content-Type"] ||
         "application/octet-stream";
     } catch (error) {
-      // If stat fails, use default content type
       console.warn(
-        `Could not get metadata for ${sourcePath}, using default content type`
+          `Could not get metadata for ${sourcePath}, using default content type`,
+          error
       );
+      throw new Error(`Failed to fetch metadata for ${sourcePath}: ${String(error)}`);
     }
 
     // Write file to destination
@@ -76,6 +77,7 @@ class MinIoService {
       await minioClient.statObject(MINIO_BUCKET, objectKey);
       return true;
     } catch (error) {
+      console.warn(`[MinIO] File does not exist: ${objectKey}`, error);
       return false;
     }
   }
@@ -133,8 +135,8 @@ class MinIoService {
       // If we get a connection error, it means external endpoint is not reachable from Docker
       // In that case, we might need to make it reachable or use a different approach
       console.warn(
-        `[MinIO] Could not generate presigned URL for ${objectKey} in bucket ${bucket}:`,
-        error && error.message ? error.message : error
+          `[MinIO] Could not generate presigned URL for ${objectKey} in bucket ${bucket}:`,
+          error?.message ?? error
       );
       // return empty string as fallback so callers can filter falsy values
       return "";

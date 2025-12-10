@@ -24,9 +24,6 @@ jest.mock("../../src/services/MinIoService", () => ({
 describe("Internal Reports E2E Tests", () => {
   let staffToken: string;
   let staffId: number;
-  let officeId: number;
-  let roleId: number;
-  let categoryId: number;
 
   beforeAll(async () => {
     if (!AppDataSource.isInitialized) {
@@ -43,13 +40,10 @@ describe("Internal Reports E2E Tests", () => {
     const reportRepo = AppDataSource.getRepository(ReportDAO);
 
     const office = await officeRepo.save({ name: "Tech Office", description: "Technical" });
-    officeId = office.id;
 
     const role = await roleRepo.save({ role: "Tech Operator", office });
-    roleId = role.id;
 
     const category = await categoryRepo.save({ name: "Tech Issues", description: "Tech stuff" });
-    categoryId = category.id;
 
     await catRoleRepo.save({ category, role });
 

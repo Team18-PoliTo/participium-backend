@@ -1,6 +1,5 @@
 import ReportController from '../../../src/controllers/reportController';
-import { Request, Response, NextFunction } from 'express';
-import * as classValidator from 'class-validator';
+import { Response, NextFunction } from 'express';
 
 // Helper to build controller with specific service mocks
 const buildController = (serviceOverrides: Record<string, jest.Mock> = {}) => {
@@ -134,7 +133,6 @@ describe('ReportController', () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: 'Internal Server Error' });
-    // expect(next).toHaveBeenCalledWith(boom); // Removed: controller handles error internally via handleError
   });
 
   // --- getMyReports ---
@@ -165,7 +163,7 @@ describe('ReportController', () => {
 
   it('getMyReports handles errors', async () => {
     const error = new Error("Fail");
-    const { controller, reportService } = buildController({
+    const { controller } = buildController({
         getReportsByUser: jest.fn().mockRejectedValue(error)
     });
     const req = { auth: { sub: 42 } } as any;
@@ -270,7 +268,7 @@ describe('ReportController', () => {
 
   it('getAssignedReportsInMap returns 400 if service throws Error', async () => {
     const error = new Error("Logic error");
-    const { controller, reportService } = buildController({
+    const { controller } = buildController({
         getAssignedReportsInMap: jest.fn().mockRejectedValue(error)
     });
     const req = { body: { corners: [{ latitude: 1, longitude: 1 }, { latitude: 2, longitude: 2 }] } } as any;
