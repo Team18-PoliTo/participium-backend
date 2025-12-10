@@ -1,24 +1,22 @@
-import { ReportMapper } from "../../mappers/ReportMapper";
-import { ReportDTO } from "../../models/dto/ReportDTO";
-import {
-  CreateReportRequestDTO,
-  UpdateReportRequestDTO,
-} from "../../models/dto/ValidRequestDTOs";
-import { IReportRepository } from "../../repositories/IReportRepository";
-import { ReportRepository } from "../../repositories/implementation/ReportRepository";
+import {ReportMapper} from "../../mappers/ReportMapper";
+import {ReportDTO} from "../../models/dto/ReportDTO";
+import {CreateReportRequestDTO, UpdateReportRequestDTO,} from "../../models/dto/ValidRequestDTOs";
+import {IReportRepository} from "../../repositories/IReportRepository";
+import {ReportRepository} from "../../repositories/implementation/ReportRepository";
 import CitizenRepository from "../../repositories/implementation/CitizenRepository";
-import { ICitizenRepository } from "../../repositories/ICitizenRepository";
-import { CategoryRoleRepository } from "../../repositories/implementation/CategoryRoleRepository";
-import { CategoryRepository } from "../../repositories/implementation/CategoryRepository";
+import {ICitizenRepository} from "../../repositories/ICitizenRepository";
+import {CategoryRoleRepository} from "../../repositories/implementation/CategoryRoleRepository";
+import {CategoryRepository} from "../../repositories/implementation/CategoryRepository";
 import InternalUserRepository from "../../repositories/InternalUserRepository";
 import FileService from "../FileService";
-import { v4 as uuidv4 } from "uuid";
-import { IReportService } from "../IReportService";
-import { ReportStatus } from "../../constants/ReportStatus";
-import { GeocodingService } from "../GeocodingService";
+import {v4 as uuidv4} from "uuid";
+import {IReportService} from "../IReportService";
+import {ReportStatus} from "../../constants/ReportStatus";
+import {GeocodingService} from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
-import { ExternalMaintainerDTO } from "../../models/dto/InternalUserDTO";
-import { ExternalMaintainerMapper } from "../../mappers/InternalUserMapper";
+import {ExternalMaintainerDTO} from "../../models/dto/InternalUserDTO";
+import {ExternalMaintainerMapper} from "../../mappers/InternalUserMapper";
+
 class ReportService implements IReportService {
   constructor(
     private readonly reportRepository: IReportRepository = new ReportRepository(),
@@ -297,10 +295,9 @@ class ReportService implements IReportService {
       // We already validated this exists in the validation phase above
       if (categoryRoleMapping) {
         // Randomly select an officer with that role
-        const selectedOfficer = await this.selectUnoccupiedOfficerByRole(
-          categoryRoleMapping.role.id
+        report.assignedTo = await this.selectUnoccupiedOfficerByRole(
+            categoryRoleMapping.role.id
         );
-        report.assignedTo = selectedOfficer;
       }
     }
 

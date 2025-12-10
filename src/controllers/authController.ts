@@ -8,45 +8,49 @@ import CitizenRepository from "../repositories/implementation/CitizenRepository"
 import InternalUserRepository from "../repositories/InternalUserRepository";
 import { CitizenMapper } from "../mappers/CitizenMapper";
 import { InternalUserMapper } from "../mappers/InternalUserMapper";
-import {ValidationError} from "@nestjs/common";
+import { ValidationError } from "@nestjs/common";
 
 class AuthController {
   constructor(
-    private readonly citizenService: ICitizenService,
-    private readonly internalUserService: InternalUserService,
-    private readonly citizenRepository: CitizenRepository = new CitizenRepository(),
-    private readonly internalRepository: InternalUserRepository = new InternalUserRepository()
+      private readonly citizenService: ICitizenService,
+      private readonly internalUserService: InternalUserService,
+      private readonly citizenRepository: CitizenRepository = new CitizenRepository(),
+      private readonly internalRepository: InternalUserRepository = new InternalUserRepository()
   ) {}
 
-  async loginCitizen(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  /**
+   * Shared login handler for both citizen and internal users.
+   */
+  private async handleLogin(
+      req: Request,
+      res: Response,
+      next: NextFunction,
+      loginFn: (dto: LoginRequestDTO) => Promise<any>
   ): Promise<void> {
     try {
-      const normalizedBody = {
+      const normalized = {
         ...req.body,
         email: req.body?.email ?? req.body?.username,
       };
-      const sanitizedBody = {
-        email: normalizedBody.email,
-        password: normalizedBody.password,
-      };
-      const dto = plainToInstance(LoginRequestDTO, sanitizedBody);
-      const errors = await validate(dto, {
-        whitelist: true,
-        forbidNonWhitelisted: true,
+
+      const dto = plainToInstance(LoginRequestDTO, {
+        email: normalized.email,
+        password: normalized.password,
       });
-      if (errors.length) {
-        const msg: string = errors
+
+      const errors = await validate(dto, { whitelist: true, forbidNonWhitelisted: true });
+
+      if (errors.length > 0) {
+        const message = errors
             .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
             .join("; ");
-        res.status(400).json({ error: msg });
+        res.status(400).json({ error: message });
         return;
       }
 
-      const result = await this.citizenService.login(dto);
+      const result = await loginFn(dto);
       res.status(200).json(result);
+
     } catch (err) {
       if (err instanceof Error && err.message === "Invalid credentials") {
         res.status(401).json({ error: "Invalid credentials" });
@@ -56,42 +60,18 @@ class AuthController {
     }
   }
 
-  async loginInternal(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const normalizedBody = {
-        ...req.body,
-        email: req.body?.email ?? req.body?.username,
-      };
-      const sanitizedBody = {
-        email: normalizedBody.email,
-        password: normalizedBody.password,
-      };
-      const dto = plainToInstance(LoginRequestDTO, sanitizedBody);
-      const errors = await validate(dto, {
-        whitelist: true,
-        forbidNonWhitelisted: true,
-      });
-      if (errors.length) {
-        const msg: string = errors
-            .flatMap((e: ValidationError) => Object.values(e.constraints ?? {}))
-            .join("; ");
-        res.status(400).json({ error: msg });
-        return;
-      }
+  /** Citizen login */
+  async loginCitizen(req: Request, res: Response, next: NextFunction): Promise<void> {
+    return this.handleLogin(req, res, next, dto =>
+        this.citizenService.login(dto)
+    );
+  }
 
-      const result = await this.internalUserService.login(dto);
-      res.status(200).json(result);
-    } catch (err) {
-      if (err instanceof Error && err.message === "Invalid credentials") {
-        res.status(401).json({ error: "Invalid credentials" });
-        return;
-      }
-      next(err);
-    }
+  /** Internal user login */
+  async loginInternal(req: Request, res: Response, next: NextFunction): Promise<void> {
+    return this.handleLogin(req, res, next, dto =>
+        this.internalUserService.login(dto)
+    );
   }
 
   async logout(_req: Request, res: Response): Promise<void> {
@@ -111,7 +91,10 @@ class AuthController {
           res.status(404).json({ error: "Citizen not found" });
           return;
         }
-        res.status(200).json({ kind: "citizen", profile: await CitizenMapper.toDTO(citizen) });
+        res.status(200).json({
+          kind: "citizen",
+          profile: await CitizenMapper.toDTO(citizen),
+        });
         return;
       }
 
@@ -121,15 +104,20 @@ class AuthController {
           res.status(404).json({ error: "Internal user not found" });
           return;
         }
-        res.status(200).json({ kind: "internal", profile: InternalUserMapper.toDTO(internal) });
+        res.status(200).json({
+          kind: "internal",
+          profile: InternalUserMapper.toDTO(internal),
+        });
         return;
       }
 
       res.status(400).json({ error: "Unknown authentication kind" });
-    } catch (error) {
-      next(error);
+
+    } catch (err) {
+      next(err);
     }
   }
 }
 
 export default AuthController;
+
