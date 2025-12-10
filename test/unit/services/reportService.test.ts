@@ -31,7 +31,6 @@ describe("ReportService", () => {
       findByCategoryIds: jest.fn().mockResolvedValue([baseReport]),
       findAllApproved: jest.fn().mockResolvedValue([baseReport]),
     };
-
     const citizenRepository = {
       findById: jest.fn().mockResolvedValue(citizen),
     };
@@ -292,8 +291,15 @@ describe("ReportService", () => {
   });
 
   describe("updateReport", () => {
+    // Mock PR officer user for updateReport tests
+    const prOfficerUser = {
+      id: 1,
+      role: { id: 10, name: "Public Relations Officer" },
+      company: null
+    };
+
     it("should update and return the updated report", async () => {
-      const { service, reportRepository } = buildService();
+      const { service, reportRepository, internalUserRepository } = buildService();
       const updatedReport = {
         id: 1,
         title: "Updated",
@@ -310,11 +316,12 @@ describe("ReportService", () => {
       };
       reportRepository.findById.mockResolvedValue(updatedReport);
       reportRepository.updateStatus.mockResolvedValue(updatedReport);
+      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
       const result = await service.updateReport(1, { 
         status: ReportStatus.REJECTED,
         explanation: "Not valid"
-      });
+      }, prOfficerUser.id, "Public Relations Officer");
       
       expect(reportRepository.updateStatus).toHaveBeenCalledWith(
         1,
@@ -345,7 +352,10 @@ describe("ReportService", () => {
         status: ReportStatus.ASSIGNED,
       };
       reportRepository.findById.mockResolvedValue(assignedReport);
+      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
+      // Status transition validation kicks in first - PR officer is not assigned to the report
+      // so they cannot transition from ASSIGNED to IN_PROGRESS
       await expect(
           service.updateReport(
               1,
@@ -363,7 +373,7 @@ describe("ReportService", () => {
 
 
     it("should allow PR officer to update pending report", async () => {
-      const { service, reportRepository } = buildService();
+      const { service, reportRepository, internalUserRepository } = buildService();
       const pendingReport = {
         ...baseReport,
         status: ReportStatus.PENDING_APPROVAL,
@@ -373,10 +383,12 @@ describe("ReportService", () => {
         ...pendingReport,
         status: ReportStatus.REJECTED,
       });
+      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
       const result = await service.updateReport(
         1,
         { status: ReportStatus.REJECTED, explanation: "Invalid" },
+        prOfficerUser.id,
         "Public Relations Officer"
       );
 
@@ -384,7 +396,7 @@ describe("ReportService", () => {
     });
 
     it("should update category when categoryId is provided", async () => {
-      const { service, reportRepository, categoryRepository } = buildService();
+      const { service, reportRepository, categoryRepository, internalUserRepository } = buildService();
       const newCategory = { id: 2, name: "Water", description: "Water issues" };
       reportRepository.findById.mockResolvedValue(baseReport);
       categoryRepository.findById.mockResolvedValue(newCategory);
@@ -392,21 +404,24 @@ describe("ReportService", () => {
         ...baseReport,
         category: newCategory,
       });
+      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
       await service.updateReport(1, {
         status: ReportStatus.REJECTED,
         categoryId: 2,
         explanation: ""
-      });
+      }, prOfficerUser.id, "Public Relations Officer");
 
       expect(categoryRepository.findById).toHaveBeenCalledWith(2);
       expect(reportRepository.updateStatus).toHaveBeenCalled();
     });
 
     it("should throw when categoryId is invalid", async () => {
-      const { service, reportRepository, categoryRepository } = buildService();
-      reportRepository.findById.mockResolvedValue(baseReport);
+      const { service, reportRepository, categoryRepository, internalUserRepository } = buildService();
+      const pendingReport = { ...baseReport, status: ReportStatus.PENDING_APPROVAL };
+      reportRepository.findById.mockResolvedValue(pendingReport);
       categoryRepository.findById.mockResolvedValue(null);
+      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
       await expect(
           service.updateReport(
@@ -434,8 +449,6 @@ describe("ReportService", () => {
       const role = { id: 5, name: "Road Officer" };
       const officer = { id: 100, activeTasks: 2, role };
       const categoryRoleMapping = { role };
-
-      // Report должен быть Pending Approval!
       const roadCategory = { id: 1, name: "Road", description: "Road issues" };
       const pendingReport = {
         ...baseReport,
@@ -502,6 +515,7 @@ describe("ReportService", () => {
 
       // Нет доступных офицеров
       internalUserRepository.findByRoleId.mockResolvedValue([]);
+      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
       await expect(
           service.updateReport(
@@ -519,6 +533,7 @@ describe("ReportService", () => {
         reportRepository,
         categoryRepository,
         categoryRoleRepository,
+        internalUserRepository,
       } = buildService();
 
       const roadCategory = { id: 1, name: "Road", description: "Road issues" };
@@ -534,6 +549,7 @@ describe("ReportService", () => {
       categoryRepository.findById.mockResolvedValue(roadCategory);
 
       categoryRoleRepository.findRoleByCategory.mockResolvedValue(null);
+      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
       await expect(
           service.updateReport(
@@ -562,7 +578,6 @@ describe("ReportService", () => {
       ];
       const categoryRoleMapping = { role };
 
-      // репорт должен быть Pending Approval!
       const pendingReport = {
         ...baseReport,
         status: ReportStatus.PENDING_APPROVAL,
@@ -576,7 +591,7 @@ describe("ReportService", () => {
       internalUserRepository.findByRoleId.mockResolvedValue(officers);
 
       reportRepository.updateStatus.mockResolvedValue({
-        ...pendingReport,
+        ...baseReport,
         status: ReportStatus.ASSIGNED,
         assignedTo: officers[1], // least busy
       });
@@ -589,6 +604,63 @@ describe("ReportService", () => {
       );
 
       expect(internalUserRepository.incrementActiveTasks).toHaveBeenCalledWith(102);
+    });
+
+    it("should prevent external maintainer from changing category", async () => {
+      const { service, reportRepository, internalUserRepository } = buildService();
+
+      const externalMaintainerUser = {
+        id: 200,
+        role: { id: 28, name: "External Maintainer" },
+        company: { id: 1, name: "Test Company" }
+      };
+
+      const delegatedReport = {
+        ...baseReport,
+        status: ReportStatus.DELEGATED,
+        assignedTo: externalMaintainerUser,
+      };
+
+      reportRepository.findById.mockResolvedValue(delegatedReport);
+      internalUserRepository.findById.mockResolvedValue(externalMaintainerUser);
+
+      await expect(
+        service.updateReport(1, {
+          status: ReportStatus.IN_PROGRESS,
+          categoryId: 5,
+          explanation: "Starting work"
+        }, externalMaintainerUser.id, "External Maintainer")
+      ).rejects.toThrow("External maintainers cannot change the report category");
+    });
+
+    it("should allow external maintainer to update delegated report to in progress", async () => {
+      const { service, reportRepository, internalUserRepository } = buildService();
+
+      const externalMaintainerUser = {
+        id: 200,
+        role: { id: 28, name: "External Maintainer" },
+        company: { id: 1, name: "Test Company" }
+      };
+
+      const delegatedReport = {
+        ...baseReport,
+        status: ReportStatus.DELEGATED,
+        assignedTo: externalMaintainerUser,
+      };
+
+      reportRepository.findById.mockResolvedValue(delegatedReport);
+      internalUserRepository.findById.mockResolvedValue(externalMaintainerUser);
+      reportRepository.updateStatus.mockResolvedValue({
+        ...delegatedReport,
+        status: ReportStatus.IN_PROGRESS,
+      });
+
+      const result = await service.updateReport(1, {
+        status: ReportStatus.IN_PROGRESS,
+        explanation: "Starting work"
+      }, externalMaintainerUser.id, "External Maintainer");
+
+      expect(result.status).toBe(ReportStatus.IN_PROGRESS);
     });
   });
 

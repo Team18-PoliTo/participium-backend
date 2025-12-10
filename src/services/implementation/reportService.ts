@@ -16,7 +16,11 @@ import {GeocodingService} from "../GeocodingService";
 import CompanyCategoryRepository from "../../repositories/implementation/CompanyCategoryRepository";
 import { ExternalMaintainerDTO } from "../../models/dto/InternalUserDTO";
 import { ExternalMaintainerMapper } from "../../mappers/InternalUserMapper";
-
+import {
+  validateStatusTransition,
+  EXTERNAL_MAINTAINER_ROLE,
+  EXTERNAL_MAINTAINER_ROLE_ID,
+} from "../../constants/StatusTransitions";
 class ReportService implements IReportService {
   constructor(
     private readonly reportRepository: IReportRepository = new ReportRepository(),
@@ -218,12 +222,56 @@ class ReportService implements IReportService {
       );
     }
 
+    // Fetch user to check if external maintainer
+    const user = await this.internalUserRepository.findById(userId);
+    if (!user) {
+      throw new Error("Internal user not found");
+    }
+
+    const isExternalMaintainer =
+      userRole === EXTERNAL_MAINTAINER_ROLE ||
+      userRole?.includes(EXTERNAL_MAINTAINER_ROLE) ||
+      user.role?.id === EXTERNAL_MAINTAINER_ROLE_ID;
+
+    const isAssignedUser = report.assignedTo?.id === user.id;
+
+    // External maintainers cannot change the category
+    if (isExternalMaintainer && data.categoryId) {
+      throw new Error("External maintainers cannot change the report category");
+    }
+
+    // Validate status transition using the transition rules
+    const transitionResult = validateStatusTransition(
+      report.status,
+      data.status,
+      userRole || "",
+      isExternalMaintainer,
+      isAssignedUser
+    );
+
+    if (!transitionResult.valid) {
+      throw new Error(transitionResult.errorMessage);
+    }
+
+    /** Additional Authorization checks (kept for backwards compatibility):
+     * - PR Officers can only update reports with status "Pending Approval"
+     * - Technical Officers/External Maintainers can only update reports assigned to them
+     */
     if (
         userRole === "Public Relations Officer" ||
         userRole?.includes("Public Relations Officer")
     ) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
+          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
+        );
+      }
+    }
+
+    if (report.status !== ReportStatus.PENDING_APPROVAL) {
+      if (!isAssignedUser) {
+        throw new Error(
+          "Only the currently assigned user can update this report"
             `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". ` +
             `This report status is "${report.status}".`
         );
@@ -274,17 +322,26 @@ class ReportService implements IReportService {
         report.assignedTo = await this.selectUnoccupiedOfficerByRole(
             categoryRoleMapping.role.id
         );
+        report.assignedTo = selectedOfficer;
       }
     }
 
-    const updatedReport = await this.reportRepository.updateReport(reportId, {
-      status: data.status,
-      explanation: data.explanation,
-      assignedTo: assignedTo,
-      categoryId: categoryToUse.id,
-    });
+    // If transitioning to RESOLVED, decrement the assigned user's active tasks
+    if (data.status === ReportStatus.RESOLVED && report.assignedTo) {
+      await this.internalUserRepository.decrementActiveTasks(
+        report.assignedTo.id
+      );
+    }
 
-    return ReportMapper.toDTO(updatedReport);
+    // Save report with updated status, category, and assignment, along with explanation
+      const updatedReport = await this.reportRepository.updateReport(reportId, {
+          status: data.status,
+          explanation: data.explanation,
+          assignedTo: assignedTo,
+          categoryId: categoryToUse.id,
+      });
+
+      return ReportMapper.toDTO(updatedReport);
   }
 
   async delegateReport(
@@ -354,8 +411,13 @@ class ReportService implements IReportService {
     );
   }
 
-  async getReportsForStaff(staffId: number): Promise<ReportDTO[]> {
-    const reports = await this.reportRepository.findByAssignedStaff(staffId);
+  async getReportsForStaff(staffId: number, statusFilter?: string): Promise<ReportDTO[]> {
+    let reports = await this.reportRepository.findByAssignedStaff(staffId);
+
+    // Apply optional status filter
+    if (statusFilter) {
+      reports = reports.filter((report) => report.status === statusFilter);
+    }
 
     return await Promise.all(
       reports.map((report) => ReportMapper.toDTO(report))

@@ -9,7 +9,7 @@ export interface IReportService {
   getReportsByUser(citizenId:number): Promise<ReportDTO[]>;
   getAssignedReportsInMap(corners: Object[]): Promise<Partial<ReportDTO>[]>;
   getReportById(reportId: number): Promise<ReportDTO>;
-  getReportsForStaff(staffId: number): Promise<ReportDTO[]>;
+  getReportsForStaff(staffId: number, statusFilter?: string): Promise<ReportDTO[]>;
   getReportsByOffice(staffId: number): Promise<ReportDTO[]>;
   delegateReport(reportId: number, userId: number, companyId: number): Promise<ExternalMaintainerDTO>;
 }
