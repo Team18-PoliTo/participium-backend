@@ -205,6 +205,7 @@ class ReportService implements IReportService {
     }
     return ReportMapper.toDTO(report);
   }
+
   async updateReport(
     reportId: number,
     data: UpdateReportRequestDTO,
@@ -215,6 +216,7 @@ class ReportService implements IReportService {
     if (!report) {
       throw new Error("Report not found");
     }
+
     if (
       report.status === ReportStatus.RESOLVED ||
       report.status === ReportStatus.REJECTED
@@ -224,7 +226,7 @@ class ReportService implements IReportService {
       );
     }
 
-    // Fetch user to check if external maintainer
+    // Load user
     const user = await this.internalUserRepository.findById(userId);
     if (!user) {
       throw new Error("Internal user not found");
@@ -237,28 +239,19 @@ class ReportService implements IReportService {
 
     const isAssignedUser = report.assignedTo?.id === user.id;
 
-    // External maintainers cannot change the category
+    // External maintainers cannot change category
     if (isExternalMaintainer && data.categoryId) {
       throw new Error("External maintainers cannot change the report category");
     }
 
-    /** Additional Authorization checks (kept for backwards compatibility):
-     * - PR Officers can only update reports with status "Pending Approval"
-     * Check this BEFORE transition validation so the correct error is thrown
-     */
-    if (
-      userRole === "Public Relations Officer" ||
-      userRole?.includes("Public Relations Officer")
-    ) {
-      if (report.status !== ReportStatus.PENDING_APPROVAL) {
-        throw new Error(
-          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". ` +
-            `This report status is "${report.status}".`
-        );
-      }
+    // Category can only be changed in Pending stage
+    if (data.categoryId && report.status !== ReportStatus.PENDING_APPROVAL) {
+      throw new Error(
+        "Cannot change category after report leaves Pending stage"
+      );
     }
 
-    // Validate status transition using the transition rules
+    // Validate status transition
     const transitionResult = validateStatusTransition(
       report.status,
       data.status,
@@ -271,22 +264,48 @@ class ReportService implements IReportService {
       throw new Error(transitionResult.errorMessage);
     }
 
+    // PR Officers can update only Pending Approval
+    if (
+      userRole === "Public Relations Officer" ||
+      userRole?.includes("Public Relations Officer")
+    ) {
+      if (report.status !== ReportStatus.PENDING_APPROVAL) {
+        throw new Error(
+          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
+        );
+      }
+    }
+
+    // Only assigned officer can modify non-pending reports
+    if (report.status !== ReportStatus.PENDING_APPROVAL) {
+      if (!isAssignedUser) {
+        throw new Error(
+          "Only the currently assigned user can update this report"
+        );
+      }
+    }
+
+    // Load category
     let categoryToUse = report.category;
 
     if (data.categoryId) {
       const foundCategory = await this.categoryRepository.findById(
         data.categoryId
       );
-
       if (!foundCategory) {
         throw new Error(`Category not found with ID: ${data.categoryId}`);
       }
-
       categoryToUse = foundCategory;
     }
 
     const categoryNameToUse = categoryToUse.name;
 
+    // External maintainers cannot assign reports
+    if (isExternalMaintainer && data.status === ReportStatus.ASSIGNED) {
+      throw new Error("External maintainers cannot assign reports");
+    }
+
+    // Validate before assignment
     if (data.status === ReportStatus.ASSIGNED) {
       const categoryRoleMapping =
         await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
@@ -301,33 +320,33 @@ class ReportService implements IReportService {
 
       if (officersWithRole.length === 0) {
         throw new Error(
-          `No officers available for category: ${categoryNameToUse}. ` +
-            `Report remains in Pending Approval state.`
+          `No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`
         );
       }
     }
 
-    const assignedTo = report.assignedTo;
+    // Assign officer if needed
+    let assignedTo = report.assignedTo;
 
     if (data.status === ReportStatus.ASSIGNED) {
       const categoryRoleMapping =
         await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
 
       if (categoryRoleMapping) {
-        report.assignedTo = await this.selectUnoccupiedOfficerByRole(
+        assignedTo = await this.selectUnoccupiedOfficerByRole(
           categoryRoleMapping.role.id
         );
       }
     }
 
-    // If transitioning to RESOLVED, decrement the assigned user's active tasks
+    // Resolve → decrement tasks
     if (data.status === ReportStatus.RESOLVED && report.assignedTo) {
       await this.internalUserRepository.decrementActiveTasks(
         report.assignedTo.id
       );
     }
 
-    // Save report with updated status, category, and assignment, along with explanation
+    // Save final changes
     const updatedReport = await this.reportRepository.updateReport(reportId, {
       status: data.status,
       explanation: data.explanation,

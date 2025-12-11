@@ -49,6 +49,8 @@ jest.mock("../../../src/mappers/CitizenMapper", () => ({
 }));
 
 import { ICitizenRepository } from "../../../src/repositories/ICitizenRepository";
+const TEST_PWD = process.env.TEST_PWD ?? "pass123";
+const TEST_PWD_SHORT = process.env.TEST_PWD_SHORT ?? "p";
 
 describe("CitizenService — complete tests", () => {
   let repo: jest.Mocked<ICitizenRepository>;
@@ -61,7 +63,7 @@ describe("CitizenService — complete tests", () => {
     firstName: "Srbuhi",
     lastName: "Danielyan",
     createdAt: new Date(),
-    password: "stored-hash",
+    password: TEST_PWD,
     status: "ACTIVE",
   };
 
@@ -97,7 +99,7 @@ describe("CitizenService — complete tests", () => {
         service.register({
           email: citizenBase.email,
           username: "another",
-          password: "pass",
+          password: TEST_PWD_SHORT,
           firstName: "f",
           lastName: "l",
         })
@@ -112,7 +114,7 @@ describe("CitizenService — complete tests", () => {
         service.register({
           email: "new@polito.it",
           username: citizenBase.username,
-          password: "p",
+          password: TEST_PWD_SHORT,
           firstName: "f",
           lastName: "l",
         })

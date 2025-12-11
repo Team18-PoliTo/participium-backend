@@ -34,6 +34,7 @@ const mockRes = () => {
 };
 
 const next: NextFunction = jest.fn();
+const TEST_VALID_PASSWORD = process.env.TEST_VALID_PASSWORD ?? "password123";
 
 describe("InternalUserController", () => {
   beforeEach(() => {
@@ -45,7 +46,7 @@ describe("InternalUserController", () => {
       email: "test@test.com",
       firstName: "John",
       lastName: "Doe",
-      password: "password123",
+      password: TEST_VALID_PASSWORD,
     };
 
     it("create sends 201 on success", async () => {
