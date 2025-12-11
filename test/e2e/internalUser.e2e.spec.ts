@@ -320,7 +320,6 @@ describe("Internal User Management E2E Tests", () => {
   describe("Get Reports", () => {
     let techToken: string;
     let prToken: string;
-    let _reportId: number;
 
     beforeAll(async () => {
       const roleRepo = AppDataSource.getRepository(RoleDAO);
@@ -396,7 +395,7 @@ describe("Internal User Management E2E Tests", () => {
         })
       );
 
-      const newReport = await reportRepo.save({
+      await reportRepo.save({
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
@@ -404,7 +403,6 @@ describe("Internal User Management E2E Tests", () => {
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
-      reportId = newReport.id;
     });
 
     it("PR Officer should ONLY see pending reports", async () => {
@@ -583,9 +581,11 @@ describe("Internal User Management E2E Tests", () => {
           explanation: "Trying to resolve",
         });
 
-      // Status transition validation returns 400 - PR officer is not assigned to this report
-      expect(res.status).toBe(400);
-      expect(res.body.error).toContain("Only the assigned user can transition");
+      // PR officer status check happens first and returns 403 - PR officers can only update pending reports
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain(
+        "PR officers can only update reports with status"
+      );
     });
 
     it("PR Officer should be able to approve pending reports", async () => {

@@ -79,6 +79,62 @@ describe("FileController", () => {
       expect(res.json).toHaveBeenCalledWith({ error: "Failed to upload file" });
       expect(next).toHaveBeenCalledWith(err);
     });
+
+    it("returns 400 on invalid type", async () => {
+      const { req, res, next } = mockReqRes();
+      req.file = { originalname: "test.png" } as any;
+      req.body = { type: "invalid" };
+
+      await controller.uploadTemp(req, res, next);
+
+      expectError(res, 400, "Invalid type. Allowed: report, profile");
+    });
+
+    it("returns 201 on successful upload", async () => {
+      const { req, res, next } = mockReqRes();
+      req.file = { originalname: "test.png" } as any;
+      req.body = { type: "report" };
+
+      const uploadedFile = {
+        fileId: "test-id",
+        filename: "test.png",
+        size: 1024,
+        mimeType: "image/png",
+        tempPath: "temp/test.png",
+        expiresAt: new Date().toISOString(),
+        type: "report",
+      };
+
+      mockUploadTemp.mockResolvedValue(uploadedFile);
+
+      await controller.uploadTemp(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith(uploadedFile);
+    });
+
+    it("defaults to report type when type is not provided", async () => {
+      const { req, res, next } = mockReqRes();
+      req.file = { originalname: "test.png" } as any;
+      req.body = {};
+
+      const uploadedFile = {
+        fileId: "test-id",
+        filename: "test.png",
+        size: 1024,
+        mimeType: "image/png",
+        tempPath: "temp/test.png",
+        expiresAt: new Date().toISOString(),
+        type: "report",
+      };
+
+      mockUploadTemp.mockResolvedValue(uploadedFile);
+
+      await controller.uploadTemp(req, res, next);
+
+      expect(mockUploadTemp).toHaveBeenCalledWith(req.file, "report");
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
   });
 
   describe("deleteTempFile", () => {
@@ -96,6 +152,22 @@ describe("FileController", () => {
       await controller.deleteTempFile(req, res, next);
       expect(res.status).toHaveBeenCalledWith(204);
       expect(res.send).toHaveBeenCalled();
+    });
+
+    it("returns 500 on error and calls next", async () => {
+      const { req, res, next } = mockReqRes();
+      req.params = { fileId: "abc" };
+
+      const err = new Error("Delete failed");
+      mockDeleteTempFile.mockRejectedValue(err);
+
+      await controller.deleteTempFile(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Failed to delete temporary file",
+      });
+      expect(next).toHaveBeenCalledWith(err);
     });
   });
 });

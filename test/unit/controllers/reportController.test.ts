@@ -115,6 +115,54 @@ describe("ReportController", () => {
     expect(res.json).toHaveBeenCalledWith({ error: "Category not found" });
   });
 
+  it("create handles non-Error exceptions", async () => {
+    const { controller, reportService } = buildController();
+    const req = {
+      body: {
+        title: "Issue",
+        description: "Desc",
+        categoryId: 1,
+        photoIds: ["file1"],
+        location: { latitude: 1, longitude: 2 },
+      },
+      auth: { sub: 1, kind: "citizen" },
+    } as any;
+    const res = mockRes();
+
+    // Throw a non-Error exception (object that's not an Error)
+    const nonErrorException = {
+      code: "CUSTOM_ERROR",
+      message: "Something went wrong",
+    };
+    reportService.create.mockRejectedValue(nonErrorException);
+
+    await controller.create(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: "Internal Server Error" });
+  });
+
+  it("create returns 401 when citizenId is missing", async () => {
+    const { controller } = buildController();
+    const req = {
+      body: {
+        title: "Issue",
+        description: "Desc",
+        categoryId: 1,
+        photoIds: ["file1"],
+        location: { latitude: 1, longitude: 2 },
+      },
+      auth: {},
+    } as any;
+    const res = mockRes();
+
+    await controller.create(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it("create returns 500 and forwards unexpected errors", async () => {
     const boom = new Error("boom");
     const { controller } = buildController({
@@ -136,6 +184,54 @@ describe("ReportController", () => {
 
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({ error: "Internal Server Error" });
+  });
+
+  it("create handles HttpException with string response", async () => {
+    const { HttpException } = require("@nestjs/common");
+    const error = new HttpException("String error", 400);
+    const { controller } = buildController({
+      create: jest.fn().mockRejectedValue(error),
+    });
+    const req = {
+      body: {
+        title: "Issue",
+        description: "Desc",
+        categoryId: 1,
+        photoIds: ["file1"],
+        location: { latitude: 1, longitude: 2 },
+      },
+      auth: { sub: 1, kind: "citizen" },
+    } as any;
+    const res = mockRes();
+
+    await controller.create(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: "String error" });
+  });
+
+  it("create handles HttpException with object response", async () => {
+    const { HttpException } = require("@nestjs/common");
+    const error = new HttpException({ message: "Object error" }, 400);
+    const { controller } = buildController({
+      create: jest.fn().mockRejectedValue(error),
+    });
+    const req = {
+      body: {
+        title: "Issue",
+        description: "Desc",
+        categoryId: 1,
+        photoIds: ["file1"],
+        location: { latitude: 1, longitude: 2 },
+      },
+      auth: { sub: 1, kind: "citizen" },
+    } as any;
+    const res = mockRes();
+
+    await controller.create(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: "Object error" });
   });
 
   // --- getMyReports ---
@@ -296,5 +392,26 @@ describe("ReportController", () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: "Logic error" });
     expect(next).toHaveBeenCalledWith(error);
+  });
+
+  it("getAssignedReportsInMap forwards non-Error exceptions", async () => {
+    const error = { code: "UNKNOWN_ERROR" };
+    const { controller } = buildController({
+      getAssignedReportsInMap: jest.fn().mockRejectedValue(error),
+    });
+    const req = {
+      body: {
+        corners: [
+          { latitude: 1, longitude: 1 },
+          { latitude: 2, longitude: 2 },
+        ],
+      },
+    } as any;
+    const res = mockRes();
+
+    await controller.getAssignedReportsInMap(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
   });
 });

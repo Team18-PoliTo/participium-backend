@@ -3,6 +3,9 @@ import jwt from "jsonwebtoken";
 import {
   requireAuth,
   requireAdmin,
+  requireInternalUser,
+  requireCitizen,
+  requireExternalMaintainer,
 } from "../../../src/middleware/authMiddleware";
 import InternalUserRepository from "../../../src/repositories/InternalUserRepository";
 
@@ -134,6 +137,45 @@ describe("authMiddleware", () => {
     expect(res.json).toHaveBeenCalledWith({ message: "Cannot verify role" });
   });
 
+  it("requireAuth sets req.auth with all properties", () => {
+    const verifySpy = jest.spyOn(jwt, "verify").mockReturnValue({
+      sub: "123",
+      kind: "citizen",
+      role: "USER",
+      email: "test@example.com",
+    } as any);
+    const req = {
+      header: () => "Bearer token",
+      auth: undefined,
+    } as unknown as Request;
+    const res = mockRes();
+
+    requireAuth(req, res, next);
+
+    expect(req.auth).toEqual({
+      sub: 123,
+      kind: "citizen",
+      role: "USER",
+      email: "test@example.com",
+    });
+    expect(next).toHaveBeenCalled();
+    verifySpy.mockRestore();
+  });
+
+  it("requireAuth handles token without Bearer prefix", () => {
+    const req = {
+      header: () => "just-a-token",
+    } as unknown as Request;
+    const res = mockRes();
+
+    requireAuth(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Unauthorized (missing token)",
+    });
+  });
+
   it("requireAdmin rejects non-admin", async () => {
     const req = {
       auth: { kind: "internal", role: "PRO" },
@@ -147,5 +189,129 @@ describe("authMiddleware", () => {
       message: "Forbidden: insufficient permissions",
     });
     expect(next).not.toHaveBeenCalled();
+  });
+
+  describe("requireInternalUser", () => {
+    it("should return 401 when auth is missing", () => {
+      const req = {} as unknown as Request;
+      const res = mockRes();
+
+      requireInternalUser(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ message: "Unauthorized" });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("should return 403 when user is not internal", () => {
+      const req = {
+        auth: { kind: "citizen", sub: 1 },
+      } as unknown as Request;
+      const res = mockRes();
+
+      requireInternalUser(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Forbidden: not an internal user",
+      });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("should call next when user is internal", () => {
+      const req = {
+        auth: { kind: "internal", sub: 1 },
+      } as unknown as Request;
+      const res = mockRes();
+
+      requireInternalUser(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("requireCitizen", () => {
+    it("should return 401 when auth is missing", () => {
+      const req = {} as unknown as Request;
+      const res = mockRes();
+
+      requireCitizen(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ message: "Unauthorized" });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("should return 403 when user is not a citizen", () => {
+      const req = {
+        auth: { kind: "internal", sub: 1 },
+      } as unknown as Request;
+      const res = mockRes();
+
+      requireCitizen(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Forbidden: not a citizen",
+      });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("should call next when user is a citizen", () => {
+      const req = {
+        auth: { kind: "citizen", sub: 1 },
+      } as unknown as Request;
+      const res = mockRes();
+
+      requireCitizen(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("requireExternalMaintainer", () => {
+    it("should allow external maintainer", async () => {
+      const req = {
+        auth: { kind: "internal", role: "External Maintainer" },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await requireExternalMaintainer(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it("should fetch role from DB when missing for internal user", async () => {
+      const req = {
+        auth: { kind: "internal", sub: 5 },
+      } as unknown as Request;
+      const res = mockRes();
+      mockFindById.mockResolvedValue({
+        role: { name: "External Maintainer" },
+      } as any);
+
+      await requireExternalMaintainer(req, res, next);
+
+      expect(mockFindById).toHaveBeenCalledWith(5);
+      expect(next).toHaveBeenCalled();
+      expect(req.auth?.role).toBe("External Maintainer");
+    });
+
+    it("should reject non-external maintainer", async () => {
+      const req = {
+        auth: { kind: "internal", role: "ADMIN" },
+      } as unknown as Request;
+      const res = mockRes();
+
+      await requireExternalMaintainer(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Forbidden: insufficient permissions",
+      });
+    });
   });
 });
