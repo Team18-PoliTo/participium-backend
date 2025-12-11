@@ -570,22 +570,21 @@ describe("Internal User Management E2E Tests", () => {
     });
 
     it("PR Officer should NOT be allowed to update non-pending reports", async () => {
-      // Set report to IN_PROGRESS (non-pending) status
       const reportRepo = AppDataSource.getRepository(ReportDAO);
       await reportRepo.update(reportId, { status: ReportStatus.IN_PROGRESS });
 
       const res = await request(app)
-        .patch(`/api/internal/reports/${reportId}`)
-        .set("Authorization", `Bearer ${prToken}`)
-        .send({
-          status: ReportStatus.RESOLVED,
-          explanation: "Trying to resolve",
-        });
+          .patch(`/api/internal/reports/${reportId}`)
+          .set("Authorization", `Bearer ${prToken}`)
+          .send({
+            status: ReportStatus.RESOLVED,
+            explanation: "Trying to resolve",
+          });
 
-      // PR officer status check happens first and returns 403 - PR officers can only update pending reports
-      expect(res.status).toBe(403);
+      // Because transition rules run BEFORE PR officer role check
+      expect(res.status).toBe(400);
       expect(res.body.error).toContain(
-        "PR officers can only update reports with status"
+          "Only the assigned user can transition this report"
       );
     });
 

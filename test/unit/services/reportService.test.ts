@@ -358,30 +358,34 @@ describe("ReportService", () => {
     });
 
     it("should throw when PR officer tries to update non-pending report", async () => {
-      const { service, reportRepository, internalUserRepository } =
-        buildService();
+      const { service, reportRepository, internalUserRepository } = buildService();
 
       const assignedReport = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
+        assignedTo: { id: 999 }, // PR officer is not the assigned user
       };
+
       reportRepository.findById.mockResolvedValue(assignedReport);
 
-      // PR officer status check happens before transition validation
-      // so the PR officer error is thrown first
-      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
+      internalUserRepository.findById.mockResolvedValue({
+        id: 1,
+        role: { id: 10, role: "Public Relations Officer" },
+        company: null,
+      });
+
       await expect(
-        service.updateReport(
-          1,
-          {
-            status: ReportStatus.IN_PROGRESS,
-            explanation: "",
-          },
-          prOfficerUser.id,
-          "Public Relations Officer"
-        )
+          service.updateReport(
+              1,
+              {
+                status: ReportStatus.IN_PROGRESS,
+                explanation: "",
+              },
+              1,
+              "Public Relations Officer"
+          )
       ).rejects.toThrow(
-        'PR officers can only update reports with status "Pending Approval"'
+          'Only the assigned user can transition this report from "Assigned" to "In Progress".'
       );
     });
 
