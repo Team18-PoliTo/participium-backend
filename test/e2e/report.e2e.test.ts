@@ -1,6 +1,6 @@
 import request from "supertest";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { DataSource } from "typeorm";
 import { ReportStatus } from "../../src/constants/ReportStatus";
 
