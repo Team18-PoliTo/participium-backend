@@ -75,6 +75,7 @@ describe("CitizenService — complete tests", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Set JWT_SECRET for most tests
     process.env.JWT_SECRET = "dev-secret";
 
     repo = {
@@ -266,6 +267,33 @@ describe("CitizenService — complete tests", () => {
 
       expect(repo.update).not.toHaveBeenCalled();
     });
+
+    it("login: should use default JWT_SECRET when env var is not set", async () => {
+      const originalSecret = process.env.JWT_SECRET;
+      delete process.env.JWT_SECRET;
+
+      // Reload service to pick up the new env
+      loadService();
+
+      repo.findByEmail.mockResolvedValueOnce({
+        ...citizenBase,
+        failedLoginAttempts: 0,
+        password: "hashed-pass",
+      });
+      (bcrypt as any).compare = jest.fn(async () => true);
+      repo.update.mockResolvedValueOnce(citizenBase);
+
+      const result = await service.login({
+        email: citizenBase.email,
+        password: "pass",
+      } as LoginRequestDTO);
+
+      expect(result.access_token).toBeDefined();
+
+      // Restore
+      process.env.JWT_SECRET = originalSecret;
+      loadService();
+    });
   });
 
   describe("updateCitizen", () => {
@@ -433,6 +461,85 @@ describe("CitizenService — complete tests", () => {
       expect(result.accountPhoto).toBeDefined();
       expect(typeof result.accountPhoto).toBe("string");
       expect(result.accountPhoto).toContain("https://presigned-url.com/");
+    });
+
+    it("should handle error when deleting old photo fails", async () => {
+      const oldPhotoPath = "photos/old.jpg";
+      const newPhotoPath = "temp/new.jpg";
+
+      const citizenWithPhoto = {
+        ...citizenBase,
+        accountPhotoUrl: oldPhotoPath,
+      };
+
+      repo.findById.mockResolvedValueOnce(citizenWithPhoto);
+      const updated = { ...citizenBase, accountPhotoUrl: newPhotoPath };
+      repo.findById.mockResolvedValueOnce(updated);
+
+      const consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+      const deleteError = new Error("MinIO delete failed");
+
+      // Ensure the mock rejects for this specific call
+      (MinIoService.deleteFile as jest.Mock).mockImplementationOnce(() =>
+        Promise.reject(deleteError)
+      );
+
+      const result = await service.updateCitizen(42, {
+        photoPath: newPhotoPath,
+      });
+
+      // Should still update with new path even if delete fails
+      expect(repo.update).toHaveBeenCalledWith(42, {
+        accountPhotoUrl: newPhotoPath,
+      });
+      expect(MinIoService.deleteFile).toHaveBeenCalledWith(
+        "profile-photos",
+        oldPhotoPath
+      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        `[CitizenService] Failed to delete profile photo ${oldPhotoPath}:`,
+        deleteError.message
+      );
+      expect(result.accountPhoto).toBeDefined();
+
+      consoleWarnSpy.mockRestore();
+    });
+
+    it("should handle photoPath as null (removing photo)", async () => {
+      const oldPhotoPath = "photos/old.jpg";
+      const citizenWithPhoto = {
+        ...citizenBase,
+        accountPhotoUrl: oldPhotoPath,
+      };
+
+      repo.findById.mockResolvedValueOnce(citizenWithPhoto);
+      const updated = { ...citizenBase, accountPhotoUrl: null };
+      repo.findById.mockResolvedValueOnce(updated);
+
+      const result = await service.updateCitizen(42, {
+        photoPath: null,
+      });
+
+      expect(repo.update).toHaveBeenCalledWith(42, {
+        accountPhotoUrl: null,
+      });
+      // Mapper converts null to undefined
+      expect(result.accountPhoto).toBeUndefined();
+    });
+
+    it("should handle undefined values in normalize function", async () => {
+      repo.findById.mockResolvedValueOnce(citizenBase);
+      const updated = { ...citizenBase };
+      repo.findById.mockResolvedValueOnce(updated);
+
+      // Test that undefined values don't get added to updatePayload
+      const result = await service.updateCitizen(42, {
+        firstName: undefined,
+        lastName: undefined,
+      });
+
+      expect(repo.update).toHaveBeenCalledWith(42, {});
+      expect(result).toBeDefined();
     });
 
     it("should update multiple fields at once", async () => {
