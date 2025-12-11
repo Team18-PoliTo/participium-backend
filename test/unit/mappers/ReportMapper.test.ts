@@ -38,7 +38,7 @@ describe("ReportMapper.toDTO", () => {
       photo2: "photos/p2.jpg",
       photo3: null,
       createdAt: mockDate,
-      location: '{"latitude": 45.0, "longitude": 9.0}',
+      location: '{"latitude": 45, "longitude": 9}',
       status: ReportStatus.PENDING_APPROVAL,
       explanation: null,
       assignedTo: {
@@ -60,7 +60,7 @@ describe("ReportMapper.toDTO", () => {
     expect(dto.photos[0]).toContain("photos/p1.jpg");
     expect(dto.photos[1]).toContain("photos/p2.jpg");
 
-    expect(dto.location).toEqual({ latitude: 45.0, longitude: 9.0 });
+    expect(dto.location).toEqual({ latitude: 45, longitude: 9 });
 
     expect(dto.assignedTo).toEqual({
       id: 99,
@@ -105,7 +105,7 @@ describe("ReportMapper.toDTO", () => {
         title: "Pothole",
         status: "Assigned",
         description: "Big hole",
-        location: '{"latitude": 45.0, "longitude": 9.0}',
+        location: '{"latitude": 45, "longitude": 9}',
         category: { id: 1, name: "Road" },
       } as any;
 
@@ -118,7 +118,7 @@ describe("ReportMapper.toDTO", () => {
         title: "Pothole",
         status: "Assigned",
         description: "Big hole",
-        location: { latitude: 45.0, longitude: 9.0 },
+        location: { latitude: 45, longitude: 9 },
         category: { id: 1, name: "Road" },
       });
     });

@@ -27,7 +27,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBe("Main Street 123");
       expect(mockAxiosGet).toHaveBeenCalledWith(
@@ -47,7 +47,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBe("Main Street");
     });
@@ -62,7 +62,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBe("Pedestrian Way 456");
     });
@@ -77,7 +77,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBe("Footpath 789");
     });
@@ -92,7 +92,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBeNull();
     });
@@ -107,7 +107,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBeNull();
     });
@@ -119,7 +119,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBeNull();
     });
@@ -129,7 +129,7 @@ describe("GeocodingService", () => {
         data: {},
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBeNull();
     });
@@ -143,7 +143,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBeNull();
     });
@@ -151,7 +151,7 @@ describe("GeocodingService", () => {
     it("should return null on axios error", async () => {
       mockAxiosGet.mockRejectedValue(new Error("Network error"));
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBeNull();
     });
@@ -166,7 +166,7 @@ describe("GeocodingService", () => {
         },
       });
 
-      const result = await GeocodingService.getAddress(45.0, 9.0);
+      const result = await GeocodingService.getAddress(45, 9);
 
       expect(result).toBeNull();
     });
