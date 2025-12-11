@@ -58,6 +58,8 @@ function createQueryBuilderMock() {
   } as unknown as jest.Mocked<SelectQueryBuilder<InternalUserDAO>>;
 }
 
+const TEST_HASHED_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "test_hash_value";
+
 describe("InternalUserRepository", () => {
   let repo: InternalUserRepository;
   let typeOrmMock: jest.Mocked<Repository<InternalUserDAO>>;
@@ -108,7 +110,7 @@ describe("InternalUserRepository", () => {
     });
 
     it("should include password when requested", async () => {
-      const user = mockUser({ password: "hash" });
+      const user = mockUser({ password: TEST_HASHED_PASSWORD });
       qb.getOne.mockResolvedValue(user);
 
       const result = await repo.findByEmail("ab.com", { withPassword: true });
