@@ -9,6 +9,8 @@ describe("CitizenController", () => {
     updateCitizen: jest.fn(),
   } as any;
   const controller = new CitizenController(citizenService);
+  const VALID_PWD = process.env.TEST_VALID_PASSWORD ?? "strongpwd";
+  const INVALID_PWD = process.env.TEST_INVALID_PASSWORD ?? "123";
 
   const mockRes = () => {
     const res = {} as Response;
@@ -31,7 +33,7 @@ describe("CitizenController", () => {
         username: "citizen",
         firstName: "City",
         lastName: "Zen",
-        password: "strongpwd",
+        password: VALID_PWD,
       },
     } as Request;
     const res = mockRes();
@@ -49,7 +51,7 @@ describe("CitizenController", () => {
         username: "citizen",
         firstName: "City",
         lastName: "Zen",
-        password: "123",
+        password: INVALID_PWD,
       },
     } as Request;
     const res = mockRes();
@@ -70,7 +72,7 @@ describe("CitizenController", () => {
         username: "citizen",
         firstName: "City",
         lastName: "Zen",
-        password: "strongpwd",
+        password: VALID_PWD,
       },
     } as Request;
     const res = mockRes();
@@ -93,7 +95,7 @@ describe("CitizenController", () => {
         username: "taken",
         firstName: "City",
         lastName: "Zen",
-        password: "strongpwd",
+        password: VALID_PWD,
       },
     } as Request;
     const res = mockRes();
@@ -116,7 +118,7 @@ describe("CitizenController", () => {
         username: "citizen",
         firstName: "City",
         lastName: "Zen",
-        password: "weak",
+        password: VALID_PWD,
       },
     } as Request;
     const res = mockRes();
@@ -139,7 +141,7 @@ describe("CitizenController", () => {
         username: "new-user",
         firstName: "City",
         lastName: "Zen",
-        password: "strongpwd",
+        password: VALID_PWD,
       },
     } as Request;
     const res = mockRes();

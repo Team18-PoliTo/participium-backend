@@ -15,6 +15,7 @@ const mockReportService = {
   updateReport: jest.fn(),
   getReportsForStaff: jest.fn(),
   getReportsByOffice: jest.fn(),
+  delegateReport: jest.fn(),
 };
 
 const buildController = (withReportService = true) => {
@@ -33,6 +34,7 @@ const mockRes = () => {
 };
 
 const next: NextFunction = jest.fn();
+const TEST_VALID_PASSWORD = process.env.TEST_VALID_PASSWORD ?? "password123";
 
 describe("InternalUserController", () => {
   beforeEach(() => {
@@ -44,7 +46,7 @@ describe("InternalUserController", () => {
       email: "test@test.com",
       firstName: "John",
       lastName: "Doe",
-      password: "password123",
+      password: TEST_VALID_PASSWORD,
     };
 
     it("create sends 201 on success", async () => {
@@ -531,6 +533,140 @@ describe("InternalUserController", () => {
       const res = mockRes();
       await buildController().getReportsByOffice(req, res, next);
       expect(next).toHaveBeenCalledWith("fail");
+    });
+  });
+
+  describe("delegateReport", () => {
+    it("should return 500 when report service is not configured", async () => {
+      const controller = buildController(false);
+      const req = { params: { id: "1" }, body: { companyId: 5 } } as any;
+      const res = mockRes();
+
+      await controller.delegateReport(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Report service not configured",
+      });
+    });
+
+    it("should return 400 when report ID is invalid", async () => {
+      const req = { params: { id: "invalid" }, body: { companyId: 5 } } as any;
+      const res = mockRes();
+
+      await buildController().delegateReport(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: "Invalid report ID" });
+    });
+
+    it("should return 400 when validation fails", async () => {
+      const req = {
+        params: { id: "1" },
+        body: {}, // Missing companyId
+      } as any;
+      const res = mockRes();
+
+      await buildController().delegateReport(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(String),
+        })
+      );
+    });
+
+    it("should return 401 when user is not authenticated", async () => {
+      const req = {
+        params: { id: "1" },
+        body: { companyId: 5 },
+        auth: undefined,
+      } as any;
+      const res = mockRes();
+
+      await buildController().delegateReport(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: "Unauthorized" });
+    });
+
+    it("should return 200 on successful delegation", async () => {
+      const assignedTo = {
+        id: 10,
+        firstName: "John",
+        lastName: "Doe",
+        company: { name: "FixIt Inc" },
+      };
+      mockReportService.delegateReport.mockResolvedValue(assignedTo);
+
+      const req = {
+        params: { id: "1" },
+        body: { companyId: 5 },
+        auth: { sub: 1 },
+      } as any;
+      const res = mockRes();
+
+      await buildController().delegateReport(req, res, next);
+
+      expect(mockReportService.delegateReport).toHaveBeenCalledWith(1, 1, 5);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith({
+        assignedTo: 10,
+        message:
+          "Report delegated successfully to maintainer John Doe from company FixIt Inc",
+      });
+    });
+
+    it("should return 403 when user is not the assigned officer", async () => {
+      const error = new Error(
+        "Only the currently assigned officer can delegate this report"
+      );
+      mockReportService.delegateReport.mockRejectedValue(error);
+
+      const req = {
+        params: { id: "1" },
+        body: { companyId: 5 },
+        auth: { sub: 1 },
+      } as any;
+      const res = mockRes();
+
+      await buildController().delegateReport(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({ error: error.message });
+    });
+
+    it("should return 400 for other errors", async () => {
+      const error = new Error("Report not found");
+      mockReportService.delegateReport.mockRejectedValue(error);
+
+      const req = {
+        params: { id: "1" },
+        body: { companyId: 5 },
+        auth: { sub: 1 },
+      } as any;
+      const res = mockRes();
+
+      await buildController().delegateReport(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: "Report not found" });
+    });
+
+    it("should forward non-Error exceptions", async () => {
+      mockReportService.delegateReport.mockRejectedValue("string error");
+
+      const req = {
+        params: { id: "1" },
+        body: { companyId: 5 },
+        auth: { sub: 1 },
+      } as any;
+      const res = mockRes();
+
+      await buildController().delegateReport(req, res, next);
+
+      expect(next).toHaveBeenCalledWith("string error");
     });
   });
 });

@@ -49,6 +49,52 @@ describe("CompanyMapper", () => {
     expect(dto.categories).toEqual([]);
   });
 
+  it("toDTOwithEmployees should map employees", () => {
+    const companyData = {
+      id: 1,
+      email: "company@test.com",
+      name: "FixIt Inc",
+      description: "Fixes things",
+    };
+
+    const companyWithEmployees = {
+      ...companyData,
+      internalUsers: [
+        {
+          id: 100,
+          firstName: "Bob",
+          lastName: "Smith",
+          email: "bob@test.com",
+          company: companyData,
+          role: { id: 28 },
+          status: "ACTIVE",
+        },
+        {
+          id: 101,
+          firstName: "Alice",
+          lastName: "Jones",
+          email: "alice@test.com",
+          company: companyData,
+          role: { id: 28 },
+          status: "ACTIVE",
+        },
+      ],
+    } as any;
+
+    const dto = CompanyMapper.toDTOwithEmployees(companyWithEmployees);
+    expect(dto.employees).toHaveLength(2);
+    expect(dto.employees[0]).toMatchObject({
+      id: 100,
+      firstName: "Bob",
+      company: { id: 1, contactEmail: "company@test.com", name: "FixIt Inc" },
+    });
+    expect(dto.employees[1]).toMatchObject({
+      id: 101,
+      firstName: "Alice",
+      company: { id: 1, contactEmail: "company@test.com", name: "FixIt Inc" },
+    });
+  });
+
   it("toDTOwithEmployees should handle missing employees", () => {
     const companyNoEmps = { ...mockCompany, internalUsers: undefined };
     const dto = CompanyMapper.toDTOwithEmployees(companyNoEmps);

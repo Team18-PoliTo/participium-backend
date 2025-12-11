@@ -12,6 +12,7 @@ import CitizenDAO from "../../src/models/dao/CitizenDAO";
 
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "password123";
 
 describe("Internal User Management E2E Tests", () => {
   let adminToken: string;
@@ -113,7 +114,7 @@ describe("Internal User Management E2E Tests", () => {
         firstName: "Test",
         lastName: "User",
         email: "testuser@example.com",
-        password: "password123",
+        password: TEST_PASSWORD,
         roleId: proRoleId,
       };
 
@@ -134,7 +135,7 @@ describe("Internal User Management E2E Tests", () => {
         firstName: "Test",
         lastName: "User",
         email: "admin@admin.com",
-        password: "password123",
+        password: TEST_PASSWORD,
         roleId: proRoleId,
       };
 
@@ -320,7 +321,6 @@ describe("Internal User Management E2E Tests", () => {
   describe("Get Reports", () => {
     let techToken: string;
     let prToken: string;
-    let _reportId: number;
 
     beforeAll(async () => {
       const roleRepo = AppDataSource.getRepository(RoleDAO);
@@ -396,7 +396,7 @@ describe("Internal User Management E2E Tests", () => {
         })
       );
 
-      const newReport = await reportRepo.save({
+      await reportRepo.save({
         title: "Broken Traffic Light",
         description: "Signal not working",
         category,
@@ -404,7 +404,6 @@ describe("Internal User Management E2E Tests", () => {
         status: ReportStatus.PENDING_APPROVAL,
         citizen,
       });
-      reportId = newReport.id;
     });
 
     it("PR Officer should ONLY see pending reports", async () => {
@@ -571,7 +570,6 @@ describe("Internal User Management E2E Tests", () => {
     });
 
     it("PR Officer should NOT be allowed to update non-pending reports", async () => {
-      // Set report to IN_PROGRESS (non-pending) status
       const reportRepo = AppDataSource.getRepository(ReportDAO);
       await reportRepo.update(reportId, { status: ReportStatus.IN_PROGRESS });
 
@@ -583,9 +581,11 @@ describe("Internal User Management E2E Tests", () => {
           explanation: "Trying to resolve",
         });
 
-      // Status transition validation returns 400 - PR officer is not assigned to this report
+      // Because transition rules run BEFORE PR officer role check
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain("Only the assigned user can transition");
+      expect(res.body.error).toContain(
+        "Only the assigned user can transition this report"
+      );
     });
 
     it("PR Officer should be able to approve pending reports", async () => {
