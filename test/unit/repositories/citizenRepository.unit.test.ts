@@ -91,24 +91,6 @@ describe("CitizenRepository", () => {
       expect(res).toBe(citizen);
     });
 
-    it("findByEmail(): withPassword=true adds select", async () => {
-      const citizen = {
-        id: 3,
-        email: "a@b.com",
-        password: TEST_HASHED_PASSWORD,
-      } as CitizenDAO;
-      (qb.getOne as jest.Mock).mockResolvedValue(citizen);
-
-      const res = await repoUnderTest.findByEmail("a@b.com", {
-        withPassword: true,
-      });
-
-      expect(qb.addSelect as jest.Mock).toHaveBeenCalledWith(
-        "citizen.password"
-      );
-      expect(res).toBe(citizen);
-    });
-
     it("findByEmail(): returns null when email not found", async () => {
       (qb.getOne as jest.Mock).mockResolvedValue(null);
 

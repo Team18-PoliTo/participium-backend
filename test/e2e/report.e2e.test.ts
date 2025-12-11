@@ -1,5 +1,6 @@
 import request from "supertest";
 import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
 import { DataSource } from "typeorm";
 import { ReportStatus } from "../../src/constants/ReportStatus";
 
@@ -128,8 +129,7 @@ describe("Report E2E Tests", () => {
 
     await reportRepo.clear();
     await citizenRepo.clear();
-
-    const randomSuffix = Math.floor(Math.random() * 1000000);
+    const randomSuffix = crypto.randomInt(0, 1_000_000);
     const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "hashed-password";
     const citizen = await citizenRepo.save({
       email: `citizen${randomSuffix}@test.com`,
@@ -384,7 +384,7 @@ describe("Report E2E Tests", () => {
       .post("/api/citizens/reports/map")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        corners: [{ latitude: 45.0, longitude: 9.0 }],
+        corners: [{ latitude: 45, longitude: 9 }],
       });
 
     expect(res.status).toBe(400);
