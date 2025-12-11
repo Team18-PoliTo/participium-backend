@@ -16,6 +16,8 @@ jest.mock("../../../src/repositories/InternalUserRepository", () => ({
   })),
 }));
 
+const INVALID_PWD = process.env.TEST_INVALID_PASSWORD ?? "123";
+
 describe("AuthController", () => {
   const citizenService = {
     login: jest.fn(),
@@ -167,7 +169,7 @@ describe("AuthController", () => {
   it("loginInternal returns 400 on validation failure", async () => {
     const controller = buildController();
     const req = {
-      body: { email: "staff@city.com", password: "123" },
+      body: { email: "staff@city.com", password: INVALID_PWD },
     } as Request;
     const res = mockRes();
 

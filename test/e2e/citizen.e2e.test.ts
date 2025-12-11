@@ -10,8 +10,9 @@ describe("CitizenController", () => {
   } as any;
 
   const controller = new CitizenController(citizenService);
+  const VALID_PWD = process.env.TEST_VALID_PASSWORD ?? "strongpwd";
+  const INVALID_PWD = process.env.TEST_INVALID_PASSWORD ?? "123";
 
-  // ---------- COMMON HELPERS ----------
   const mockRes = (): Response => {
     const res = {} as Response;
     res.status = jest.fn().mockReturnValue(res);
@@ -27,7 +28,7 @@ describe("CitizenController", () => {
     username: "citizen",
     firstName: "City",
     lastName: "Zen",
-    password: "strongpwd",
+    password: VALID_PWD,
   };
 
   const invalidCitizen = {
@@ -35,14 +36,13 @@ describe("CitizenController", () => {
     username: "citizen",
     firstName: "City",
     lastName: "Zen",
-    password: "123",
+    password: INVALID_PWD,
   };
 
   const next: NextFunction = jest.fn();
 
   beforeEach(() => jest.clearAllMocks());
 
-  // ---------- REGISTER ----------
   it("register creates citizen and returns 201", async () => {
     citizenService.register.mockResolvedValue({ id: 1 });
 
