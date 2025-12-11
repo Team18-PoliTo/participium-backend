@@ -21,6 +21,8 @@ jest.mock("../../src/services/MinIoService", () => ({
   },
 }));
 
+const TEST_SHORT_PASSWORD = process.env.TEST_SHORT_PASSWORD ?? "p";
+
 describe("External Maintainer Workflow E2E", () => {
   let maintainerToken: string;
   let assignedReportId: number;
@@ -97,14 +99,13 @@ describe("External Maintainer Workflow E2E", () => {
       name: "Potholes",
       description: "Road issues",
     });
-    //categoryId = category.id;
 
     const citizen = await citizenRepo.save({
       email: "c@test.com",
       username: "c",
       firstName: "C",
       lastName: "T",
-      password: "p",
+      password: TEST_SHORT_PASSWORD,
     });
 
     const assignedReport = await reportRepo.save({

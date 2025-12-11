@@ -13,6 +13,8 @@ import CitizenDAO from "../../src/models/dao/CitizenDAO";
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "password123";
+const TEST_SHORT_PASSWORD =
+  process.env.TEST_SHORT_PASSWORD ?? "hashedpassword1234";
 
 describe("Internal User Management E2E Tests", () => {
   let adminToken: string;
@@ -389,7 +391,7 @@ describe("Internal User Management E2E Tests", () => {
           username: "johndoe1234",
           firstName: "John1",
           lastName: "Doe1",
-          password: "hashedpassword1234",
+          password: TEST_SHORT_PASSWORD,
           status: "ACTIVE",
           failedLoginAttempts: 0,
           lastLoginAt: new Date(),
