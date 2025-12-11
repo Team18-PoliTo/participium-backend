@@ -34,7 +34,7 @@ describe("File E2E Tests", () => {
         fileExists: jest.fn().mockResolvedValue(true),
         getPresignedUrl: jest
           .fn()
-          .mockResolvedValue("http://mock-minio/presigned-url"),
+          .mockResolvedValue("https://mock-minio/presigned-url"),
       },
     }));
 

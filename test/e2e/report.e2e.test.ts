@@ -16,7 +16,7 @@ jest.mock("../../src/services/MinIoService", () => ({
     fileExists: jest.fn().mockResolvedValue(true),
     getPresignedUrl: jest
       .fn()
-      .mockResolvedValue("http://mock-minio/presigned-url"),
+      .mockResolvedValue("https://mock-minio/presigned-url"),
     uploadUserProfilePhoto: jest
       .fn()
       .mockResolvedValue("citizens/1/profile.jpg"),
