@@ -55,7 +55,6 @@ export const requireAuth = (
   }
 };
 
-
 /**
  * requireRole:
  * - Checks if the user has one of the allowed roles.
@@ -63,7 +62,7 @@ export const requireAuth = (
  *   we fetch the role from the database and cache it back into `req.auth.role`.
  */
 export const requireRole = (allowedRoles: string[]) => {
-  const allowed = allowedRoles.map((r) => r.toUpperCase());
+  const allowed = new Set(allowedRoles.map((r) => r.toUpperCase()));
 
   return async (
     req: Request,
@@ -85,7 +84,7 @@ export const requireRole = (allowedRoles: string[]) => {
         if (role) req.auth.role = role;
       }
 
-      if (!role || !allowed.includes(String(role).toUpperCase())) {
+      if (!role || !allowed.has(String(role).toUpperCase())) {
         res
           .status(403)
           .json({ message: "Forbidden: insufficient permissions" });
@@ -100,6 +99,26 @@ export const requireRole = (allowedRoles: string[]) => {
 };
 
 export const requireAdmin = requireRole(["ADMIN"]);
+
+export const requireExternalMaintainer = requireRole(["External Maintainer"]);
+
+export const requireInternalUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (!req.auth) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  if (req.auth.kind !== "internal") {
+    res.status(403).json({ message: "Forbidden: not an internal user" });
+    return;
+  }
+
+  next();
+};
 
 export const requireCitizen = (
   req: Request,

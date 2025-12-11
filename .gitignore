@@ -1,3 +1,9 @@
+.idea/
+!.idea/codeStyles
+!.idea/runConfigurations
+!.idea/fileTemplates
+!.idea/inspectionProfiles
+
 # Logs
 logs
 *.log

@@ -1,10 +1,15 @@
-/* istanbul ignore file */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  OneToMany,
+} from "typeorm";
 import ReportDAO from "./ReportDAO";
 
 export type CitizenStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
-@Entity("users")
+@Entity("citizens")
 class CitizenDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
   id: number;
@@ -36,9 +41,20 @@ class CitizenDAO {
   @CreateDateColumn({ type: "datetime" })
   createdAt: Date;
 
-  @OneToMany(() => ReportDAO, (report) => report.citizen, { nullable: true, onDelete: "CASCADE" })
+  @Column({ type: "varchar", nullable: true })
+  telegramUsername?: string;
+
+  @Column({ type: "boolean", default: true })
+  emailNotificationsEnabled: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  accountPhotoUrl?: string;
+
+  @OneToMany(() => ReportDAO, (report) => report.citizen, {
+    nullable: true,
+    onDelete: "CASCADE",
+  })
   reports: ReportDAO[];
 }
 
 export default CitizenDAO;
-

@@ -18,6 +18,10 @@ import {
 } from "../../../src/models/dto/ValidRequestDTOs";
 import InternalUserDAO from "../../../src/models/dao/InternalUserDAO";
 
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "pw";
+const TEST_SHORT_PASSWORD = process.env.TEST_SHORT_PASSWORD ?? "x";
+const TEST_HASHED_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "hashed";
+
 describe("InternalUserService", () => {
   let userRepositoryMock: any;
   let roleRepositoryMock: any;
@@ -25,7 +29,7 @@ describe("InternalUserService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set default return values for mocks
     mockCompare.mockImplementation(() => Promise.resolve(true));
     mockHash.mockImplementation(() => Promise.resolve("hashed_password"));
@@ -48,7 +52,7 @@ describe("InternalUserService", () => {
   describe("register", () => {
     const dto: RegisterInternalUserRequestDTO = {
       email: "a@b.com",
-      password: "pw",
+      password: TEST_PASSWORD,
       firstName: "A",
       lastName: "B",
     };
@@ -63,7 +67,9 @@ describe("InternalUserService", () => {
     it("throws when default role missing", async () => {
       userRepositoryMock.findByEmail.mockResolvedValue(null);
       roleRepositoryMock.findById.mockResolvedValue(null);
-      await expect(service.register(dto)).rejects.toThrow("Default role not found");
+      await expect(service.register(dto)).rejects.toThrow(
+        "Default role not found"
+      );
     });
 
     it("creates user with default role", async () => {
@@ -97,14 +103,16 @@ describe("InternalUserService", () => {
 
     it("throws when user missing", async () => {
       userRepositoryMock.findById.mockResolvedValue(null);
-      await expect(service.update(2, {} as UpdateInternalUserRequestDTO)).rejects.toThrow(
-        "InternalUser not found"
-      );
+      await expect(
+        service.update(2, {} as UpdateInternalUserRequestDTO)
+      ).rejects.toThrow("InternalUser not found");
     });
 
     it("throws when new email used by another user", async () => {
       userRepositoryMock.findById.mockResolvedValue(baseDao);
-      userRepositoryMock.findByEmail.mockResolvedValue({ id: 3 } as InternalUserDAO);
+      userRepositoryMock.findByEmail.mockResolvedValue({
+        id: 3,
+      } as InternalUserDAO);
       await expect(
         service.update(2, { newEmail: "exists@city.com" })
       ).rejects.toThrow("Email already in use by another user");
@@ -113,7 +121,9 @@ describe("InternalUserService", () => {
     it("updates basic fields", async () => {
       userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
       userRepositoryMock.findByEmail.mockResolvedValue(null);
-      userRepositoryMock.update.mockImplementation(async (user: any) => ({ ...user }));
+      userRepositoryMock.update.mockImplementation(async (user: any) => ({
+        ...user,
+      }));
 
       const result = await service.update(2, {
         newEmail: "new@city.com",
@@ -134,7 +144,9 @@ describe("InternalUserService", () => {
       userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
       userRepositoryMock.findByEmail.mockResolvedValue(null);
       roleRepositoryMock.findById.mockResolvedValue({ id: 5, role: "ADMIN" });
-      userRepositoryMock.update.mockImplementation(async (user: any) => ({ ...user }));
+      userRepositoryMock.update.mockImplementation(async (user: any) => ({
+        ...user,
+      }));
 
       const result = await service.update(2, { newRoleId: 5 });
 
@@ -161,6 +173,104 @@ describe("InternalUserService", () => {
       await expect(service.update(2, { newRoleId: 7 })).rejects.toThrow(
         "Role not found"
       );
+    });
+
+    it("should throw when external maintainer role assigned without company", async () => {
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      roleRepositoryMock.findById.mockResolvedValue({
+        id: 28,
+        role: "External Maintainer",
+      });
+
+      await expect(
+        service.update(2, { newRoleId: 28, newCompanyId: null as any })
+      ).rejects.toThrow("External Maintainers must be assigned to a company");
+    });
+
+    it("should throw when company assigned but role is not external maintainer", async () => {
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      roleRepositoryMock.findById.mockResolvedValue({ id: 5, role: "Admin" });
+
+      await expect(
+        service.update(2, { newRoleId: 5, newCompanyId: 10 })
+      ).rejects.toThrow(
+        "Only External Maintainers (role 28) can be assigned to a company"
+      );
+    });
+
+    it("should throw when company not found", async () => {
+      const companyRepository = {
+        findById: jest.fn(),
+      } as any;
+      (service as any).companyRepository = companyRepository;
+
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      roleRepositoryMock.findById.mockResolvedValue({
+        id: 28,
+        role: "External Maintainer",
+      });
+      companyRepository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update(2, { newRoleId: 28, newCompanyId: 999 })
+      ).rejects.toThrow("Company not found");
+    });
+
+    it("should update user with company when role is external maintainer", async () => {
+      const companyRepository = {
+        findById: jest.fn(),
+      } as any;
+      (service as any).companyRepository = companyRepository;
+
+      const company = { id: 5, name: "FixIt Inc", email: "fixit@test.com" };
+      const updatedUser = {
+        ...baseDao,
+        role: { id: 28, role: "External Maintainer" },
+        company: company,
+      };
+
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      roleRepositoryMock.findById.mockResolvedValue({
+        id: 28,
+        role: "External Maintainer",
+      });
+      companyRepository.findById.mockResolvedValue(company);
+      userRepositoryMock.update.mockResolvedValue(updatedUser);
+
+      const result = await service.update(2, {
+        newRoleId: 28,
+        newCompanyId: 5,
+      });
+
+      expect(companyRepository.findById).toHaveBeenCalledWith(5);
+      expect(userRepositoryMock.update).toHaveBeenCalled();
+      expect(result).toMatchObject({
+        id: 2,
+        company: expect.objectContaining({ id: 5, name: "FixIt Inc" }),
+      });
+    });
+
+    it("should update user without company when newCompanyId is undefined", async () => {
+      userRepositoryMock.findById.mockResolvedValue({ ...baseDao });
+      userRepositoryMock.findByEmail.mockResolvedValue(null);
+      userRepositoryMock.update.mockImplementation(async (user: any) => ({
+        ...user,
+      }));
+
+      const result = await service.update(2, {
+        newFirstName: "Updated",
+        newCompanyId: undefined,
+      });
+
+      expect(result).toMatchObject({
+        firstName: "Updated",
+      });
+      // Should use InternalUserMapper, not ExternalMaintainerMapper
+      expect(userRepositoryMock.update).toHaveBeenCalled();
     });
   });
 
@@ -196,7 +306,10 @@ describe("InternalUserService", () => {
     it("marks user as deactivated", async () => {
       const dao = { id: 10, status: "ACTIVE" } as InternalUserDAO;
       userRepositoryMock.findById.mockResolvedValue(dao);
-      userRepositoryMock.update.mockResolvedValue({ ...dao, status: "DEACTIVATED" });
+      userRepositoryMock.update.mockResolvedValue({
+        ...dao,
+        status: "DEACTIVATED",
+      });
 
       const result = await service.disableById(10);
 
@@ -217,14 +330,17 @@ describe("InternalUserService", () => {
     const baseUser: any = {
       id: 9,
       email: "internal@city.com",
-      password: "hashed",
+      password: TEST_HASHED_PASSWORD,
       status: "ACTIVE",
     };
 
     it("throws when user cannot be found", async () => {
       userRepositoryMock.findByEmail.mockResolvedValue(null);
       await expect(
-        service.login({ email: "missing@city.com", password: "x" })
+        service.login({
+          email: "missing@city.com",
+          password: TEST_SHORT_PASSWORD,
+        })
       ).rejects.toThrow("Invalid credentials");
     });
 
@@ -235,7 +351,7 @@ describe("InternalUserService", () => {
         role: { role: "ADMIN" },
       });
       await expect(
-        service.login({ email: baseUser.email, password: "x" })
+        service.login({ email: baseUser.email, password: TEST_SHORT_PASSWORD })
       ).rejects.toThrow("Invalid credentials");
     });
   });

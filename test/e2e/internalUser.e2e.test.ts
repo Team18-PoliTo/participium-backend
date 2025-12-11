@@ -1,7 +1,7 @@
 import request from "supertest";
 import express, { Express } from "express";
 import { AppDataSource } from "../../src/config/database";
-import internalUserRouter from "../../src/routes/internalUserRoutes";
+import adminRouter from "../../src/routes/adminRoutes";
 import InternalUserDAO from "../../src/models/dao/InternalUserDAO";
 import RoleDAO from "../../src/models/dao/RoleDAO";
 
@@ -12,16 +12,16 @@ beforeAll(async () => {
     await AppDataSource.initialize();
   }
   await AppDataSource.synchronize(true);
- 
+
   const roleRepo = AppDataSource.getRepository(RoleDAO);
   await roleRepo.save({
-    id: 0, 
+    id: 0,
     role: "Unassigned",
   });
 
   app = express();
   app.use(express.json());
-  app.use("/", internalUserRouter);
+  app.use("/", adminRouter);
 });
 
 beforeEach(async () => {
@@ -34,13 +34,14 @@ afterAll(async () => {
     await AppDataSource.destroy();
   }
 });
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "StrongPass123";
 
 describe("InternalUser E2E (real DB)", () => {
   const validInternalUser = {
     email: "employee@example.com",
     firstName: "Alice",
     lastName: "Smith",
-    password: "StrongPass123",
+    password: TEST_PASSWORD,
   };
 
   test("POST / → should register a new internal user", async () => {

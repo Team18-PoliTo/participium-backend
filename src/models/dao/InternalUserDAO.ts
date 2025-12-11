@@ -1,6 +1,12 @@
-/* istanbul ignore file */
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+} from "typeorm";
 import RoleDAO from "./RoleDAO";
+import CompanyDAO from "./CompanyDAO";
 
 export type InternalUserStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
@@ -24,12 +30,19 @@ class InternalUserDAO {
   @Column({ type: "varchar", default: () => "'ACTIVE'", nullable: true })
   status: InternalUserStatus;
 
+  @Column({ default: () => 0, nullable: false })
+  activeTasks: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @ManyToOne(() => RoleDAO, (role) => role.users, { nullable: false })
   role: RoleDAO;
+
+  @ManyToOne(() => CompanyDAO, (company) => company.internalUsers, {
+    nullable: true,
+  })
+  company: CompanyDAO;
 }
 
 export default InternalUserDAO;
-

@@ -1,4 +1,7 @@
-import { InternalUserMapper } from "../mappers/InternalUserMapper";
+import {
+  ExternalMaintainerMapper,
+  InternalUserMapper,
+} from "../mappers/InternalUserMapper";
 import { InternalUserDTO } from "../models/dto/InternalUserDTO";
 import {
   RegisterInternalUserRequestDTO,
@@ -7,22 +10,27 @@ import {
 import InternalUserDAO from "../models/dao/InternalUserDAO";
 import InternalUserRepository from "../repositories/InternalUserRepository";
 import * as bcrypt from "bcrypt";
-import RoleRepository from "../repositories/RoleRepository";
+import RoleRepository from "../repositories/implementation/RoleRepository";
 import jwt from "jsonwebtoken";
 import { LoginRequestDTO } from "../models/dto/LoginRequestDTO";
+import CompanyRepository from "../repositories/implementation/CompanyRepository";
 
 interface IInternalUserRepository {
   create(user: Partial<InternalUserDAO>): Promise<InternalUserDAO>;
-  findByEmail(email: string, opts?: { withPassword?: boolean }): Promise<InternalUserDAO | null>;
+  findByEmail(
+    email: string,
+    opts?: { withPassword?: boolean }
+  ): Promise<InternalUserDAO | null>;
   findById(id: number): Promise<InternalUserDAO | null>;
   update(user: InternalUserDAO): Promise<InternalUserDAO>;
-  fetchAll(): Promise<InternalUserDAO []>
+  fetchAll(): Promise<InternalUserDAO[]>;
 }
 
 class InternalUserService {
   constructor(
-    private userRepository: IInternalUserRepository = new InternalUserRepository(),
-    private roleRepository: RoleRepository = new RoleRepository()
+    private readonly userRepository: IInternalUserRepository = new InternalUserRepository(),
+    private readonly roleRepository: RoleRepository = new RoleRepository(),
+    private readonly companyRepository: CompanyRepository = new CompanyRepository()
   ) {}
 
   async register(
@@ -30,9 +38,8 @@ class InternalUserService {
   ): Promise<InternalUserDTO> {
     const normalizedEmail = data.email.trim().toLowerCase();
     // Check if email already exists
-    const existingInternalUserByEmail = await this.userRepository.findByEmail(
-      normalizedEmail
-    );
+    const existingInternalUserByEmail =
+      await this.userRepository.findByEmail(normalizedEmail);
     if (existingInternalUserByEmail) {
       throw new Error("InternalUser with this email already exists");
     }
@@ -51,6 +58,7 @@ class InternalUserService {
       password: hashedPassword,
       role: role,
       status: "ACTIVE",
+      activeTasks: 0,
     });
 
     return InternalUserMapper.toDTO(newInternalUser);
@@ -58,7 +66,7 @@ class InternalUserService {
 
   async update(
     id: number,
-    data: UpdateInternalUserRequestDTO,
+    data: UpdateInternalUserRequestDTO
   ): Promise<InternalUserDTO> {
     const internalUserDAO = await this.userRepository.findById(id);
     if (!internalUserDAO) {
@@ -80,7 +88,7 @@ class InternalUserService {
       internalUserDAO.email = newEmail;
     }
     if (data.newRoleId !== undefined) {
-       const currentRoleId = (internalUserDAO.role as any)?.id;
+      const currentRoleId = (internalUserDAO.role as any)?.id;
       if (currentRoleId !== 0 || data.newRoleId === currentRoleId) {
         throw new Error("Role already assigned");
       }
@@ -90,25 +98,54 @@ class InternalUserService {
       }
       internalUserDAO.role = newRole;
     }
-    const updatedInternalUser = await this.userRepository.update(internalUserDAO);
-    return InternalUserMapper.toDTO(updatedInternalUser);
+    if (data.newCompanyId !== undefined) {
+      // validates that external maintainers have a company assigned
+      if (data.newRoleId === 28 && !data.newCompanyId) {
+        throw new Error("External Maintainers must be assigned to a company");
+      }
+
+      // validates that users with a company are external maintainers
+      if (data.newCompanyId && data.newRoleId !== 28) {
+        throw new Error(
+          "Only External Maintainers (role 28) can be assigned to a company"
+        );
+      }
+
+      // validate company exists if provided
+      let company = null;
+      if (data.newCompanyId) {
+        company = await this.companyRepository.findById(data.newCompanyId);
+        if (!company) {
+          throw new Error("Company not found");
+        }
+      }
+      const externalMaintainer = internalUserDAO;
+      externalMaintainer.company = company!;
+      const updatedInternalUser =
+        await this.userRepository.update(externalMaintainer);
+      return ExternalMaintainerMapper.toDTO(updatedInternalUser);
+    } else {
+      const updatedInternalUser =
+        await this.userRepository.update(internalUserDAO);
+      return InternalUserMapper.toDTO(updatedInternalUser);
+    }
   }
 
-  async fetchUsers(): Promise<InternalUserDTO []>{
+  async fetchUsers(): Promise<InternalUserDTO[]> {
     const users = await this.userRepository.fetchAll();
     return users.map((user) => InternalUserMapper.toDTO(user));
   }
 
-  async disableById(id: number): Promise<'ok' | 'not_found'> {
+  async disableById(id: number): Promise<"ok" | "not_found"> {
     const user = await this.userRepository.findById(id);
     if (!user) {
-      return 'not_found';
+      return "not_found";
     }
 
     user.status = "DEACTIVATED";
     await this.userRepository.update(user);
 
-    return 'ok';
+    return "ok";
   }
 
   async login({

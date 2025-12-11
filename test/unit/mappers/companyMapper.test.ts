@@ -1,0 +1,103 @@
+import { CompanyMapper } from "../../../src/mappers/CompanyMapper";
+import { ExternalMaintainerMapper as _ExternalMaintainerMapper } from "../../../src/mappers/InternalUserMapper";
+
+// Mock InternalUserMapper to isolate tests
+jest.mock("../../../src/mappers/InternalUserMapper", () => ({
+  ExternalMaintainerMapper: {
+    toDTO: jest.fn((user) => ({ id: user.id, name: user.firstName })),
+  },
+}));
+
+describe("CompanyMapper", () => {
+  const mockCompany = {
+    id: 1,
+    email: "company@test.com",
+    name: "FixIt Inc",
+    description: "Fixes things",
+    categories: [
+      { category: { id: 10, name: "Plumbing" } },
+      { category: { id: 11, name: "Electrical" } },
+    ],
+    internalUsers: [
+      { id: 100, firstName: "Bob" },
+      { id: 101, firstName: "Alice" },
+    ],
+  } as any;
+
+  it("toDTO should map basic fields", () => {
+    const dto = CompanyMapper.toDTO(mockCompany);
+    expect(dto).toEqual({
+      id: 1,
+      contactEmail: "company@test.com",
+      name: "FixIt Inc",
+      description: "Fixes things",
+    });
+  });
+
+  it("toDTOwithCategories should map categories", () => {
+    const dto = CompanyMapper.toDTOwithCategories(mockCompany);
+    expect(dto.categories).toHaveLength(2);
+    expect(dto.categories).toEqual([
+      { id: 10, name: "Plumbing" },
+      { id: 11, name: "Electrical" },
+    ]);
+  });
+
+  it("toDTOwithCategories should handle missing categories", () => {
+    const companyNoCats = { ...mockCompany, categories: undefined };
+    const dto = CompanyMapper.toDTOwithCategories(companyNoCats);
+    expect(dto.categories).toEqual([]);
+  });
+
+  it("toDTOwithEmployees should map employees", () => {
+    const companyData = {
+      id: 1,
+      email: "company@test.com",
+      name: "FixIt Inc",
+      description: "Fixes things",
+    };
+
+    const companyWithEmployees = {
+      ...companyData,
+      internalUsers: [
+        {
+          id: 100,
+          firstName: "Bob",
+          lastName: "Smith",
+          email: "bob@test.com",
+          company: companyData,
+          role: { id: 28 },
+          status: "ACTIVE",
+        },
+        {
+          id: 101,
+          firstName: "Alice",
+          lastName: "Jones",
+          email: "alice@test.com",
+          company: companyData,
+          role: { id: 28 },
+          status: "ACTIVE",
+        },
+      ],
+    } as any;
+
+    const dto = CompanyMapper.toDTOwithEmployees(companyWithEmployees);
+    expect(dto.employees).toHaveLength(2);
+    expect(dto.employees[0]).toMatchObject({
+      id: 100,
+      firstName: "Bob",
+      company: { id: 1, contactEmail: "company@test.com", name: "FixIt Inc" },
+    });
+    expect(dto.employees[1]).toMatchObject({
+      id: 101,
+      firstName: "Alice",
+      company: { id: 1, contactEmail: "company@test.com", name: "FixIt Inc" },
+    });
+  });
+
+  it("toDTOwithEmployees should handle missing employees", () => {
+    const companyNoEmps = { ...mockCompany, internalUsers: undefined };
+    const dto = CompanyMapper.toDTOwithEmployees(companyNoEmps);
+    expect(dto.employees).toEqual([]);
+  });
+});
