@@ -16,8 +16,6 @@ jest.mock("../../../src/repositories/InternalUserRepository", () => ({
   })),
 }));
 
-const INVALID_PWD = process.env.TEST_INVALID_PASSWORD ?? "123";
-
 describe("AuthController", () => {
   const citizenService = {
     login: jest.fn(),
@@ -38,6 +36,9 @@ describe("AuthController", () => {
   const InternalRepositoryMock = jest.requireMock(
     "../../../src/repositories/InternalUserRepository"
   ).default as jest.Mock;
+  const TEST_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "hashed";
+  const TEST_SORT_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "123";
+  const INVALID_PWD = process.env.TEST_INVALID_PASSWORD ?? "secret";
 
   const buildController = () =>
     new AuthController(
@@ -73,7 +74,7 @@ describe("AuthController", () => {
       token_type: "bearer",
     });
     const req = {
-      body: { email: "john@doe.com", password: "secret" },
+      body: { email: "john@doe.com", password: TEST_PASSWORD },
     } as Request;
     const res = mockRes();
 
@@ -92,7 +93,7 @@ describe("AuthController", () => {
     const req = {
       body: {
         username: "user@city.com",
-        password: "badPwd",
+        password: TEST_PASSWORD,
         grant_type: "password",
       },
     } as Request;
@@ -107,7 +108,7 @@ describe("AuthController", () => {
   it("loginCitizen returns 400 on validation failure", async () => {
     const controller = buildController();
     const req = {
-      body: { email: "not-an-email", password: "short" },
+      body: { email: "not-an-email", password: INVALID_PWD },
     } as Request;
     const res = mockRes();
 
@@ -122,7 +123,7 @@ describe("AuthController", () => {
     const validateSpy = jest
       .spyOn(classValidator, "validate")
       .mockResolvedValue([{ constraints: undefined } as any]);
-    const req = { body: { email: "bad", password: "short" } } as Request;
+    const req = { body: { email: "bad", password: INVALID_PWD } } as Request;
     const res = mockRes();
 
     await controller.loginCitizen(req, res, next);
@@ -137,7 +138,7 @@ describe("AuthController", () => {
     const controller = buildController();
     citizenService.login.mockRejectedValue(new Error("database down"));
     const req = {
-      body: { email: "john@doe.com", password: "secret" },
+      body: { email: "john@doe.com", password: INVALID_PWD },
     } as Request;
     const res = mockRes();
 
@@ -153,7 +154,7 @@ describe("AuthController", () => {
       token_type: "bearer",
     });
     const req = {
-      body: { username: "staff@city.com", password: "securepwd" },
+      body: { username: "staff@city.com", password: TEST_PASSWORD },
     } as Request;
     const res = mockRes();
 
@@ -169,7 +170,7 @@ describe("AuthController", () => {
   it("loginInternal returns 400 on validation failure", async () => {
     const controller = buildController();
     const req = {
-      body: { email: "staff@city.com", password: INVALID_PWD },
+      body: { email: "staff@city.com", password: TEST_SORT_PASSWORD },
     } as Request;
     const res = mockRes();
 
@@ -185,7 +186,7 @@ describe("AuthController", () => {
       .spyOn(classValidator, "validate")
       .mockResolvedValue([{ constraints: undefined } as any]);
     const req = {
-      body: { email: "staff@city.com", password: "short" },
+      body: { email: "staff@city.com", password: INVALID_PWD },
     } as Request;
     const res = mockRes();
 
@@ -201,7 +202,7 @@ describe("AuthController", () => {
     const controller = buildController();
     internalService.login.mockRejectedValue(new Error("Invalid credentials"));
     const req = {
-      body: { email: "staff@city.com", password: "wrongpwd" },
+      body: { email: "staff@city.com", password: TEST_PASSWORD },
     } as Request;
     const res = mockRes();
 
@@ -215,7 +216,7 @@ describe("AuthController", () => {
     const controller = buildController();
     internalService.login.mockRejectedValue(new Error("boom"));
     const req = {
-      body: { email: "staff@city.com", password: "securepwd" },
+      body: { email: "staff@city.com", password: TEST_PASSWORD },
     } as Request;
     const res = mockRes();
 

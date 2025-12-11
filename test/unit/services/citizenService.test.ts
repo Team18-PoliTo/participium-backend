@@ -51,6 +51,7 @@ jest.mock("../../../src/mappers/CitizenMapper", () => ({
 import { ICitizenRepository } from "../../../src/repositories/ICitizenRepository";
 const TEST_PWD = process.env.TEST_PWD ?? "pass123";
 const TEST_PWD_SHORT = process.env.TEST_PWD_SHORT ?? "p";
+const TEST_HASHED_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "hashed-pass";
 
 describe("CitizenService — complete tests", () => {
   let repo: jest.Mocked<ICitizenRepository>;
@@ -135,7 +136,7 @@ describe("CitizenService — complete tests", () => {
       const dto = await service.register({
         email: "fresh@polito.it",
         username: "FreshUser",
-        password: "strong",
+        password: TEST_PWD,
         firstName: "Fresh",
         lastName: "User",
       });
@@ -145,7 +146,7 @@ describe("CitizenService — complete tests", () => {
         username: "freshuser",
         firstName: "Fresh",
         lastName: "User",
-        password: "hashed-pass",
+        password: TEST_HASHED_PASSWORD,
         status: "ACTIVE",
       });
       expect(dto).toEqual(
@@ -164,7 +165,7 @@ describe("CitizenService — complete tests", () => {
       repo.findByEmail.mockResolvedValueOnce({
         ...citizenBase,
         failedLoginAttempts: 3,
-        password: "hashed-pass",
+        password: TEST_HASHED_PASSWORD,
       });
 
       (bcrypt as any).compare = jest.fn(async () => true);
@@ -172,7 +173,7 @@ describe("CitizenService — complete tests", () => {
 
       const result = await service.login({
         email: citizenBase.email,
-        password: "StrongPass123!",
+        password: TEST_HASHED_PASSWORD,
       } as LoginRequestDTO);
 
       expect(repo.update).toHaveBeenCalledWith(citizenBase.id, {
@@ -191,14 +192,14 @@ describe("CitizenService — complete tests", () => {
         ...citizenBase,
         status: undefined,
         failedLoginAttempts: undefined,
-        password: "hashed-pass",
+        password: TEST_HASHED_PASSWORD,
       });
       (bcrypt as any).compare = jest.fn(async () => true);
       (jwt as any).sign = jest.fn(() => "token-abc");
 
       const result = await service.login({
         email: citizenBase.email,
-        password: "pass123",
+        password: TEST_PWD,
       } as LoginRequestDTO);
 
       expect(repo.update).toHaveBeenCalledWith(citizenBase.id, {
@@ -215,7 +216,7 @@ describe("CitizenService — complete tests", () => {
       repo.findByEmail.mockResolvedValueOnce(null);
 
       await expect(
-        service.login({ email: "x@x.com", password: "p" })
+        service.login({ email: "x@x.com", password: TEST_PWD_SHORT })
       ).rejects.toThrow("Invalid credentials");
 
       expect(repo.update).not.toHaveBeenCalled();
@@ -225,13 +226,13 @@ describe("CitizenService — complete tests", () => {
       repo.findByEmail.mockResolvedValueOnce({
         ...citizenBase,
         failedLoginAttempts: 1,
-        password: "hashed-pass",
+        password: TEST_HASHED_PASSWORD,
       });
 
       (bcrypt as any).compare = jest.fn(async () => false);
 
       await expect(
-        service.login({ email: citizenBase.email, password: "wrong" })
+        service.login({ email: citizenBase.email, password: TEST_PWD })
       ).rejects.toThrow("Invalid credentials");
 
       expect(repo.update).toHaveBeenCalledWith(citizenBase.id, {
@@ -243,13 +244,13 @@ describe("CitizenService — complete tests", () => {
       repo.findByEmail.mockResolvedValueOnce({
         ...citizenBase,
         failedLoginAttempts: undefined,
-        password: "hashed-pass",
+        password: TEST_HASHED_PASSWORD,
       });
 
       (bcrypt as any).compare = jest.fn(async () => false);
 
       await expect(
-        service.login({ email: citizenBase.email, password: "oops" })
+        service.login({ email: citizenBase.email, password: TEST_PWD })
       ).rejects.toThrow("Invalid credentials");
 
       expect(repo.update).toHaveBeenCalledWith(citizenBase.id, {
@@ -264,7 +265,7 @@ describe("CitizenService — complete tests", () => {
       });
 
       await expect(
-        service.login({ email: citizenBase.email, password: "whatever" })
+        service.login({ email: citizenBase.email, password: TEST_PWD })
       ).rejects.toThrow("Invalid credentials");
 
       expect(repo.update).not.toHaveBeenCalled();
@@ -280,14 +281,14 @@ describe("CitizenService — complete tests", () => {
       repo.findByEmail.mockResolvedValueOnce({
         ...citizenBase,
         failedLoginAttempts: 0,
-        password: "hashed-pass",
+        password: TEST_HASHED_PASSWORD,
       });
       (bcrypt as any).compare = jest.fn(async () => true);
       repo.update.mockResolvedValueOnce(citizenBase);
 
       const result = await service.login({
         email: citizenBase.email,
-        password: "pass",
+        password: TEST_PWD,
       } as LoginRequestDTO);
 
       expect(result.access_token).toBeDefined();

@@ -18,6 +18,10 @@ import {
 } from "../../../src/models/dto/ValidRequestDTOs";
 import InternalUserDAO from "../../../src/models/dao/InternalUserDAO";
 
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "pw";
+const TEST_SHORT_PASSWORD = process.env.TEST_SHORT_PASSWORD ?? "x";
+const TEST_HASHED_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "hashed";
+
 describe("InternalUserService", () => {
   let userRepositoryMock: any;
   let roleRepositoryMock: any;
@@ -48,7 +52,7 @@ describe("InternalUserService", () => {
   describe("register", () => {
     const dto: RegisterInternalUserRequestDTO = {
       email: "a@b.com",
-      password: "pw",
+      password: TEST_PASSWORD,
       firstName: "A",
       lastName: "B",
     };
@@ -326,14 +330,17 @@ describe("InternalUserService", () => {
     const baseUser: any = {
       id: 9,
       email: "internal@city.com",
-      password: "hashed",
+      password: TEST_HASHED_PASSWORD,
       status: "ACTIVE",
     };
 
     it("throws when user cannot be found", async () => {
       userRepositoryMock.findByEmail.mockResolvedValue(null);
       await expect(
-        service.login({ email: "missing@city.com", password: "x" })
+        service.login({
+          email: "missing@city.com",
+          password: TEST_SHORT_PASSWORD,
+        })
       ).rejects.toThrow("Invalid credentials");
     });
 
@@ -344,7 +351,7 @@ describe("InternalUserService", () => {
         role: { role: "ADMIN" },
       });
       await expect(
-        service.login({ email: baseUser.email, password: "x" })
+        service.login({ email: baseUser.email, password: TEST_SHORT_PASSWORD })
       ).rejects.toThrow("Invalid credentials");
     });
   });
