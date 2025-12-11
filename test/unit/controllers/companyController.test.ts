@@ -32,9 +32,9 @@ describe("CompanyController", () => {
       mockCompanyService.getAllCompanies.mockResolvedValue(companies);
 
       await controller.getAll(
-        req as Request,
-        res as Response,
-        next as NextFunction
+        req as unknown as Request,
+        res as unknown as Response,
+        next as unknown as NextFunction
       );
 
       expect(mockCompanyService.getAllCompanies).toHaveBeenCalledTimes(1);
@@ -51,9 +51,9 @@ describe("CompanyController", () => {
       mockCompanyService.getAllCompanies.mockRejectedValue(error);
 
       await controller.getAll(
-        req as Request,
-        res as Response,
-        next as NextFunction
+        req as unknown as Request,
+        res as unknown as Response,
+        next as unknown as NextFunction
       );
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -66,9 +66,9 @@ describe("CompanyController", () => {
       mockCompanyService.getAllCompanies.mockRejectedValue(error);
 
       await controller.getAll(
-        req as Request,
-        res as Response,
-        next as NextFunction
+        req as unknown as Request,
+        res as unknown as Response,
+        next as unknown as NextFunction
       );
 
       expect(next).toHaveBeenCalledWith(error);
@@ -87,9 +87,9 @@ describe("CompanyController", () => {
       mockCompanyService.getCompaniesByCategory.mockResolvedValue(companies);
 
       await controller.getByCategory(
-        req as Request,
-        res as Response,
-        next as NextFunction
+        req as unknown as Request,
+        res as unknown as Response,
+        next as unknown as NextFunction
       );
 
       expect(mockCompanyService.getCompaniesByCategory).toHaveBeenCalledWith(1);
@@ -107,9 +107,9 @@ describe("CompanyController", () => {
       mockCompanyService.getCompaniesByCategory.mockResolvedValue(companies);
 
       await controller.getByCategory(
-        req as Request,
-        res as Response,
-        next as NextFunction
+        req as unknown as Request,
+        res as unknown as Response,
+        next as unknown as NextFunction
       );
 
       // parseInt("invalid") returns NaN, which is passed to the service
@@ -124,9 +124,9 @@ describe("CompanyController", () => {
       mockCompanyService.getCompaniesByCategory.mockRejectedValue(error);
 
       await controller.getByCategory(
-        req as Request,
-        res as Response,
-        next as NextFunction
+        req as unknown as Request,
+        res as unknown as Response,
+        next as unknown as NextFunction
       );
 
       expect(res.status).toHaveBeenCalledWith(400);
@@ -140,9 +140,9 @@ describe("CompanyController", () => {
       mockCompanyService.getCompaniesByCategory.mockRejectedValue(error);
 
       await controller.getByCategory(
-        req as Request,
-        res as Response,
-        next as NextFunction
+        req as unknown as Request,
+        res as unknown as Response,
+        next as unknown as NextFunction
       );
 
       expect(next).toHaveBeenCalledWith(error);
