@@ -58,9 +58,8 @@ class MinIoService {
         `Could not get metadata for ${sourcePath}, using default content type`,
         error
       );
-      throw new Error(
-        `Failed to fetch metadata for ${sourcePath}: ${String(error)}`
-      );
+      // Use default content type instead of throwing error
+      contentType = "application/octet-stream";
     }
 
     // Write file to destination

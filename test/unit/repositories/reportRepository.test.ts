@@ -369,4 +369,89 @@ describe("ReportRepository", () => {
       expect(result).toEqual(mockReports);
     });
   });
+
+  describe("updateReport", () => {
+    it("should update report with all fields including categoryId", async () => {
+      const repo = new ReportRepository();
+      const updatedReport = {
+        id: 1,
+        title: "Updated Report",
+        status: ReportStatus.IN_PROGRESS,
+        explanation: "Updated explanation",
+        category: { id: 2 },
+      } as ReportDAO;
+      update.mockResolvedValue({ affected: 1 });
+      findOne.mockResolvedValue(updatedReport);
+
+      const result = await repo.updateReport(1, {
+        status: ReportStatus.IN_PROGRESS,
+        explanation: "Updated explanation",
+        assignedTo: null,
+        categoryId: 2,
+      });
+
+      expect(update).toHaveBeenCalledWith(1, {
+        status: ReportStatus.IN_PROGRESS,
+        explanation: "Updated explanation",
+        assignedTo: null,
+        category: { id: 2 },
+      });
+      expect(findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: ["citizen", "category", "assignedTo"],
+      });
+      expect(result).toEqual(updatedReport);
+    });
+
+    it("should update report without categoryId (branch coverage)", async () => {
+      const repo = new ReportRepository();
+      const updatedReport = {
+        id: 1,
+        title: "Updated Report",
+        status: ReportStatus.RESOLVED,
+        explanation: "Resolved",
+      } as ReportDAO;
+      update.mockResolvedValue({ affected: 1 });
+      findOne.mockResolvedValue(updatedReport);
+
+      const result = await repo.updateReport(1, {
+        status: ReportStatus.RESOLVED,
+        explanation: "Resolved",
+        assignedTo: null,
+      });
+
+      expect(update).toHaveBeenCalledWith(1, {
+        status: ReportStatus.RESOLVED,
+        explanation: "Resolved",
+        assignedTo: null,
+        category: undefined,
+      });
+      expect(result).toEqual(updatedReport);
+    });
+
+    it("should update report with assignedTo", async () => {
+      const repo = new ReportRepository();
+      const assignedUser = { id: 10, firstName: "John", lastName: "Doe" };
+      const updatedReport = {
+        id: 1,
+        status: ReportStatus.ASSIGNED,
+        assignedTo: assignedUser,
+      } as ReportDAO;
+      update.mockResolvedValue({ affected: 1 });
+      findOne.mockResolvedValue(updatedReport);
+
+      const result = await repo.updateReport(1, {
+        status: ReportStatus.ASSIGNED,
+        assignedTo: assignedUser,
+      });
+
+      expect(update).toHaveBeenCalledWith(1, {
+        status: ReportStatus.ASSIGNED,
+        explanation: undefined,
+        assignedTo: assignedUser,
+        category: undefined,
+      });
+      expect(result).toEqual(updatedReport);
+    });
+  });
 });

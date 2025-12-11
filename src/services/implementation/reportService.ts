@@ -242,22 +242,9 @@ class ReportService implements IReportService {
       throw new Error("External maintainers cannot change the report category");
     }
 
-    // Validate status transition using the transition rules
-    const transitionResult = validateStatusTransition(
-      report.status,
-      data.status,
-      userRole || "",
-      isExternalMaintainer,
-      isAssignedUser
-    );
-
-    if (!transitionResult.valid) {
-      throw new Error(transitionResult.errorMessage);
-    }
-
     /** Additional Authorization checks (kept for backwards compatibility):
      * - PR Officers can only update reports with status "Pending Approval"
-     * - Technical Officers/External Maintainers can only update reports assigned to them
+     * Check this BEFORE transition validation so the correct error is thrown
      */
     if (
       userRole === "Public Relations Officer" ||
@@ -269,6 +256,19 @@ class ReportService implements IReportService {
             `This report status is "${report.status}".`
         );
       }
+    }
+
+    // Validate status transition using the transition rules
+    const transitionResult = validateStatusTransition(
+      report.status,
+      data.status,
+      userRole || "",
+      isExternalMaintainer,
+      isAssignedUser
+    );
+
+    if (!transitionResult.valid) {
+      throw new Error(transitionResult.errorMessage);
     }
 
     let categoryToUse = report.category;

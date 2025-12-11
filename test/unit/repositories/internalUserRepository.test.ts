@@ -195,6 +195,12 @@ describe("InternalUserRepository", () => {
       expect(qb.set).toHaveBeenCalledWith({
         activeTasks: expect.any(Function),
       });
+
+      // Call the function to get coverage
+      const setCall = qb.set.mock.calls[0][0];
+      const activeTasksFn = setCall.activeTasks;
+      expect(activeTasksFn()).toBe("activeTasks + 1");
+
       expect(qb.where).toHaveBeenCalledWith("id = :id", { id: 1 });
       expect(qb.execute).toHaveBeenCalled();
     });
@@ -218,6 +224,12 @@ describe("InternalUserRepository", () => {
       expect(qb.set).toHaveBeenCalledWith({
         activeTasks: expect.any(Function),
       });
+
+      // Call the function to get coverage
+      const setCall = qb.set.mock.calls[0][0];
+      const activeTasksFn = setCall.activeTasks;
+      expect(activeTasksFn()).toBe("MAX(activeTasks - 1, 0)");
+
       expect(qb.where).toHaveBeenCalledWith("id = :id", { id: 1 });
       expect(qb.execute).toHaveBeenCalled();
     });

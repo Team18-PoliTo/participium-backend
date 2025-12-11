@@ -112,6 +112,49 @@ describe("MinIoService", () => {
     );
   });
 
+  it("copyFile handles stat failure by using default content type", async () => {
+    const stream = {
+      on: (event: string, cb: any) => {
+        if (event === "end") cb();
+      },
+    };
+    mockMinioClient.getObject.mockResolvedValue(stream);
+    mockMinioClient.statObject.mockRejectedValue(new Error("Fail"));
+
+    await MinIoService.copyFile("src", "dest");
+
+    expect(mockMinioClient.putObject).toHaveBeenCalledWith(
+      "reports",
+      "dest",
+      expect.any(Buffer),
+      0,
+      { "Content-Type": "application/octet-stream" }
+    );
+  });
+
+  it("copyFile should use Content-Type metadata when content-type is not available", async () => {
+    const stream = {
+      on: (event: string, cb: any) => {
+        if (event === "data") cb(Buffer.from("content"));
+        if (event === "end") cb();
+      },
+    };
+    mockMinioClient.getObject.mockResolvedValue(stream);
+    mockMinioClient.statObject.mockResolvedValue({
+      metaData: { "Content-Type": "image/png" },
+    });
+
+    await MinIoService.copyFile("src", "dest");
+
+    expect(mockMinioClient.putObject).toHaveBeenCalledWith(
+      "reports",
+      "dest",
+      expect.any(Buffer),
+      7,
+      { "Content-Type": "image/png" }
+    );
+  });
+
   it("uploadUserProfilePhoto uploads to profile bucket", async () => {
     mockMinioClient.bucketExists.mockResolvedValue(true);
     const file = {
@@ -149,5 +192,53 @@ describe("MinIoService", () => {
     await expect(
       MinIoService.uploadUserProfilePhoto(1, undefined as any)
     ).rejects.toThrow();
+  });
+
+  it("uploadUserProfilePhoto should handle file without extension", async () => {
+    mockMinioClient.bucketExists.mockResolvedValue(true);
+    const file = {
+      originalname: "profile",
+      mimetype: "image/jpeg",
+      buffer: Buffer.from("data"),
+    } as any;
+
+    const key = await MinIoService.uploadUserProfilePhoto(1, file);
+
+    // When no extension, it uses the originalname as extension, so "profile.profile"
+    expect(key).toContain("citizens/1/profile.profile");
+  });
+
+  it("uploadUserProfilePhoto should handle file without mimetype", async () => {
+    mockMinioClient.bucketExists.mockResolvedValue(true);
+    const file = {
+      originalname: "profile.png",
+      mimetype: undefined,
+      buffer: Buffer.from("data"),
+    } as any;
+
+    const key = await MinIoService.uploadUserProfilePhoto(1, file);
+
+    expect(key).toContain("citizens/1/profile.png");
+    expect(mockMinioClient.putObject).toHaveBeenCalledWith(
+      "profiles",
+      key,
+      expect.any(Buffer),
+      4,
+      { "Content-Type": "application/octet-stream" }
+    );
+  });
+
+  it("getPresignedUrl should handle error with message property", async () => {
+    const error = { message: "Connection failed" };
+    mockMinioClientForPresigned.presignedGetObject.mockRejectedValue(error);
+    const url = await MinIoService.getPresignedUrl("key", "bucket", 3600);
+    expect(url).toBe("");
+  });
+
+  it("getPresignedUrl should handle error without message property", async () => {
+    const error = "Simple string error";
+    mockMinioClientForPresigned.presignedGetObject.mockRejectedValue(error);
+    const url = await MinIoService.getPresignedUrl("key", "bucket", 3600);
+    expect(url).toBe("");
   });
 });

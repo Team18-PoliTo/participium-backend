@@ -120,6 +120,9 @@ describe("Report E2E Tests", () => {
   });
 
   beforeEach(async () => {
+    // Reset mock counter for each test
+    mockCounter = 1;
+
     const reportRepo = AppDataSource.getRepository(ReportDAO);
     const citizenRepo = AppDataSource.getRepository(CitizenDAO);
 
