@@ -87,6 +87,8 @@ Index:
 
 ![Test coverage chart](./Sprint3-TestCoverage.jpg)
 
+![Test coverage chart second report](<Screenshot 2025-12-11 at 21.04.56.png>)
+
 ## Techincal Debt
 
 - Strategy adopted: primary goal is maintainability 
