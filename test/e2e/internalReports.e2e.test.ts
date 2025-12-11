@@ -18,7 +18,7 @@ jest.mock("../../src/config/initMinio", () => ({
 jest.mock("../../src/services/MinIoService", () => ({
   __esModule: true,
   default: {
-    getPresignedUrl: jest.fn().mockResolvedValue("http://mock-url"),
+    getPresignedUrl: jest.fn().mockResolvedValue("https://mock-url"),
   },
 }));
 

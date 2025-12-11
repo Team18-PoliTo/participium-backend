@@ -72,10 +72,10 @@ describe("MinIoService", () => {
 
   it("getPresignedUrl should return url", async () => {
     mockMinioClientForPresigned.presignedGetObject.mockResolvedValue(
-      "http://url"
+      "https://url"
     );
     const url = await MinIoService.getPresignedUrl("key");
-    expect(url).toBe("http://url");
+    expect(url).toBe("https://url");
   });
 
   it("getPresignedUrl should return empty string on error", async () => {
