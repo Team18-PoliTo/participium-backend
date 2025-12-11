@@ -25,7 +25,7 @@ Index:
 #### Nr of hours planned vs. spent (as a team)
 
 - Planned Hours: 95h 30m
-- Spent Hours: 94h 35m
+- Spent Hours: 95h 05m
 
 ##### Our definition of DONE
 
@@ -50,9 +50,9 @@ Index:
 | Estimation | 1h 46m | 2h 24m |
 | Actual     | 1h 45m | 2h 24m |
 
-##### Total estimation error ratio = -0,009
+##### Total estimation error ratio = -0,004
 
-##### Absolute relative task estimation = 0,065
+##### Absolute relative task estimation = 0,064
 
 ## QUALITY MEASURES
 
