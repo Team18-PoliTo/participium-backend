@@ -290,17 +290,17 @@ describe("ReportService", () => {
   });
 
   describe("updateReport", () => {
-    // Mock PR officer user for updateReport tests
+
     const prOfficerUser = {
       id: 1,
-      role: { id: 10, name: "Public Relations Officer" },
+      role: { id: 10, role: "Public Relations Officer" }, // ← правильное поле
       company: null,
     };
 
     it("should update and return the updated report", async () => {
-      const { service, reportRepository, internalUserRepository } =
-        buildService();
-      const updatedReport = {
+      const { service, reportRepository, internalUserRepository } = buildService();
+
+      const existingReport = {
         id: 1,
         title: "Updated",
         location: JSON.stringify({ latitude: 45, longitude: 9 }),
@@ -308,40 +308,46 @@ describe("ReportService", () => {
         citizen: { id: 123, firstName: "Test", lastName: "Test" },
         status: ReportStatus.PENDING_APPROVAL,
         explanation: undefined,
-        assignedTo: undefined,
+        assignedTo: null,
         createdAt: new Date(),
         photo1: undefined,
         photo2: undefined,
         photo3: undefined,
       };
-      reportRepository.findById.mockResolvedValue(updatedReport);
 
-      // Override default mock to simulate successful update status return
-      reportRepository.updateStatus.mockResolvedValue({
-        ...updatedReport,
+      const updatedReport = {
+        ...existingReport,
         status: ReportStatus.REJECTED,
         explanation: "Not valid",
+      };
+
+      jest.spyOn(reportRepository, "findById").mockResolvedValue(existingReport);
+
+      jest.spyOn(internalUserRepository, "findById").mockResolvedValue({
+        id: 1,
+        role: { id: 10, role: "Public Relations Officer" },
+        company: null,
       });
-      reportRepository.updateStatus.mockResolvedValue(updatedReport);
-      internalUserRepository.findById.mockResolvedValue(prOfficerUser);
+
+      jest.spyOn(reportRepository, "updateStatus").mockResolvedValue(updatedReport);
 
       const result = await service.updateReport(
-        1,
-        {
-          status: ReportStatus.REJECTED,
-          explanation: "Not valid",
-        },
-        1
-      ); // Fixed: Added userId 1
+          1,
+          { status: ReportStatus.REJECTED, explanation: "Not valid" },
+          1,
+          "Public Relations Officer"
+      );
 
       expect(reportRepository.updateStatus).toHaveBeenCalledWith(
-        1,
-        ReportStatus.REJECTED,
-        "Not valid",
-        undefined
+          1,
+          ReportStatus.REJECTED,
+          "Not valid",
+          undefined
       );
+
       expect(result.status).toBe(ReportStatus.REJECTED);
     });
+
 
     it("should throw when report does not exist", async () => {
       const { service, reportRepository } = buildService();
@@ -365,49 +371,93 @@ describe("ReportService", () => {
       const assignedReport = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
+        assignedTo: { id: 111 }, // ← обязательно!
       };
       reportRepository.findById.mockResolvedValue(assignedReport);
 
-      // Status transition validation kicks in first - PR officer is not assigned to the report
-      // so they cannot transition from ASSIGNED to IN_PROGRESS
       await expect(
-        service.updateReport(
-          1,
-          {
-            status: ReportStatus.IN_PROGRESS,
-            explanation: "",
-          },
-          999,
-          "Public Relations Officer"
-        )
+          service.updateReport(
+              1,
+              {
+                status: ReportStatus.IN_PROGRESS,
+                explanation: "",
+              },
+              999, // userId
+              "Public Relations Officer"
+          )
       ).rejects.toThrow(
-        'PR officers can only update reports with status "Pending Approval"'
+          'Only the assigned user can transition this report from "Assigned" to "In Progress".'
       );
     });
 
+    // it("should allow PR officer to update pending report", async () => {
+    //   const { service, reportRepository, internalUserRepository } =
+    //     buildService();
+    //   const pendingReport = {
+    //     ...baseReport,
+    //     status: ReportStatus.PENDING_APPROVAL,
+    //   };
+    //   reportRepository.findById.mockResolvedValue(pendingReport);
+    //   reportRepository.updateStatus.mockResolvedValue({
+    //     ...pendingReport,
+    //     status: ReportStatus.REJECTED,
+    //   });
+    //   internalUserRepository.findById.mockResolvedValue(prOfficerUser);
+    //
+    //   const result = await service.updateReport(
+    //     1,
+    //     { status: ReportStatus.REJECTED, explanation: "Invalid" },
+    //     prOfficerUser.id,
+    //     "Public Relations Officer"
+    //   );
+    //
+    //   expect(result.status).toBe(ReportStatus.REJECTED);
+    // });
+
     it("should allow PR officer to update pending report", async () => {
-      const { service, reportRepository, internalUserRepository } =
-        buildService();
+      const { service, reportRepository, internalUserRepository } = buildService();
+
       const pendingReport = {
         ...baseReport,
         status: ReportStatus.PENDING_APPROVAL,
       };
+
+      // 1️⃣ Найти отчёт
       reportRepository.findById.mockResolvedValue(pendingReport);
+
+      // 2️⃣ Правильный метод — updateStatus, НЕ updateReport !!!
       reportRepository.updateStatus.mockResolvedValue({
         ...pendingReport,
         status: ReportStatus.REJECTED,
+        explanation: "Invalid",
       });
+
+      // 3️⃣ Мокаем PR офицера
       internalUserRepository.findById.mockResolvedValue(prOfficerUser);
 
+      // 4️⃣ Вызываем сервис
       const result = await service.updateReport(
-        1,
-        { status: ReportStatus.REJECTED, explanation: "Invalid" },
-        prOfficerUser.id,
-        "Public Relations Officer"
+          1,
+          {
+            status: ReportStatus.REJECTED,
+            explanation: "Invalid",
+          },
+          prOfficerUser.id,
+          "Public Relations Officer"
+      );
+
+      // 5️⃣ Проверяем результат
+      expect(reportRepository.updateStatus).toHaveBeenCalledWith(
+          1,
+          ReportStatus.REJECTED,
+          "Invalid",
+          undefined
       );
 
       expect(result.status).toBe(ReportStatus.REJECTED);
     });
+
+
 
     it("should update category when categoryId is provided", async () => {
       const { service, reportRepository, categoryRepository } = buildService();
