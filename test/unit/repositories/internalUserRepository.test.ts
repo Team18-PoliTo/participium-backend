@@ -58,7 +58,8 @@ function createQueryBuilderMock() {
   } as unknown as jest.Mocked<SelectQueryBuilder<InternalUserDAO>>;
 }
 
-const TEST_HASHED_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "test_hash_value";
+const TEST_HASHED_PASSWORD =
+  process.env.TEST_HASHED_PASSWORD ?? "test_hash_value";
 
 describe("InternalUserRepository", () => {
   let repo: InternalUserRepository;
