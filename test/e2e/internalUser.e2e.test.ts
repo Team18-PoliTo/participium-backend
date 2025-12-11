@@ -34,13 +34,14 @@ afterAll(async () => {
     await AppDataSource.destroy();
   }
 });
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "StrongPass123";
 
 describe("InternalUser E2E (real DB)", () => {
   const validInternalUser = {
     email: "employee@example.com",
     firstName: "Alice",
     lastName: "Smith",
-    password: "StrongPass123",
+    password: TEST_PASSWORD,
   };
 
   test("POST / → should register a new internal user", async () => {

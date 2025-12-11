@@ -11,6 +11,8 @@ function makeQbMock<T extends object>() {
   return qb as SelectQueryBuilder<T>;
 }
 
+const TEST_HASHED_PASSWORD = process.env.TEST_HASHED_PASSWORD ?? "hashed";
+
 describe("CitizenRepository", () => {
   let repoUnderTest: CitizenRepository;
   let ormRepoMock: jest.Mocked<Repository<CitizenDAO>>;
@@ -93,7 +95,7 @@ describe("CitizenRepository", () => {
       const citizen = {
         id: 3,
         email: "a@b.com",
-        password: "hashed",
+        password: TEST_HASHED_PASSWORD,
       } as CitizenDAO;
       (qb.getOne as jest.Mock).mockResolvedValue(citizen);
 

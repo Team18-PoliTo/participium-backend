@@ -130,10 +130,11 @@ describe("Report E2E Tests", () => {
     await citizenRepo.clear();
 
     const randomSuffix = Math.floor(Math.random() * 1000000);
+    const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "hashed-password";
     const citizen = await citizenRepo.save({
       email: `citizen${randomSuffix}@test.com`,
       username: `testcitizen${randomSuffix}`,
-      password: "hashed-password",
+      password: TEST_PASSWORD,
       firstName: "Test",
       lastName: "Citizen",
     });

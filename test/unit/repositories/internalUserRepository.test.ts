@@ -15,6 +15,10 @@ function mockRole(overrides: Partial<RoleDAO> = {}): RoleDAO {
   } as RoleDAO;
 }
 
+const TEST_HASHED_PASSWORD =
+  process.env.TEST_HASHED_PASSWORD ?? "test_hash_value";
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "pw";
+
 function mockCompany(overrides: Partial<CompanyDAO> = {}): CompanyDAO {
   return {
     id: 1,
@@ -31,7 +35,7 @@ function mockUser(overrides: Partial<InternalUserDAO> = {}): InternalUserDAO {
     email: "user@city.com",
     firstName: "A",
     lastName: "B",
-    password: "pw",
+    password: TEST_PASSWORD,
     activeTasks: 0,
     role: mockRole(),
     company: mockCompany(),
@@ -57,9 +61,6 @@ function createQueryBuilderMock() {
     execute: jest.fn(),
   } as unknown as jest.Mocked<SelectQueryBuilder<InternalUserDAO>>;
 }
-
-const TEST_HASHED_PASSWORD =
-  process.env.TEST_HASHED_PASSWORD ?? "test_hash_value";
 
 describe("InternalUserRepository", () => {
   let repo: InternalUserRepository;
