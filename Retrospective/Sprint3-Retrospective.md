@@ -98,15 +98,21 @@ Index:
 
 ## ASSESSMENT
 
-- What caused your errors in estimation (if any)?
+What caused your errors in estimation (if any)?
+Similarly to the previous sprint, due to excessive workload we had some diversions in the timeline.
 
-- What lessons did you learn (both positive and negative) in this sprint?
+What lessons did you learn (both positive and negative) in this sprint?
+The importance of keeping track of technical debt and the system up to date with the user requirements (positive), and not underestimating the effort it requires to do so (negatuive). 
 
-- Which improvement goals set in the previous retrospective were you able to achieve?
-- Which ones you were not able to achieve? Why?
+Which improvement goals set in the previous retrospective were you able to achieve?
+Testing was a success on both fronts, regression for the entire system (newly implemented and refactored features) manual testing for the client side part of the application. 
 
-- Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
+Which ones you were not able to achieve? Why?
+All goals set in the previous retrospective were achieved
 
-> Propose one or two
+Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
+- Increasing the number of story points to be implemented while keeping the same level of time and technical debt    management
+- Stay on the same level of presentation and restrospective analysis
 
-- One thing you are proud of as a Team!!
+One thing you are proud of as a Team!!
+Through coordination of the members, goals such as, resolving technical debt, regression testing and implementing new features while keeping nearly the same time management (as made evident by the Burndown chart for both the actual and previous sprint) were successfully achieved. 
