@@ -207,10 +207,10 @@ class ReportService implements IReportService {
   }
 
   async updateReport(
-      reportId: number,
-      data: UpdateReportRequestDTO,
-      userId: number,
-      userRole?: string
+    reportId: number,
+    data: UpdateReportRequestDTO,
+    userId: number,
+    userRole?: string
   ): Promise<ReportDTO> {
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
@@ -218,11 +218,11 @@ class ReportService implements IReportService {
     }
 
     if (
-        report.status === ReportStatus.RESOLVED ||
-        report.status === ReportStatus.REJECTED
+      report.status === ReportStatus.RESOLVED ||
+      report.status === ReportStatus.REJECTED
     ) {
       throw new Error(
-          "Cannot update a report that is already Resolved or Rejected"
+        "Cannot update a report that is already Resolved or Rejected"
       );
     }
 
@@ -233,9 +233,9 @@ class ReportService implements IReportService {
     }
 
     const isExternalMaintainer =
-        userRole === EXTERNAL_MAINTAINER_ROLE ||
-        userRole?.includes(EXTERNAL_MAINTAINER_ROLE) ||
-        user.role?.id === EXTERNAL_MAINTAINER_ROLE_ID;
+      userRole === EXTERNAL_MAINTAINER_ROLE ||
+      userRole?.includes(EXTERNAL_MAINTAINER_ROLE) ||
+      user.role?.id === EXTERNAL_MAINTAINER_ROLE_ID;
 
     const isAssignedUser = report.assignedTo?.id === user.id;
 
@@ -246,16 +246,18 @@ class ReportService implements IReportService {
 
     // Category can only be changed in Pending stage
     if (data.categoryId && report.status !== ReportStatus.PENDING_APPROVAL) {
-      throw new Error("Cannot change category after report leaves Pending stage");
+      throw new Error(
+        "Cannot change category after report leaves Pending stage"
+      );
     }
 
     // Validate status transition
     const transitionResult = validateStatusTransition(
-        report.status,
-        data.status,
-        userRole || "",
-        isExternalMaintainer,
-        isAssignedUser
+      report.status,
+      data.status,
+      userRole || "",
+      isExternalMaintainer,
+      isAssignedUser
     );
 
     if (!transitionResult.valid) {
@@ -264,12 +266,12 @@ class ReportService implements IReportService {
 
     // PR Officers can update only Pending Approval
     if (
-        userRole === "Public Relations Officer" ||
-        userRole?.includes("Public Relations Officer")
+      userRole === "Public Relations Officer" ||
+      userRole?.includes("Public Relations Officer")
     ) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
-            `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
+          `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
         );
       }
     }
@@ -278,7 +280,7 @@ class ReportService implements IReportService {
     if (report.status !== ReportStatus.PENDING_APPROVAL) {
       if (!isAssignedUser) {
         throw new Error(
-            "Only the currently assigned user can update this report"
+          "Only the currently assigned user can update this report"
         );
       }
     }
@@ -288,7 +290,7 @@ class ReportService implements IReportService {
 
     if (data.categoryId) {
       const foundCategory = await this.categoryRepository.findById(
-          data.categoryId
+        data.categoryId
       );
       if (!foundCategory) {
         throw new Error(`Category not found with ID: ${data.categoryId}`);
@@ -306,19 +308,19 @@ class ReportService implements IReportService {
     // Validate before assignment
     if (data.status === ReportStatus.ASSIGNED) {
       const categoryRoleMapping =
-          await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
 
       if (!categoryRoleMapping) {
         throw new Error(`No role found for category: ${categoryNameToUse}`);
       }
 
       const officersWithRole = await this.internalUserRepository.findByRoleId(
-          categoryRoleMapping.role.id
+        categoryRoleMapping.role.id
       );
 
       if (officersWithRole.length === 0) {
         throw new Error(
-            `No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`
+          `No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`
         );
       }
     }
@@ -328,11 +330,11 @@ class ReportService implements IReportService {
 
     if (data.status === ReportStatus.ASSIGNED) {
       const categoryRoleMapping =
-          await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
 
       if (categoryRoleMapping) {
         assignedTo = await this.selectUnoccupiedOfficerByRole(
-            categoryRoleMapping.role.id
+          categoryRoleMapping.role.id
         );
       }
     }
@@ -340,7 +342,7 @@ class ReportService implements IReportService {
     // Resolve → decrement tasks
     if (data.status === ReportStatus.RESOLVED && report.assignedTo) {
       await this.internalUserRepository.decrementActiveTasks(
-          report.assignedTo.id
+        report.assignedTo.id
       );
     }
 

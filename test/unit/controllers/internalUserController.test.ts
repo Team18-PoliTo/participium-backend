@@ -34,9 +34,7 @@ const mockRes = () => {
 };
 
 const next: NextFunction = jest.fn();
-const TEST_VALID_PASSWORD =
-    process.env.TEST_VALID_PASSWORD ?? "password123";
-
+const TEST_VALID_PASSWORD = process.env.TEST_VALID_PASSWORD ?? "password123";
 
 describe("InternalUserController", () => {
   beforeEach(() => {

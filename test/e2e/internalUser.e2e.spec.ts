@@ -12,7 +12,7 @@ import CitizenDAO from "../../src/models/dao/CitizenDAO";
 
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-const TEST_PASSWORD = "password123";
+const TEST_PASSWORD = process.env.TEST_PASSWORD ?? "password123";
 
 describe("Internal User Management E2E Tests", () => {
   let adminToken: string;
@@ -574,17 +574,17 @@ describe("Internal User Management E2E Tests", () => {
       await reportRepo.update(reportId, { status: ReportStatus.IN_PROGRESS });
 
       const res = await request(app)
-          .patch(`/api/internal/reports/${reportId}`)
-          .set("Authorization", `Bearer ${prToken}`)
-          .send({
-            status: ReportStatus.RESOLVED,
-            explanation: "Trying to resolve",
-          });
+        .patch(`/api/internal/reports/${reportId}`)
+        .set("Authorization", `Bearer ${prToken}`)
+        .send({
+          status: ReportStatus.RESOLVED,
+          explanation: "Trying to resolve",
+        });
 
       // Because transition rules run BEFORE PR officer role check
       expect(res.status).toBe(400);
       expect(res.body.error).toContain(
-          "Only the assigned user can transition this report"
+        "Only the assigned user can transition this report"
       );
     });
 

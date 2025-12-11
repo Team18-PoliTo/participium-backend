@@ -358,7 +358,8 @@ describe("ReportService", () => {
     });
 
     it("should throw when PR officer tries to update non-pending report", async () => {
-      const { service, reportRepository, internalUserRepository } = buildService();
+      const { service, reportRepository, internalUserRepository } =
+        buildService();
 
       const assignedReport = {
         ...baseReport,
@@ -375,17 +376,17 @@ describe("ReportService", () => {
       });
 
       await expect(
-          service.updateReport(
-              1,
-              {
-                status: ReportStatus.IN_PROGRESS,
-                explanation: "",
-              },
-              1,
-              "Public Relations Officer"
-          )
+        service.updateReport(
+          1,
+          {
+            status: ReportStatus.IN_PROGRESS,
+            explanation: "",
+          },
+          1,
+          "Public Relations Officer"
+        )
       ).rejects.toThrow(
-          'Only the assigned user can transition this report from "Assigned" to "In Progress".'
+        'Only the assigned user can transition this report from "Assigned" to "In Progress".'
       );
     });
 
