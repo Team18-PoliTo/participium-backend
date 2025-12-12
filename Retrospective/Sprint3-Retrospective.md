@@ -87,7 +87,7 @@ Index:
 
 ![Test coverage chart](./Sprint3-TestCoverage.jpg)
 
-![Test coverage chart second report](<Screenshot 2025-12-11 at 21.04.56.png>)
+![Test coverage chart second report](./Sprint3-TestCoverage1.png)
 
 ## Techincal Debt
 
@@ -99,20 +99,26 @@ Index:
 ## ASSESSMENT
 
 What caused your errors in estimation (if any)?
-Similarly to the previous sprint, due to excessive workload we had some diversions in the timeline.
+
+- Similarly to the previous sprint, due to excessive workload we had some diversions in the timeline.
 
 What lessons did you learn (both positive and negative) in this sprint?
-The importance of keeping track of technical debt and the system up to date with the user requirements (positive), and not underestimating the effort it requires to do so (negatuive). 
+
+- The importance of keeping track of technical debt and the system up to date with the user requirements (positive), and learning best practices to write code more consistent and maintainable creating less issues for the future techincal debt (negative). 
 
 Which improvement goals set in the previous retrospective were you able to achieve?
-Testing was a success on both fronts, regression for the entire system (newly implemented and refactored features) manual testing for the client side part of the application. 
+
+- Testing was a success on both fronts, regression for the entire system (newly implemented and refactored features) manual testing for the client side part of the application. 
 
 Which ones you were not able to achieve? Why?
-All goals set in the previous retrospective were achieved
+
+- All goals set in the previous retrospective were achieved
 
 Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
+
 - Increasing the number of story points to be implemented while keeping the same level of time and technical debt    management
 - Stay on the same level of presentation and restrospective analysis
 
 One thing you are proud of as a Team!!
-Through coordination of the members, goals such as, resolving technical debt, regression testing and implementing new features while keeping nearly the same time management (as made evident by the Burndown chart for both the actual and previous sprint) were successfully achieved. 
+
+- Through coordination of the members, goals such as, resolving technical debt, regression testing and implementing new features while keeping nearly the same time management (as made evident by the Burndown chart for both the actual and previous sprint) were successfully achieved. 
