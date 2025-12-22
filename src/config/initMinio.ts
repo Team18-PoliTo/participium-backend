@@ -25,14 +25,19 @@ export const initMinio = async () => {
       "[MinIO] Buckets:",
       buckets.map((b) => b.name)
     );
-
-    // Seed reports with images after MinIO is ready
-    // Only seed if database is initialized
-    if (AppDataSource.isInitialized) {
-      const forceSeed = process.env.FORCE_SEED === "true";
-      await seedReports(AppDataSource, forceSeed);
-    }
   } catch (error: any) {
     console.error("[MinIO] Initialization failed:", error);
+  } finally {
+    // Always attempt to seed reports once DB is ready,
+    // even if MinIO init failed (uploads will be skipped per-image on error)
+    if (AppDataSource.isInitialized) {
+      const forceSeed = process.env.FORCE_SEED === "true";
+      console.log(
+        `[Seed] Starting report seeding (forceSeed=${forceSeed}). MinIO may be unavailable, uploads will be skipped.`
+      );
+      await seedReports(AppDataSource, forceSeed);
+    } else {
+      console.warn("[Seed] Skipped: AppDataSource not initialized.");
+    }
   }
 };
