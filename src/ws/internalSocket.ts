@@ -36,7 +36,9 @@ export function initInternalSocket(server: HttpServer): void {
     try {
       const token =
         (socket.handshake.auth && (socket.handshake.auth as any).token) ||
-        extractBearer(socket.handshake.headers?.authorization as string | undefined);
+        extractBearer(
+          socket.handshake.headers?.authorization as string | undefined
+        );
 
       if (!token) {
         return next(new Error("Unauthorized: missing token"));
