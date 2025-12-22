@@ -24,6 +24,7 @@ import {
   EXTERNAL_MAINTAINER_ROLE,
   EXTERNAL_MAINTAINER_ROLE_ID,
 } from "../../constants/StatusTransitions";
+import { emitCommentCreated } from "../../ws/internalSocket";
 class ReportService implements IReportService {
   constructor(
     private readonly reportRepository: IReportRepository = new ReportRepository(),
@@ -247,13 +248,22 @@ class ReportService implements IReportService {
       commentText.trim()
     );
 
-    return {
+    const newCommentPayload = {
       id: comment.id,
       comment: comment.comment,
       commentOwner_id: (comment as any).comment_owner?.id,
       creation_date: (comment as any).creation_date,
       report_id: reportId,
     };
+
+    // Emit real-time event to subscribers of this report
+    try {
+      emitCommentCreated(reportId, newCommentPayload);
+    } catch (e) {
+      // Swallow emit errors to avoid impacting API response
+    }
+
+    return newCommentPayload;
   }
 
   async updateReport(
