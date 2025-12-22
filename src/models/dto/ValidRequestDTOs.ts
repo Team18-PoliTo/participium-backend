@@ -133,3 +133,10 @@ export class GetAssignedReportsForMapRequestDTO {
     longitude: number;
   }[];
 }
+
+export class CreateCommentRequestDTO {
+  @IsString({ message: "Comment must be a string" })
+  @IsNotEmpty({ message: "Comment text is required" })
+  @MinLength(1, { message: "Comment cannot be empty" })
+  comment: string;
+}

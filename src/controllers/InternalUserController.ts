@@ -4,6 +4,7 @@ import {
   RegisterInternalUserRequestDTO,
   UpdateInternalUserRequestDTO,
   UpdateReportRequestDTO,
+  CreateCommentRequestDTO,
 } from "../models/dto/ValidRequestDTOs";
 import { InternalUserDTO } from "../models/dto/InternalUserDTO";
 import { ReportDTO } from "../models/dto/ReportDTO";
@@ -380,6 +381,92 @@ class InternalUserController {
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });
         return;
+      }
+      next(error);
+    }
+  }
+
+  async getReportComments(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const reportId = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(reportId)) {
+        res.status(400).json({ error: "Invalid report ID" });
+        return;
+      }
+
+      const comments = await this.reportService.getCommentsByReportId(reportId);
+      res.status(200).json(comments);
+    } catch (error) {
+      if (error instanceof Error && error.message === "Report not found") {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async createReportComment(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const reportId = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(reportId)) {
+        res.status(400).json({ error: "Invalid report ID" });
+        return;
+      }
+
+      const userId = (req as any).auth?.sub;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const createCommentDTO = plainToClass(CreateCommentRequestDTO, req.body);
+      const errors = await validate(createCommentDTO);
+
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((err) => Object.values(err.constraints || {}).join(", "))
+          .join("; ");
+        res.status(400).json({ error: errorMessages });
+        return;
+      }
+
+      const newComment = await this.reportService.createComment(
+        reportId,
+        userId,
+        createCommentDTO.comment
+      );
+      res.status(201).json(newComment);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (
+          error.message === "Report not found" ||
+          error.message === "Internal user not found"
+        ) {
+          res.status(404).json({ error: error.message });
+          return;
+        }
+        if (error.message === "Comment text cannot be empty") {
+          res.status(400).json({ error: error.message });
+          return;
+        }
       }
       next(error);
     }
