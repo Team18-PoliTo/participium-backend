@@ -256,11 +256,14 @@ class ReportService implements IReportService {
       report_id: reportId,
     };
 
-    // Emit real-time event to subscribers of this report
     try {
       emitCommentCreated(reportId, newCommentPayload);
     } catch (e) {
-      // Swallow emit errors to avoid impacting API response
+      console.error(
+        "Failed to emit comment.created via WebSocket for report",
+        reportId,
+        e
+      );
     }
 
     return newCommentPayload;
