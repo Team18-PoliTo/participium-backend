@@ -21,7 +21,7 @@ class CommentDAO {
     eager: true,
   })
   comment_owner: InternalUserDAO;
-  
+
   @CreateDateColumn({ type: "datetime" })
   creation_date: Date;
 

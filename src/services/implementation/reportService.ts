@@ -217,7 +217,7 @@ class ReportService implements IReportService {
       id: c.id,
       comment: c.comment,
       commentOwner_id: (c as any).comment_owner?.id,
-      creation_date:  (c as any).creation_date,
+      creation_date: (c as any).creation_date,
       report_id: reportId,
     }));
   }
