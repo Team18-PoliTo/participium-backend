@@ -5,11 +5,13 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from "typeorm";
 import CitizenDAO from "./CitizenDAO";
 import InternalUserDAO from "./InternalUserDAO";
 import CategoryDAO from "./CategoryDAO";
 import { ReportStatus } from "../../constants/ReportStatus";
+import CommentDAO from "./CommentDAO";
 
 @Entity("reports")
 class ReportDAO {
@@ -71,6 +73,12 @@ class ReportDAO {
 
   @Column({ nullable: true })
   assignedToId: number | null;
+
+  @OneToMany(() => CommentDAO, (comment) => comment.report, {
+    nullable: true,
+    cascade: true,
+  })
+  comments: CommentDAO[];
 }
 
 export default ReportDAO;

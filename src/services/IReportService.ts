@@ -27,4 +27,10 @@ export interface IReportService {
     userId: number,
     companyId: number
   ): Promise<ExternalMaintainerDTO>;
+  getCommentsByReportId(reportId: number): Promise<any[]>;
+  createComment(
+    reportId: number,
+    userId: number,
+    commentText: string
+  ): Promise<any>;
 }
