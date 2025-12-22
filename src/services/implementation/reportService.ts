@@ -206,6 +206,56 @@ class ReportService implements IReportService {
     return ReportMapper.toDTO(report);
   }
 
+  async getCommentsByReportId(reportId: number): Promise<any[]> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+    const comments =
+      await this.reportRepository.findCommentsByReportId(reportId);
+    return comments.map((c) => ({
+      id: c.id,
+      comment: c.comment,
+      commentOwner_id: (c as any).comment_owner?.id,
+      creation_date:  (c as any).creation_date,
+      report_id: reportId,
+    }));
+  }
+
+  async createComment(
+    reportId: number,
+    userId: number,
+    commentText: string
+  ): Promise<any> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+
+    const user = await this.internalUserRepository.findById(userId);
+    if (!user) {
+      throw new Error("Internal user not found");
+    }
+
+    if (!commentText || commentText.trim().length === 0) {
+      throw new Error("Comment text cannot be empty");
+    }
+
+    const comment = await this.reportRepository.createComment(
+      reportId,
+      userId,
+      commentText.trim()
+    );
+
+    return {
+      id: comment.id,
+      comment: comment.comment,
+      commentOwner_id: (comment as any).comment_owner?.id,
+      creation_date: (comment as any).creation_date,
+      report_id: reportId,
+    };
+  }
+
   async updateReport(
     reportId: number,
     data: UpdateReportRequestDTO,

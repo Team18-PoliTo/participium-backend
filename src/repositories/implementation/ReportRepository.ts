@@ -1,6 +1,7 @@
 import { In, Repository } from "typeorm";
 import { AppDataSource } from "../../config/database";
 import ReportDAO from "../../models/dao/ReportDAO";
+import CommentDAO from "../../models/dao/CommentDAO";
 import { IReportRepository } from "../IReportRepository";
 import { ReportStatus } from "../../constants/ReportStatus";
 
@@ -111,5 +112,28 @@ export class ReportRepository implements IReportRepository {
       relations: ["assignedTo", "category"],
       order: { createdAt: "DESC" },
     });
+  }
+
+  async findCommentsByReportId(reportId: number): Promise<CommentDAO[]> {
+    const commentRepo = AppDataSource.getRepository(CommentDAO);
+    return commentRepo.find({
+      where: { report: { id: reportId } },
+      relations: ["comment_owner"],
+      order: { creation_date: "ASC" },
+    });
+  }
+
+  async createComment(
+    reportId: number,
+    userId: number,
+    commentText: string
+  ): Promise<CommentDAO> {
+    const commentRepo = AppDataSource.getRepository(CommentDAO);
+    const comment = commentRepo.create({
+      comment: commentText,
+      comment_owner: { id: userId },
+      report: { id: reportId },
+    });
+    return await commentRepo.save(comment);
   }
 }

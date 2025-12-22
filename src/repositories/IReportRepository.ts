@@ -1,4 +1,5 @@
 import ReportDAO from "../models/dao/ReportDAO";
+import CommentDAO from "../models/dao/CommentDAO";
 
 export interface IReportRepository {
   create(reportDAO: Partial<ReportDAO>): Promise<ReportDAO>;
@@ -25,4 +26,10 @@ export interface IReportRepository {
   findByUser(citizenId: number): Promise<ReportDAO[]>;
   findByAssignedStaff(staffId: number): Promise<ReportDAO[]>;
   findByCategoryIds(categoryIds: number[]): Promise<ReportDAO[]>;
+  findCommentsByReportId(reportId: number): Promise<CommentDAO[]>;
+  createComment(
+    reportId: number,
+    userId: number,
+    commentText: string
+  ): Promise<CommentDAO>;
 }
