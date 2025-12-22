@@ -7,6 +7,7 @@ import {
 } from "typeorm";
 import RoleDAO from "./RoleDAO";
 import CompanyDAO from "./CompanyDAO";
+import CommentDAO from "./CommentDAO";
 
 export type InternalUserStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
@@ -43,6 +44,11 @@ class InternalUserDAO {
     nullable: true,
   })
   company: CompanyDAO;
+
+  @ManyToOne(() => CommentDAO, (comment) => comment.comment_owner, {
+    nullable: true,
+  })
+  comments: CommentDAO[];
 }
 
 export default InternalUserDAO;
