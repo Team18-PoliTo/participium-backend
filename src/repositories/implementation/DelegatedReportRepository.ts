@@ -55,6 +55,9 @@ export class DelegatedReportRepository implements IDelegatedReportRepository {
     return await this.repo
       .createQueryBuilder("delegated")
       .leftJoinAndSelect("delegated.report", "report")
+      .leftJoinAndSelect("report.category", "category")
+      .leftJoinAndSelect("report.citizen", "citizen")
+      .leftJoinAndSelect("report.assignedTo", "assignedTo")
       .leftJoin("delegated.delegatedBy", "user")
       .where("user.id = :delegatedById", { delegatedById })
       .orderBy("delegated.delegatedAt", "DESC")
