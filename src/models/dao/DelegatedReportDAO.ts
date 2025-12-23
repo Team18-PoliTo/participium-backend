@@ -10,7 +10,9 @@ import InternalUserDAO from "./InternalUserDAO";
 
 @Entity("delegated_reports")
 class DelegatedReportDAO {
-  @PrimaryColumn({ type: "integer" })
+  @PrimaryColumn({ name: "reportId", type: "integer" })
+  reportId: number;
+
   @ManyToOne(() => ReportDAO, { eager: true })
   @JoinColumn({ name: "reportId" })
   report: ReportDAO;
