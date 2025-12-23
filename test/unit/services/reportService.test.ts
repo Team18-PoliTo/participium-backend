@@ -1127,6 +1127,8 @@ describe("ReportService", () => {
       lastName: "Officer",
       role: { id: 13, role: "Technical Officer" },
     };
+    const roadCategory = { id: 1, name: "Road" };
+    const companyFixIt = { id: 5, name: "FixIt Inc" };
     it("should delegate report to external maintainer company", async () => {
       const {
         service,
@@ -1151,9 +1153,9 @@ describe("ReportService", () => {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
         assignedTo: assignedUser,
-        category: { id: 1, name: "Road" },
+        category: roadCategory,
       };
-      const company = { id: 5, name: "FixIt Inc" };
+      const company = companyFixIt;
       const maintainer = {
         id: 20,
         firstName: "Maintainer",
@@ -1256,7 +1258,7 @@ describe("ReportService", () => {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
         assignedTo: delegatingOfficer,
-        category: { id: 1, name: "Road" },
+        category: roadCategory,
       };
       reportRepository.findById.mockResolvedValue(report);
       internalUserRepository.findById.mockResolvedValue(delegatingOfficer);
@@ -1281,7 +1283,7 @@ describe("ReportService", () => {
         assignedTo: delegatingOfficer,
         category: { id: 1, name: "Road" },
       };
-      const company = { id: 5, name: "FixIt Inc" };
+      const company = companyFixIt;
 
       reportRepository.findById.mockResolvedValue(report);
       internalUserRepository.findById.mockResolvedValue(delegatingOfficer);
@@ -1335,9 +1337,9 @@ describe("ReportService", () => {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
         assignedTo: delegatingOfficer,
-        category: { id: 1, name: "Road" },
+        category: roadCategory,
       };
-      const company = { id: 5, name: "FixIt Inc" };
+      const company = companyFixIt;
 
       reportRepository.findById.mockResolvedValue(report);
       internalUserRepository.findById.mockResolvedValue(delegatingOfficer);
