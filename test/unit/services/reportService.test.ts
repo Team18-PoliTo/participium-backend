@@ -423,7 +423,10 @@ describe("ReportService", () => {
     it("should allow PR officer to update pending report", async () => {
       const { service, reportRepository, internalUserRepository } =
         buildService();
-      const pendingReport = { ...baseReport, status: ReportStatus.PENDING_APPROVAL };
+      const pendingReport = {
+        ...baseReport,
+        status: ReportStatus.PENDING_APPROVAL,
+      };
       reportRepository.findById.mockResolvedValue(pendingReport);
       reportRepository.updateReport.mockResolvedValue({
         ...pendingReport,
@@ -450,7 +453,10 @@ describe("ReportService", () => {
         internalUserRepository,
       } = buildService();
       const newCategory = { id: 2, name: "Water", description: "Water issues" };
-      const pendingReport = { ...baseReport, status: ReportStatus.PENDING_APPROVAL };
+      const pendingReport = {
+        ...baseReport,
+        status: ReportStatus.PENDING_APPROVAL,
+      };
       reportRepository.findById.mockResolvedValue(pendingReport);
       categoryRepository.findById.mockResolvedValue(newCategory);
       reportRepository.updateReport.mockResolvedValue({
@@ -481,7 +487,10 @@ describe("ReportService", () => {
         categoryRepository,
         internalUserRepository,
       } = buildService();
-      const pendingReport = { ...baseReport, status: ReportStatus.PENDING_APPROVAL };
+      const pendingReport = {
+        ...baseReport,
+        status: ReportStatus.PENDING_APPROVAL,
+      };
       reportRepository.findById.mockResolvedValue(pendingReport);
       categoryRepository.findById.mockResolvedValue(null);
       internalUserRepository.findById.mockResolvedValue(PR_OFFICER_USER);
