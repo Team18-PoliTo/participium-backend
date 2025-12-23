@@ -1121,6 +1121,12 @@ describe("ReportService", () => {
   });
 
   describe("delegateReport", () => {
+    const delegatingOfficer = {
+      id: 10,
+      firstName: "Tech",
+      lastName: "Officer",
+      role: { id: 13, role: "Technical Officer" },
+    };
     it("should delegate report to external maintainer company", async () => {
       const {
         service,
@@ -1246,20 +1252,14 @@ describe("ReportService", () => {
       } as any;
       (service as any).companyCategoryRepository = companyCategoryRepository;
 
-      const officer = {
-        id: 10,
-        firstName: "Tech",
-        lastName: "Officer",
-        role: { id: 13, role: "Technical Officer" }, // Valid delegating role
-      };
       const report = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
-        assignedTo: officer,
+        assignedTo: delegatingOfficer,
         category: { id: 1, name: "Road" },
       };
       reportRepository.findById.mockResolvedValue(report);
-      internalUserRepository.findById.mockResolvedValue(officer);
+      internalUserRepository.findById.mockResolvedValue(delegatingOfficer);
       companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([]);
 
       await expect(service.delegateReport(1, 10, 5)).rejects.toThrow(
@@ -1275,22 +1275,16 @@ describe("ReportService", () => {
       } as any;
       (service as any).companyCategoryRepository = companyCategoryRepository;
 
-      const officer = {
-        id: 10,
-        firstName: "Tech",
-        lastName: "Officer",
-        role: { id: 13, role: "Technical Officer" }, // Valid delegating role
-      };
       const report = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
-        assignedTo: officer,
+        assignedTo: delegatingOfficer,
         category: { id: 1, name: "Road" },
       };
       const company = { id: 5, name: "FixIt Inc" };
 
       reportRepository.findById.mockResolvedValue(report);
-      internalUserRepository.findById.mockResolvedValue(officer);
+      internalUserRepository.findById.mockResolvedValue(delegatingOfficer);
       companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
         company,
       ]);
@@ -1337,22 +1331,16 @@ describe("ReportService", () => {
       } as any;
       (service as any).companyCategoryRepository = companyCategoryRepository;
 
-      const officer = {
-        id: 10,
-        firstName: "Tech",
-        lastName: "Officer",
-        role: { id: 13, role: "Technical Officer" }, // Valid delegating role
-      };
       const report = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
-        assignedTo: officer,
+        assignedTo: delegatingOfficer,
         category: { id: 1, name: "Road" },
       };
       const company = { id: 5, name: "FixIt Inc" };
 
       reportRepository.findById.mockResolvedValue(report);
-      internalUserRepository.findById.mockResolvedValue(officer);
+      internalUserRepository.findById.mockResolvedValue(delegatingOfficer);
       companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
         company,
       ]);
