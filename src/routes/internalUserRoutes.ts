@@ -438,4 +438,42 @@ router.post(
   internalUserController.createReportComment.bind(internalUserController)
 );
 
+/**
+ * @swagger
+ * /internal/delegated-reports:
+ *   get:
+ *     summary: Get all reports delegated by the authenticated user
+ *     description: Retrieve all reports that were delegated by the authenticated technical officer. Returns reports with all report fields plus a delegatedAt timestamp indicating when the delegation occurred. Only technical officers can access this endpoint.
+ *     tags: [Internal Reports]
+ *     security:
+ *       - internalPassword: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved delegated reports
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/ReportDTO'
+ *                   - type: object
+ *                     properties:
+ *                       delegatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Timestamp when the report was delegated
+ *                         example: "2024-01-15T10:30:00Z"
+ *       401:
+ *         description: Unauthorized - Missing or invalid authentication token
+ *       403:
+ *         description: Forbidden - User is not an internal user or role does not have permission to delegate reports
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  "/delegated-reports",
+  internalUserController.getDelegatedReports.bind(internalUserController)
+);
+
 export default router;

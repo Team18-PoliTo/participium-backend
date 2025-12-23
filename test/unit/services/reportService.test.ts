@@ -57,15 +57,24 @@ describe("ReportService", () => {
       findExternalMaintainersByCompany: jest.fn(),
     };
 
+    const delegatedReportRepository = {
+      create: jest.fn().mockResolvedValue(undefined),
+      deleteByReportId: jest.fn().mockResolvedValue(undefined),
+      findByReportId: jest.fn().mockResolvedValue(null),
+    };
+
     return {
       service: new ReportService(
         reportRepository as any,
         citizenRepository as any,
         categoryRepository as any,
         categoryRoleRepository as any,
-        internalUserRepository as any
+        internalUserRepository as any,
+        undefined as any,
+        delegatedReportRepository as any
       ),
       reportRepository,
+      delegatedReportRepository,
       citizenRepository,
       categoryRepository,
       categoryRoleRepository,
@@ -1113,8 +1122,12 @@ describe("ReportService", () => {
 
   describe("delegateReport", () => {
     it("should delegate report to external maintainer company", async () => {
-      const { service, reportRepository, internalUserRepository } =
-        buildService();
+      const {
+        service,
+        reportRepository,
+        internalUserRepository,
+        delegatedReportRepository,
+      } = buildService();
       const companyCategoryRepository = {
         findCompaniesByCategory: jest.fn(),
       } as any;
@@ -1122,7 +1135,12 @@ describe("ReportService", () => {
       // Add companyCategoryRepository to service
       (service as any).companyCategoryRepository = companyCategoryRepository;
 
-      const assignedUser = { id: 10, firstName: "Staff", lastName: "User" };
+      const assignedUser = {
+        id: 10,
+        firstName: "Staff",
+        lastName: "User",
+        role: { id: 11, role: "Technical Officer" },
+      };
       const report = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
@@ -1139,6 +1157,7 @@ describe("ReportService", () => {
       };
 
       reportRepository.findById.mockResolvedValue(report);
+      internalUserRepository.findById.mockResolvedValue(assignedUser);
       companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
         company,
       ]);
@@ -1155,6 +1174,7 @@ describe("ReportService", () => {
       const result = await service.delegateReport(1, 10, 5);
 
       expect(reportRepository.findById).toHaveBeenCalledWith(1);
+      expect(internalUserRepository.findById).toHaveBeenCalledWith(10);
       expect(
         companyCategoryRepository.findCompaniesByCategory
       ).toHaveBeenCalledWith(1);
@@ -1173,6 +1193,7 @@ describe("ReportService", () => {
         undefined,
         maintainer
       );
+      expect(delegatedReportRepository.create).toHaveBeenCalledWith(1, 10);
       expect(result).toMatchObject({
         id: 20,
         firstName: "Maintainer",
@@ -1218,19 +1239,27 @@ describe("ReportService", () => {
     });
 
     it("should throw when company does not handle the category", async () => {
-      const { service, reportRepository } = buildService();
+      const { service, reportRepository, internalUserRepository } =
+        buildService();
       const companyCategoryRepository = {
         findCompaniesByCategory: jest.fn(),
       } as any;
       (service as any).companyCategoryRepository = companyCategoryRepository;
 
+      const officer = {
+        id: 10,
+        firstName: "Tech",
+        lastName: "Officer",
+        role: { id: 13, role: "Technical Officer" }, // Valid delegating role
+      };
       const report = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
-        assignedTo: { id: 10 },
+        assignedTo: officer,
         category: { id: 1, name: "Road" },
       };
       reportRepository.findById.mockResolvedValue(report);
+      internalUserRepository.findById.mockResolvedValue(officer);
       companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([]);
 
       await expect(service.delegateReport(1, 10, 5)).rejects.toThrow(
@@ -1246,15 +1275,22 @@ describe("ReportService", () => {
       } as any;
       (service as any).companyCategoryRepository = companyCategoryRepository;
 
+      const officer = {
+        id: 10,
+        firstName: "Tech",
+        lastName: "Officer",
+        role: { id: 13, role: "Technical Officer" }, // Valid delegating role
+      };
       const report = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
-        assignedTo: { id: 10 },
+        assignedTo: officer,
         category: { id: 1, name: "Road" },
       };
       const company = { id: 5, name: "FixIt Inc" };
 
       reportRepository.findById.mockResolvedValue(report);
+      internalUserRepository.findById.mockResolvedValue(officer);
       companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
         company,
       ]);
@@ -1267,6 +1303,32 @@ describe("ReportService", () => {
       );
     });
 
+    it("should throw when officer role cannot delegate (roles 0, 1, 10, 28)", async () => {
+      const { service, reportRepository, internalUserRepository } =
+        buildService();
+
+      // Test with role 10 (Public Relations Officer)
+      const nonDelegatingOfficer = {
+        id: 10,
+        firstName: "PR",
+        lastName: "Officer",
+        role: { id: 10, role: "Public Relations Officer" },
+      };
+      const report = {
+        ...baseReport,
+        status: ReportStatus.ASSIGNED,
+        assignedTo: nonDelegatingOfficer,
+        category: { id: 1, name: "Road" },
+      };
+
+      reportRepository.findById.mockResolvedValue(report);
+      internalUserRepository.findById.mockResolvedValue(nonDelegatingOfficer);
+
+      await expect(service.delegateReport(1, 10, 5)).rejects.toThrow(
+        "Your role does not have permission to delegate reports"
+      );
+    });
+
     it("should handle edge case when chosenMaintainer is falsy", async () => {
       const { service, reportRepository, internalUserRepository } =
         buildService();
@@ -1275,15 +1337,22 @@ describe("ReportService", () => {
       } as any;
       (service as any).companyCategoryRepository = companyCategoryRepository;
 
+      const officer = {
+        id: 10,
+        firstName: "Tech",
+        lastName: "Officer",
+        role: { id: 13, role: "Technical Officer" }, // Valid delegating role
+      };
       const report = {
         ...baseReport,
         status: ReportStatus.ASSIGNED,
-        assignedTo: { id: 10 },
+        assignedTo: officer,
         category: { id: 1, name: "Road" },
       };
       const company = { id: 5, name: "FixIt Inc" };
 
       reportRepository.findById.mockResolvedValue(report);
+      internalUserRepository.findById.mockResolvedValue(officer);
       companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
         company,
       ]);
