@@ -471,6 +471,62 @@ class InternalUserController {
       next(error);
     }
   }
+
+  async getDelegatedReports(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const userId = (req as any).auth?.sub;
+
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      // Check if user's role can delegate (exclude roles 0, 1, 10, 28)
+      const nonDelegatingRoles = [0, 1, 10, 28];
+      const userRole = (req as any).auth?.role;
+
+      let roleId: number | null = null;
+      if (typeof userRole === "number") {
+        roleId = userRole;
+      } else if (userRole && typeof userRole === "string") {
+        if (!this.reportService) {
+          res.status(500).json({ error: "Report service not available" });
+          return;
+        }
+
+        // Fetch the user to get their role ID
+        const user = await this.internalUserService.fetchUsers();
+        const currentUser = user.find((u) => u.id === userId);
+
+        if (currentUser && typeof currentUser.role === "number") {
+          roleId = currentUser.role;
+        }
+      }
+
+      if (roleId !== null && nonDelegatingRoles.includes(roleId)) {
+        res.status(403).json({
+          error:
+            "Forbidden: Your role does not have permission to delegate reports",
+        });
+        return;
+      }
+
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not available" });
+        return;
+      }
+
+      const reports =
+        await this.reportService.getDelegatedReportsByUser(userId);
+      res.status(200).json(reports);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default InternalUserController;
