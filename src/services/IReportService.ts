@@ -5,36 +5,65 @@ import {
   CreateReportRequestDTO,
   UpdateReportRequestDTO,
 } from "../models/dto/ValidRequestDTOs";
+import { ReportViewContext } from "../constants/ReportViewContext";
 
 export interface IReportService {
-  create(data: CreateReportRequestDTO, citizenId: number): Promise<ReportDTO>;
-  getReportsByStatus(status: string): Promise<ReportDTO[]>;
+  create(
+    data: CreateReportRequestDTO,
+    citizenId: number
+  ): Promise<ReportDTO>;
+
+  getReportsByStatus(
+    status: string,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]>;
+
+  getReportsByUser(
+    citizenId: number,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]>;
+
+  getAssignedReportsInMap(
+    corners: object[]
+  ): Promise<Partial<ReportDTO>[]>;
+
+  getReportById(
+    reportId: number
+  ): Promise<ReportDTO>;
+
+  getReportsForStaff(
+    staffId: number,
+    statusFilter?: string,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]>;
+
+  getReportsByOffice(
+    staffId: number,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]>;
+
+  delegateReport(
+    reportId: number,
+    userId: number,
+    companyId: number
+  ): Promise<ExternalMaintainerDTO>;
+
+  getDelegatedReportsByUser(
+    delegatedById: number,
+  ): Promise<DelegatedReportDTO[]>;
+
+  getCommentsByReportId(reportId: number): Promise<any[]>;
+
+  createComment(
+    reportId: number,
+    userId: number,
+    commentText: string
+  ): Promise<any>;
+
   updateReport(
     reportId: number,
     data: UpdateReportRequestDTO,
     userId: number,
     userRole?: string
   ): Promise<ReportDTO>;
-  getReportsByUser(citizenId: number): Promise<ReportDTO[]>;
-  getAssignedReportsInMap(corners: object[]): Promise<Partial<ReportDTO>[]>;
-  getReportById(reportId: number): Promise<ReportDTO>;
-  getReportsForStaff(
-    staffId: number,
-    statusFilter?: string
-  ): Promise<ReportDTO[]>;
-  getReportsByOffice(staffId: number): Promise<ReportDTO[]>;
-  delegateReport(
-    reportId: number,
-    userId: number,
-    companyId: number
-  ): Promise<ExternalMaintainerDTO>;
-  getDelegatedReportsByUser(
-    delegatedById: number
-  ): Promise<DelegatedReportDTO[]>;
-  getCommentsByReportId(reportId: number): Promise<any[]>;
-  createComment(
-    reportId: number,
-    userId: number,
-    commentText: string
-  ): Promise<any>;
 }

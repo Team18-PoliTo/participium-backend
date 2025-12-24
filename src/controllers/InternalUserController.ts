@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import {
+  CreateCommentRequestDTO,
   DelegateReportRequestDTO,
   RegisterInternalUserRequestDTO,
   UpdateInternalUserRequestDTO,
   UpdateReportRequestDTO,
-  CreateCommentRequestDTO,
 } from "../models/dto/ValidRequestDTOs";
 import { InternalUserDTO } from "../models/dto/InternalUserDTO";
 import { ReportDTO } from "../models/dto/ReportDTO";
@@ -12,6 +12,7 @@ import { validate } from "class-validator";
 import { plainToClass } from "class-transformer";
 import { IReportService } from "../services/IReportService";
 import { ReportStatus } from "../constants/ReportStatus";
+import { ReportViewContext } from "../constants/ReportViewContext";
 
 interface IInternalUserService {
   register(data: RegisterInternalUserRequestDTO): Promise<InternalUserDTO>;
@@ -164,8 +165,10 @@ class InternalUserController {
         status = status || ReportStatus.PENDING_APPROVAL;
       }
 
-      const reports: ReportDTO[] =
-        await this.reportService.getReportsByStatus(status);
+      const reports: ReportDTO[] = await this.reportService.getReportsByStatus(
+        status,
+        ReportViewContext.INTERNAL
+      );
       res.status(200).json(reports);
     } catch (error) {
       if (error instanceof Error) {
@@ -336,7 +339,8 @@ class InternalUserController {
 
       const reports = await this.reportService.getReportsForStaff(
         staffId,
-        statusFilter
+        statusFilter,
+        ReportViewContext.INTERNAL
       );
 
       res.status(200).json(reports);
@@ -374,7 +378,7 @@ class InternalUserController {
         res.status(403).json({ error: "PR Officers cannot filter by office" });
         return;
       }
-      const reports = await this.reportService.getReportsByOffice(staffId);
+      const reports = await this.reportService.getReportsByOffice(staffId, ReportViewContext.INTERNAL);
 
       res.status(200).json(reports);
     } catch (error) {

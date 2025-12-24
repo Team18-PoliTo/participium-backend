@@ -18,6 +18,9 @@ class ReportDAO {
   @PrimaryGeneratedColumn({ type: "integer" })
   id: number;
 
+  @Column({ type: "boolean", nullable: false, default: false })
+  isAnonymous: boolean;
+
   @ManyToOne(() => CitizenDAO, (citizen) => citizen.reports, {
     nullable: false,
     eager: true,

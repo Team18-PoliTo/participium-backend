@@ -29,6 +29,7 @@ import {
 import { emitCommentCreated } from "../../ws/internalSocket";
 import { IDelegatedReportRepository } from "../../repositories/IDelegatedReportRepository";
 import DelegatedReportRepository from "../../repositories/implementation/DelegatedReportRepository";
+import { ReportViewContext } from "../../constants/ReportViewContext";
 class ReportService implements IReportService {
   constructor(
     private readonly reportRepository: IReportRepository = new ReportRepository(),
@@ -129,6 +130,7 @@ class ReportService implements IReportService {
     // Create report in database (without photo paths initially)
     const newReport = await this.reportRepository.create({
       citizen: citizen,
+      isAnonymous: data.isAnonymous,
       title: data.title,
       description: data.description,
       category: category,
@@ -174,10 +176,10 @@ class ReportService implements IReportService {
     }
   }
 
-  async getReportsByStatus(status: string): Promise<ReportDTO[]> {
+  async getReportsByStatus(status: string, viewContext?: ReportViewContext): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByStatus(status);
     return await Promise.all(
-      reports.map((report) => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report, viewContext))
     );
   }
 
@@ -502,17 +504,18 @@ class ReportService implements IReportService {
     return ExternalMaintainerMapper.toDTO(report.assignedTo);
   }
 
-  async getReportsByUser(citizenId: number): Promise<ReportDTO[]> {
+  async getReportsByUser(citizenId: number, viewContext?: ReportViewContext): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByUser(citizenId);
 
     return await Promise.all(
-      reports.map((report) => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report, viewContext))
     );
   }
 
   async getReportsForStaff(
     staffId: number,
-    statusFilter?: string
+    statusFilter?: string,
+    viewContext?: ReportViewContext
   ): Promise<ReportDTO[]> {
     let reports = await this.reportRepository.findByAssignedStaff(staffId);
 
@@ -522,11 +525,11 @@ class ReportService implements IReportService {
     }
 
     return await Promise.all(
-      reports.map((report) => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report, viewContext))
     );
   }
 
-  async getReportsByOffice(staffId: number): Promise<ReportDTO[]> {
+  async getReportsByOffice(staffId: number, viewContext?: ReportViewContext): Promise<ReportDTO[]> {
     const staff =
       await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
     if (!staff) {
@@ -548,11 +551,11 @@ class ReportService implements IReportService {
 
     const reports = await this.reportRepository.findByCategoryIds(categoryIds);
 
-    return Promise.all(reports.map((r) => ReportMapper.toDTO(r)));
+    return Promise.all(reports.map((r) => ReportMapper.toDTO(r, viewContext)));
   }
 
   async getDelegatedReportsByUser(
-    delegatedById: number
+    delegatedById: number,
   ): Promise<DelegatedReportDTO[]> {
     const delegatedReports =
       await this.delegatedReportRepository.findReportsByDelegatedBy(
