@@ -1,5 +1,7 @@
 import { ReportMapper } from "../../mappers/ReportMapper";
 import { ReportDTO } from "../../models/dto/ReportDTO";
+import DelegatedReportDTO from "../../models/dto/DelegatedReportDTO";
+import DelegatedReportMapper from "../../mappers/DelegatedReportMapper";
 import {
   CreateReportRequestDTO,
   UpdateReportRequestDTO,
@@ -24,6 +26,9 @@ import {
   EXTERNAL_MAINTAINER_ROLE,
   EXTERNAL_MAINTAINER_ROLE_ID,
 } from "../../constants/StatusTransitions";
+import { emitCommentCreated } from "../../ws/internalSocket";
+import { IDelegatedReportRepository } from "../../repositories/IDelegatedReportRepository";
+import DelegatedReportRepository from "../../repositories/implementation/DelegatedReportRepository";
 class ReportService implements IReportService {
   constructor(
     private readonly reportRepository: IReportRepository = new ReportRepository(),
@@ -31,7 +36,8 @@ class ReportService implements IReportService {
     private readonly categoryRepository: CategoryRepository = new CategoryRepository(),
     private readonly categoryRoleRepository: CategoryRoleRepository = new CategoryRoleRepository(),
     private readonly internalUserRepository: InternalUserRepository = new InternalUserRepository(),
-    private readonly companyCategoryRepository = new CompanyCategoryRepository()
+    private readonly companyCategoryRepository = new CompanyCategoryRepository(),
+    private readonly delegatedReportRepository: IDelegatedReportRepository = new DelegatedReportRepository()
   ) {}
 
   /**
@@ -247,13 +253,25 @@ class ReportService implements IReportService {
       commentText.trim()
     );
 
-    return {
+    const newCommentPayload = {
       id: comment.id,
       comment: comment.comment,
       commentOwner_id: (comment as any).comment_owner?.id,
       creation_date: (comment as any).creation_date,
       report_id: reportId,
     };
+
+    try {
+      emitCommentCreated(reportId, newCommentPayload);
+    } catch (e) {
+      console.error(
+        "Failed to emit comment.created via WebSocket for report",
+        reportId,
+        e
+      );
+    }
+
+    return newCommentPayload;
   }
 
   async updateReport(
@@ -389,11 +407,14 @@ class ReportService implements IReportService {
       }
     }
 
-    // Resolve → decrement tasks
+    // Resolve → decrement tasks and remove from delegated_reports
     if (data.status === ReportStatus.RESOLVED && report.assignedTo) {
       await this.internalUserRepository.decrementActiveTasks(
         report.assignedTo.id
       );
+
+      // Remove from delegated_reports if this was a delegated report
+      await this.delegatedReportRepository.deleteByReportId(reportId);
     }
 
     // Save final changes
@@ -431,6 +452,19 @@ class ReportService implements IReportService {
       );
     }
 
+    // Get the delegating officer's role to ensure they can delegate
+    const delegatingOfficer =
+      await this.internalUserRepository.findById(userId);
+    if (!delegatingOfficer || !delegatingOfficer.role) {
+      throw new Error("Delegating officer not found");
+    }
+
+    // Check that the officer's role can delegate (not 0, 1, 10, 28)
+    const nonDelegatingRoles = [0, 1, 10, 28];
+    if (nonDelegatingRoles.includes(delegatingOfficer.role.id)) {
+      throw new Error("Your role does not have permission to delegate reports");
+    }
+
     // checks that the category sent actually handles that category
     // a bit overkill but better to be sure
     const companies =
@@ -461,6 +495,9 @@ class ReportService implements IReportService {
       undefined,
       selectedMaintainer
     );
+
+    // Insert into delegated_reports table
+    await this.delegatedReportRepository.create(reportId, userId);
 
     return ExternalMaintainerMapper.toDTO(report.assignedTo);
   }
@@ -512,6 +549,18 @@ class ReportService implements IReportService {
     const reports = await this.reportRepository.findByCategoryIds(categoryIds);
 
     return Promise.all(reports.map((r) => ReportMapper.toDTO(r)));
+  }
+
+  async getDelegatedReportsByUser(
+    delegatedById: number
+  ): Promise<DelegatedReportDTO[]> {
+    const delegatedReports =
+      await this.delegatedReportRepository.findReportsByDelegatedBy(
+        delegatedById
+      );
+    return Promise.all(
+      delegatedReports.map((dr) => DelegatedReportMapper.toDTO(dr))
+    );
   }
 }
 export const reportService = new ReportService();

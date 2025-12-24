@@ -293,10 +293,21 @@ export class InitialSeed1000000000001 implements MigrationInterface {
     // Reports are now seeded via seedReports.ts after MinIO is initialized
     // This allows proper image upload to MinIO storage
     console.log("Reports will be seeded after MinIO initialization...");
+
+    // Insert Delegated Reports
+    await queryRunner.query(
+      `INSERT INTO delegated_reports (reportId, delegatedById, delegatedAt)
+       SELECT 5, id, CURRENT_TIMESTAMP
+       FROM "internal-users"
+       WHERE roleId = 13
+       LIMIT 1`
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Delete data in reverse order
+    await queryRunner.query(`DELETE
+                                 FROM delegated_reports`);
     await queryRunner.query(`DELETE
                                  FROM company_categories`);
     await queryRunner.query(`DELETE

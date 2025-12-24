@@ -1,5 +1,6 @@
 import { ExternalMaintainerDTO } from "../models/dto/InternalUserDTO";
 import { ReportDTO } from "../models/dto/ReportDTO";
+import DelegatedReportDTO from "../models/dto/DelegatedReportDTO";
 import {
   CreateReportRequestDTO,
   UpdateReportRequestDTO,
@@ -27,6 +28,9 @@ export interface IReportService {
     userId: number,
     companyId: number
   ): Promise<ExternalMaintainerDTO>;
+  getDelegatedReportsByUser(
+    delegatedById: number
+  ): Promise<DelegatedReportDTO[]>;
   getCommentsByReportId(reportId: number): Promise<any[]>;
   createComment(
     reportId: number,
