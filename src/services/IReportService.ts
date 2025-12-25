@@ -8,10 +8,7 @@ import {
 import { ReportViewContext } from "../constants/ReportViewContext";
 
 export interface IReportService {
-  create(
-    data: CreateReportRequestDTO,
-    citizenId: number
-  ): Promise<ReportDTO>;
+  create(data: CreateReportRequestDTO, citizenId: number): Promise<ReportDTO>;
 
   getReportsByStatus(
     status: string,
@@ -23,13 +20,9 @@ export interface IReportService {
     viewContext?: ReportViewContext
   ): Promise<ReportDTO[]>;
 
-  getAssignedReportsInMap(
-    corners: object[]
-  ): Promise<Partial<ReportDTO>[]>;
+  getAssignedReportsInMap(corners: object[]): Promise<Partial<ReportDTO>[]>;
 
-  getReportById(
-    reportId: number
-  ): Promise<ReportDTO>;
+  getReportById(reportId: number): Promise<ReportDTO>;
 
   getReportsForStaff(
     staffId: number,
@@ -49,7 +42,7 @@ export interface IReportService {
   ): Promise<ExternalMaintainerDTO>;
 
   getDelegatedReportsByUser(
-    delegatedById: number,
+    delegatedById: number
   ): Promise<DelegatedReportDTO[]>;
 
   getCommentsByReportId(reportId: number): Promise<any[]>;

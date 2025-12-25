@@ -378,7 +378,10 @@ class InternalUserController {
         res.status(403).json({ error: "PR Officers cannot filter by office" });
         return;
       }
-      const reports = await this.reportService.getReportsByOffice(staffId, ReportViewContext.INTERNAL);
+      const reports = await this.reportService.getReportsByOffice(
+        staffId,
+        ReportViewContext.INTERNAL
+      );
 
       res.status(200).json(reports);
     } catch (error) {

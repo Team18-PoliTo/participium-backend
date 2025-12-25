@@ -9,7 +9,8 @@ import {
   IsObject,
   IsArray,
   ArrayMinSize,
-  ArrayMaxSize, IsBoolean,
+  ArrayMaxSize,
+  IsBoolean,
 } from "class-validator";
 
 export class RegisterCitizenRequestDTO {

@@ -176,7 +176,10 @@ class ReportService implements IReportService {
     }
   }
 
-  async getReportsByStatus(status: string, viewContext?: ReportViewContext): Promise<ReportDTO[]> {
+  async getReportsByStatus(
+    status: string,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByStatus(status);
     return await Promise.all(
       reports.map((report) => ReportMapper.toDTO(report, viewContext))
@@ -504,7 +507,10 @@ class ReportService implements IReportService {
     return ExternalMaintainerMapper.toDTO(report.assignedTo);
   }
 
-  async getReportsByUser(citizenId: number, viewContext?: ReportViewContext): Promise<ReportDTO[]> {
+  async getReportsByUser(
+    citizenId: number,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByUser(citizenId);
 
     return await Promise.all(
@@ -529,7 +535,10 @@ class ReportService implements IReportService {
     );
   }
 
-  async getReportsByOffice(staffId: number, viewContext?: ReportViewContext): Promise<ReportDTO[]> {
+  async getReportsByOffice(
+    staffId: number,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]> {
     const staff =
       await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
     if (!staff) {
@@ -555,7 +564,7 @@ class ReportService implements IReportService {
   }
 
   async getDelegatedReportsByUser(
-    delegatedById: number,
+    delegatedById: number
   ): Promise<DelegatedReportDTO[]> {
     const delegatedReports =
       await this.delegatedReportRepository.findReportsByDelegatedBy(
