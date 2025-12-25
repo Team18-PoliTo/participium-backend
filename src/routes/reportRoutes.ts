@@ -129,6 +129,59 @@ const reportController = new ReportController(reportService);
  *               example: "Ferrari"
  *
  *
+ *     MapReportDTO:
+ *       type: object
+ *       required:
+ *         - id
+ *         - citizenName
+ *         - citizenLastName
+ *         - title
+ *         - status
+ *         - description
+ *         - category
+ *         - location
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         citizenName:
+ *           type: string
+ *           example: Alex
+ *         citizenLastName:
+ *           type: string
+ *           example: Morgan
+ *         title:
+ *           type: string
+ *           example: Gas coming out
+ *         status:
+ *           type: string
+ *           example: Pending Approval
+ *         description:
+ *           type: string
+ *           example: There is some gas coming out from the street.
+ *         location:
+ *           type: object
+ *           properties:
+ *             latitude:
+ *               type: number
+ *               example: 45.0607297
+ *             longitude:
+ *               type: number
+ *               example: 7.6579427
+ *         category:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               example: 3
+ *             name:
+ *               type: string
+ *               example: Sewer System
+ *             description:
+ *               type: string
+ *               example: Sistema Fognario
+ *
+ *
  *     CreateReportRequestDTO:
  *       type: object
  *       required:
