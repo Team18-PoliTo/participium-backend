@@ -125,6 +125,7 @@ export async function seedReports(
 
       const report = reportRepo.create({
         citizen,
+        isAnonymous: seedReport.isAnonymous,
         title: seedReport.title,
         description: seedReport.description,
         category,

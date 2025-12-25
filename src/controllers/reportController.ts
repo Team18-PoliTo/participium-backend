@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import {
   CreateReportRequestDTO,
   GetAssignedReportsForMapRequestDTO,
@@ -8,6 +8,7 @@ import { plainToClass } from "class-transformer";
 
 import { IReportService } from "../services/IReportService";
 import { HttpException } from "@nestjs/common";
+import { ReportViewContext } from "../constants/ReportViewContext";
 
 class ReportController {
   constructor(private readonly reportService: IReportService) {}
@@ -77,7 +78,10 @@ class ReportController {
         return;
       }
 
-      const reports = await this.reportService.getReportsByUser(citizenId);
+      const reports = await this.reportService.getReportsByUser(
+        citizenId,
+        ReportViewContext.CITIZEN
+      );
       res.status(200).json(reports);
     } catch (error) {
       this.handleError(error, res, next);

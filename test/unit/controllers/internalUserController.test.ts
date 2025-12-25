@@ -259,7 +259,8 @@ describe("InternalUserController", () => {
       await buildController().getReports(req, res, next);
 
       expect(mockReportService.getReportsByStatus).toHaveBeenCalledWith(
-        ReportStatus.PENDING_APPROVAL
+        ReportStatus.PENDING_APPROVAL,
+        "INTERNAL"
       );
       expect(res.status).toHaveBeenCalledWith(200);
     });
@@ -287,7 +288,8 @@ describe("InternalUserController", () => {
       await buildController().getReports(req, res, next);
 
       expect(mockReportService.getReportsByStatus).toHaveBeenCalledWith(
-        "Assigned"
+        "Assigned",
+        "INTERNAL"
       );
     });
 
@@ -437,7 +439,8 @@ describe("InternalUserController", () => {
       await buildController().getReportsForTechnicalOfficer(req, res, next);
       expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(
         123,
-        undefined
+        undefined,
+        "INTERNAL"
       );
       expect(res.status).toHaveBeenCalledWith(200);
     });
@@ -451,7 +454,8 @@ describe("InternalUserController", () => {
       await buildController().getReportsForTechnicalOfficer(req, res, next);
       expect(mockReportService.getReportsForStaff).toHaveBeenCalledWith(
         123,
-        ReportStatus.DELEGATED
+        ReportStatus.DELEGATED,
+        "INTERNAL"
       );
       expect(res.status).toHaveBeenCalledWith(200);
     });
@@ -515,7 +519,10 @@ describe("InternalUserController", () => {
       const req = { auth: { sub: 1, role: "Admin" } } as any;
       const res = mockRes();
       await buildController().getReportsByOffice(req, res, next);
-      expect(mockReportService.getReportsByOffice).toHaveBeenCalledWith(1);
+      expect(mockReportService.getReportsByOffice).toHaveBeenCalledWith(
+        1,
+        "INTERNAL"
+      );
       expect(res.status).toHaveBeenCalledWith(200);
     });
 

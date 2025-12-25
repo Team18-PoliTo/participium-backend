@@ -13,7 +13,8 @@ export class CategoryDTO {
 
 export class ReportDTO {
   id: number;
-  citizenId: number;
+  isAnonymous: boolean;
+  citizenId?: number;
   citizenName: string;
   citizenLastName: string;
   title: string;

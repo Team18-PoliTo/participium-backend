@@ -169,7 +169,7 @@ describe("ReportController", () => {
 
     await controller.getMyReports(req, res, next);
 
-    expect(reportService.getReportsByUser).toHaveBeenCalledWith(42);
+    expect(reportService.getReportsByUser).toHaveBeenCalledWith(42, "CITIZEN");
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(reports);
   });
