@@ -266,28 +266,29 @@ export class InitialSeed1000000000001 implements MigrationInterface {
 
     // Insert Example Citizens
     // NEW citizen with explicit ID = 1 (needed for all mock reports)
+    // Seed users are created as ACTIVE with isEmailVerified = true (no verification needed)
     await queryRunner.query(`
-            INSERT INTO citizens (id, username, email, firstName, lastName, password, status)
+            INSERT INTO citizens (id, username, email, firstName, lastName, password, status, isEmailVerified)
             VALUES (1, 'alex.morgan', 'alex.morgan@example.com', 'Alex', 'Morgan', '${hashedPassword}',
-                    'ACTIVE') ON CONFLICT (id) DO NOTHING;
+                    'ACTIVE', 1) ON CONFLICT (id) DO NOTHING;
         `);
 
     await queryRunner.query(`
-            INSERT INTO citizens (id, username, email, firstName, lastName, password, status)
+            INSERT INTO citizens (id, username, email, firstName, lastName, password, status, isEmailVerified)
             VALUES (2, 'yusaerguven', 'yusaerguven@gmail.com', 'Yusa', 'Erguven', '${hashedPassword}',
-                    'ACTIVE') ON CONFLICT (id) DO NOTHING;
+                    'ACTIVE', 1) ON CONFLICT (id) DO NOTHING;
         `);
 
     await queryRunner.query(`
-            INSERT INTO citizens (id, username, email, firstName, lastName, password, status)
+            INSERT INTO citizens (id, username, email, firstName, lastName, password, status, isEmailVerified)
             VALUES (3, 'aram.petrosyan', 'aram.petrosyan@example.com', 'Aram', 'Petrosyan', '${hashedPassword}',
-                    'ACTIVE') ON CONFLICT (id) DO NOTHING;
+                    'ACTIVE', 1) ON CONFLICT (id) DO NOTHING;
         `);
 
     await queryRunner.query(`
-            INSERT INTO citizens (id, username, email, firstName, lastName, password, status)
+            INSERT INTO citizens (id, username, email, firstName, lastName, password, status, isEmailVerified)
             VALUES (4, 'giulia.rossi', 'giulia.rossi@example.com', 'Giulia', 'Rossi', '${hashedPassword}',
-                    'ACTIVE') ON CONFLICT (id) DO NOTHING;
+                    'ACTIVE', 1) ON CONFLICT (id) DO NOTHING;
         `);
 
     // Reports are now seeded via seedReports.ts after MinIO is initialized

@@ -4,7 +4,8 @@ export class CitizenDTO {
   username: string;
   firstName: string;
   lastName: string;
-  status: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+  status: "PENDING" | "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+  isEmailVerified: boolean;
   createdAt: Date;
   accountPhoto?: string; // Presigned URL if photo exists (matches PATCH /me field name)
   telegramUsername?: string;
