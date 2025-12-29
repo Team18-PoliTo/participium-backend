@@ -41,11 +41,10 @@ export const requireAuth = (
       return;
     }
 
-    // Store the authenticated user info in the request object
     req.auth = {
       sub: Number(decoded.sub),
       kind: decoded.kind,
-      role: decoded.role,
+      roles: decoded.roles,
       email: decoded.email,
     };
 
@@ -70,33 +69,55 @@ export const requireRole = (allowedRoles: string[]) => {
     next: NextFunction
   ): Promise<void> => {
     try {
+
       if (!req.auth) {
         res.status(401).json({ message: "Unauthorized" });
         return;
       }
 
-      let role = req.auth.role;
+      if (Array.isArray(req.auth.roles)) {
 
-      // If role is missing but it's an internal user, fetch from DB and cache it
-      if (!role && req.auth.kind === "internal") {
+        const hasRole = req.auth.roles.some((r: any) =>
+          typeof r === "string" && allowed.has(r.toUpperCase())
+        );
+
+        if (hasRole) {
+          next();
+          return;
+        }
+      }
+
+      if (req.auth.kind === "internal") {
+
         const internalUser = await internalUserRepo.findById(req.auth.sub);
-        role = (internalUser as any)?.role?.name as string | undefined;
-        if (role) req.auth.role = role;
+
+        const roles = internalUser?.roles ?? [];
+
+        const hasRole = roles.some((ur) =>
+          ur.role &&
+          ur.role.role &&
+          allowed.has(ur.role.role.toUpperCase())
+        );
+
+
+        if (hasRole) {
+          req.auth.roles = roles
+            .filter((ur) => ur.role)
+            .map((ur) => ur.role.role);
+          next();
+          return;
+        }
       }
 
-      if (!role || !allowed.has(String(role).toUpperCase())) {
-        res
-          .status(403)
-          .json({ message: "Forbidden: insufficient permissions" });
-        return;
-      }
-
-      next();
-    } catch {
+      res
+        .status(403)
+        .json({ message: "Forbidden: insufficient permissions" });
+    } catch (e) {
       res.status(500).json({ message: "Cannot verify role" });
     }
   };
 };
+
 
 export const requireAdmin = requireRole(["ADMIN"]);
 

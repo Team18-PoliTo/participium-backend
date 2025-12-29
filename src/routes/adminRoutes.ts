@@ -121,6 +121,10 @@ router.post("/", internalUserController.create.bind(internalUserController));
  * /admin/internal-users/{id}:
  *   put:
  *     summary: Update an internal user
+ *     description: |
+ *       Updates internal user data.
+ *       Roles are provided as a full array and will overwrite existing ones.
+ *       Cancellation of a role is achieved by omitting it from the array.
  *     tags: [Admin]
  *     security:
  *       - internalPassword: []
@@ -138,18 +142,26 @@ router.post("/", internalUserController.create.bind(internalUserController));
  *           schema:
  *             type: object
  *             properties:
- *               newEmail:
+ *               email:
  *                 type: string
- *               newFirstName:
+ *               firstName:
  *                 type: string
- *               newLastName:
+ *               lastName:
  *                 type: string
- *               newRoleId:
+ *               roleIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: |
+ *                   Full list of role IDs assigned to the user.
+ *                   This array overwrites existing roles.
+ *               companyId:
  *                 type: integer
- *                 description: Optional new role identifier
- *               newCompanyId:
- *                 type: integer
- *                 description: Optional new company identifier, only for roles with id = 28 (external maintainer)
+ *                 nullable: true
+ *                 description: |
+ *                   Company ID.
+ *                   Required if roleIds contains External Maintainer (id = 28).
+ *                   Must be omitted or null otherwise.
  *     responses:
  *       200:
  *         description: Internal user updated
@@ -158,11 +170,14 @@ router.post("/", internalUserController.create.bind(internalUserController));
  *             schema:
  *               $ref: '#/components/schemas/InternalUserDTO'
  *       400:
- *         description: Invalid ID or validation error
+ *         description: Validation error
+ *       404:
+ *         description: Internal user not found
  *       409:
  *         description: Email already in use
  */
 router.put("/:id", internalUserController.update.bind(internalUserController));
+
 
 /**
  * @swagger

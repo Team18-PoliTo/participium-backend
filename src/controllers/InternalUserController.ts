@@ -60,6 +60,41 @@ class InternalUserController {
     }
   }
 
+  // async update(req: Request, res: Response, next: NextFunction): Promise<void> {
+  //   try {
+  //     const id = Number.parseInt(req.params.id, 10);
+  //
+  //     if (Number.isNaN(id)) {
+  //       res.status(400).json({ error: "Invalid ID format" });
+  //       return;
+  //     }
+  //
+  //     const updateDTO = plainToClass(UpdateInternalUserRequestDTO, req.body);
+  //     const errors = await validate(updateDTO);
+  //     if (errors.length > 0) {
+  //       const errorMessages = errors
+  //         .map((err) => Object.values(err.constraints || {}).join(", "))
+  //         .join("; ");
+  //       res.status(400).json({ error: errorMessages });
+  //       return;
+  //     }
+  //
+  //     const updatedUser = await this.internalUserService.update(id, updateDTO);
+  //     res.status(200).json(updatedUser);
+  //   } catch (error) {
+  //     if (
+  //       error instanceof Error &&
+  //       (error.message === "InternalUser with this email already exists" ||
+  //         error.message === "Role not found" ||
+  //         error.message === "Role already assigned")
+  //     ) {
+  //       res.status(409).json({ error: error.message });
+  //       return;
+  //     }
+  //     next(error);
+  //   }
+  // }
+
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = Number.parseInt(req.params.id, 10);
@@ -71,6 +106,7 @@ class InternalUserController {
 
       const updateDTO = plainToClass(UpdateInternalUserRequestDTO, req.body);
       const errors = await validate(updateDTO);
+
       if (errors.length > 0) {
         const errorMessages = errors
           .map((err) => Object.values(err.constraints || {}).join(", "))
@@ -82,18 +118,14 @@ class InternalUserController {
       const updatedUser = await this.internalUserService.update(id, updateDTO);
       res.status(200).json(updatedUser);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message === "InternalUser with this email already exists" ||
-          error.message === "Role not found" ||
-          error.message === "Role already assigned")
-      ) {
-        res.status(409).json({ error: error.message });
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
         return;
       }
       next(error);
     }
   }
+
 
   async fetch(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -492,29 +524,28 @@ class InternalUserController {
         return;
       }
 
-      // Check if user's role can delegate (exclude roles 0, 1, 10, 28)
-      const nonDelegatingRoles = [0, 1, 10, 28];
-      const userRole = (req as any).auth?.role;
-
-      let roleId: number | null = null;
-      if (typeof userRole === "number") {
-        roleId = userRole;
-      } else if (userRole && typeof userRole === "string") {
-        if (!this.reportService) {
-          res.status(500).json({ error: "Report service not available" });
-          return;
-        }
-
-        // Fetch the user to get their role ID
-        const user = await this.internalUserService.fetchUsers();
-        const currentUser = user.find((u) => u.id === userId);
-
-        if (currentUser && typeof currentUser.role === "number") {
-          roleId = currentUser.role;
-        }
+      if (!this.internalUserService) {
+        res.status(500).json({ error: "Internal user service not available" });
+        return;
       }
 
-      if (roleId !== null && nonDelegatingRoles.includes(roleId)) {
+      const nonDelegatingRoles = [0, 1, 10, 28];
+
+      const users = await this.internalUserService.fetchUsers();
+      const currentUser = users.find((u) => u.id === userId);
+
+      if (!currentUser || !currentUser.roles || currentUser.roles.length === 0) {
+        res.status(403).json({
+          error: "Forbidden: User roles not found",
+        });
+        return;
+      }
+
+      const hasForbiddenRole = currentUser.roles.some((role) =>
+        nonDelegatingRoles.includes(role.id)
+      );
+
+      if (hasForbiddenRole) {
         res.status(403).json({
           error:
             "Forbidden: Your role does not have permission to delegate reports",
@@ -529,6 +560,7 @@ class InternalUserController {
 
       const reports =
         await this.reportService.getDelegatedReportsByUser(userId);
+
       res.status(200).json(reports);
     } catch (error) {
       next(error);

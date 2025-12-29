@@ -4,10 +4,11 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  OneToMany,
 } from "typeorm";
-import RoleDAO from "./RoleDAO";
 import CompanyDAO from "./CompanyDAO";
 import CommentDAO from "./CommentDAO";
+import InternalUserRoleDAO from "./InternalUserRoleDAO";
 
 export type InternalUserStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
@@ -28,7 +29,7 @@ class InternalUserDAO {
   @Column({ nullable: false })
   password: string;
 
-  @Column({ type: "varchar", default: () => "'ACTIVE'", nullable: true })
+  @Column({ type: "varchar", default: () => "'ACTIVE'", nullable:  true })
   status: InternalUserStatus;
 
   @Column({ default: () => 0, nullable: false })
@@ -37,8 +38,18 @@ class InternalUserDAO {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => RoleDAO, (role) => role.users, { nullable: false })
-  role: RoleDAO;
+  /**
+   * One internal user can have multiple roles
+   */
+  @OneToMany(
+    () => InternalUserRoleDAO,
+    (ur) => ur.internalUser,
+    {
+      cascade: ["insert", "update", "remove"],
+      eager: true,
+    }
+  )
+  roles: InternalUserRoleDAO[];
 
   @ManyToOne(() => CompanyDAO, (company) => company.internalUsers, {
     nullable: true,

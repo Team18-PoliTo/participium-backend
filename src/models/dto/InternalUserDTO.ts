@@ -1,5 +1,11 @@
 import { CompanyDTO } from "./CompanyDTO";
 
+export class RoleDTO {
+  id: number;
+  name: string;
+  officeId: number | null;
+}
+
 export class InternalUserDTO {
   id: number;
   email: string;
@@ -7,7 +13,7 @@ export class InternalUserDTO {
   lastName: string;
   activeTasks: number;
   createdAt: Date;
-  role: number | string;
+  roles: RoleDTO[];
   status: "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 }
 

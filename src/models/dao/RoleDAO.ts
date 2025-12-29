@@ -1,12 +1,12 @@
 import {
   Entity,
   Column,
-  OneToMany,
-  ManyToOne,
   PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
 } from "typeorm";
-import InternalUserDAO from "./InternalUserDAO";
 import OfficeDAO from "./OfficeDAO";
+import InternalUserRoleDAO from "./InternalUserRoleDAO";
 import CategoryRoleDAO from "./CategoryRoleDAO";
 
 @Entity("roles")
@@ -15,20 +15,27 @@ class RoleDAO {
   id: number;
 
   @Column({ nullable: false, unique: true })
-  role: string; // e.g. "Street Maintenance Operator" (Manutenzione Stradale Operator)
+  role: string;
 
   @ManyToOne(() => OfficeDAO, (office) => office.roles, {
     nullable: true,
   })
   office: OfficeDAO | null;
 
-  @OneToMany(() => InternalUserDAO, (user) => user.role)
-  users: InternalUserDAO[];
+  @OneToMany(
+    () => InternalUserRoleDAO,
+    (ur) => ur.role
+  )
+  userRoles: InternalUserRoleDAO[];
 
-  @OneToMany(() => CategoryRoleDAO, (categoryRole) => categoryRole.role, {
-    cascade: true,
-    eager: false,
-  })
+  @OneToMany(
+    () => CategoryRoleDAO,
+    (categoryRole) => categoryRole.role,
+    {
+      cascade: true,
+      eager: false,
+    }
+  )
   categoryRoles: CategoryRoleDAO[];
 }
 

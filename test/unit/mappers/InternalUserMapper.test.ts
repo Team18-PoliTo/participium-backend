@@ -118,7 +118,7 @@ describe("InternalUserMapper", () => {
       expect(dto.email).toBe("maintainer@example.com");
       expect(dto.firstName).toBe("Maintainer");
       expect(dto.lastName).toBe("User");
-      expect(dto.role).toBe("External Maintainer");
+      expect(dto.roles).toBe("External Maintainer");
       expect(dto.company).toEqual({
         id: 1,
         name: "FixIt Inc",
