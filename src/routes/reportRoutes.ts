@@ -19,9 +19,7 @@ const reportController = new ReportController(reportService);
  *       type: object
  *       required:
  *         - id
- *         - citizenId
- *         - citizenName
- *         - citizenLastName
+ *         - isAnonymous
  *         - title
  *         - description
  *         - category
@@ -35,22 +33,31 @@ const reportController = new ReportController(reportService);
  *           type: integer
  *           example: 1
  *
+ *         isAnonymous:
+ *           type: boolean
+ *           example: true
+ *           description: Indicates whether the report was created anonymously
+ *
  *         citizenId:
  *           type: integer
+ *           nullable: true
  *           example: 1
+ *
  *         citizenName:
  *           type: string
- *           example: Alex
+ *           example: "Anonymous"
+ *
  *         citizenLastName:
  *           type: string
- *           example: Morgan
+ *           example: "Anonymous"
  *
  *         title:
  *           type: string
- *           example: Gas coming out
+ *           example: "Gas coming out"
+ *
  *         description:
  *           type: string
- *           example: There is some gas coming out from the street.
+ *           example: "There is some gas coming out from the street."
  *
  *         category:
  *           type: object
@@ -60,17 +67,17 @@ const reportController = new ReportController(reportService);
  *               example: 3
  *             name:
  *               type: string
- *               example: Sewer System
+ *               example: "Sewer System"
  *             description:
  *               type: string
- *               example: Sistema Fognario
+ *               example: "Sistema Fognario"
  *
  *         photos:
  *           type: array
  *           items:
  *             type: string
  *           example:
- *             - "http://localhost:9000/reports/reports/1/photo1_xxx.jpg?...signed"
+ *             - "http://localhost:9000/reports/photo1_xxx.jpg"
  *
  *         createdAt:
  *           type: string
@@ -79,16 +86,20 @@ const reportController = new ReportController(reportService);
  *
  *         location:
  *           type: object
+ *           required:
+ *             - latitude
+ *             - longitude
  *           properties:
  *             latitude:
  *               type: number
- *               example: 45.060729719938735
+ *               example: 45.0607297
  *             longitude:
  *               type: number
- *               example: 7.657942771911622
+ *               example: 7.6579427
  *
  *         address:
  *           type: string
+ *           nullable: true
  *           example: "Via Saverio Mercadante, 10154 Torino"
  *
  *         status:
@@ -180,15 +191,23 @@ const reportController = new ReportController(reportService);
  *         - photoIds
  *         - location
  *       properties:
+ *         isAnonymous:
+ *           type: boolean
+ *           example: false
+ *           description: If true, the report will be created anonymously
+ *
  *         title:
  *           type: string
  *           example: "Broken streetlight"
+ *
  *         description:
  *           type: string
  *           example: "The streetlight in front of my house has been out for 3 days"
+ *
  *         categoryId:
  *           type: integer
  *           example: 1
+ *
  *         photoIds:
  *           type: array
  *           minItems: 1
@@ -196,7 +215,9 @@ const reportController = new ReportController(reportService);
  *           items:
  *             type: string
  *             format: uuid
- *           example: ["550e8400-e29b-41d4-a716-446655440000"]
+ *           example:
+ *             - "550e8400-e29b-41d4-a716-446655440000"
+ *
  *         location:
  *           type: object
  *           required:
@@ -226,10 +247,10 @@ const reportController = new ReportController(reportService);
  *               longitude:
  *                 type: number
  *           example:
- *             [
- *               { "latitude": 45.4650, "longitude": 9.1890 },
- *               { "latitude": 45.4630, "longitude": 9.1910 }
- *             ]
+ *             - latitude: 45.4650
+ *               longitude: 9.1890
+ *             - latitude: 45.4630
+ *               longitude: 9.1910
  */
 
 /**

@@ -10,6 +10,7 @@ import {
   IsArray,
   ArrayMinSize,
   ArrayMaxSize,
+  IsBoolean,
 } from "class-validator";
 
 export class RegisterCitizenRequestDTO {
@@ -99,6 +100,10 @@ export class CreateReportRequestDTO {
     latitude: number;
     longitude: number;
   };
+
+  @IsOptional()
+  @IsBoolean({ message: "isAnonymous must be a boolean" })
+  isAnonymous?: boolean;
 }
 
 export class UpdateReportRequestDTO {
