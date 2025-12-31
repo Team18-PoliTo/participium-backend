@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 import ReportDAO from "./ReportDAO";
 
-export type CitizenStatus = "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
+export type CitizenStatus = "PENDING" | "ACTIVE" | "SUSPENDED" | "DEACTIVATED";
 
 @Entity("citizens")
 class CitizenDAO {
@@ -29,8 +29,23 @@ class CitizenDAO {
   @Column({ nullable: false, select: false })
   password: string;
 
-  @Column({ type: "varchar", default: () => "'ACTIVE'", nullable: true })
+  @Column({ type: "varchar", default: () => "'PENDING'", nullable: true })
   status: CitizenStatus;
+
+  @Column({ type: "boolean", default: false })
+  isEmailVerified: boolean;
+
+  @Column({ type: "varchar", nullable: true, select: false })
+  verificationCode?: string;
+
+  @Column({ type: "datetime", nullable: true, select: false })
+  verificationCodeExpiresAt?: Date;
+
+  @Column({ type: "int", default: 0 })
+  verificationAttempts: number;
+
+  @Column({ type: "datetime", nullable: true })
+  lastVerificationAttemptAt?: Date;
 
   @Column({ type: "int", default: 0 })
   failedLoginAttempts: number;

@@ -3,6 +3,7 @@ import CitizenController from "../controllers/citizenController";
 import CitizenService from "../services/implementation/citizenService";
 import CitizenRepository from "../repositories/implementation/CitizenRepository";
 import { requireAuth, requireCitizen } from "../middleware/authMiddleware";
+import { registrationLimiter } from "../middleware/rateLimiters";
 
 const router = Router();
 
@@ -101,7 +102,11 @@ const citizenController = new CitizenController(citizenService);
  *         description: Citizen with this email or username already exists
  */
 // POST /register - Register a new citizen
-router.post("/register", citizenController.register.bind(citizenController));
+router.post(
+  "/register",
+  registrationLimiter, // IP-based rate limiting
+  citizenController.register.bind(citizenController)
+);
 
 /**
  * @swagger

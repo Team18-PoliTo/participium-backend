@@ -23,12 +23,16 @@ export class CitizenRepository implements ICitizenRepository {
 
   async findByEmail(
     email: string,
-    opts?: { withPassword?: boolean }
+    opts?: { withPassword?: boolean; withVerificationCode?: boolean }
   ): Promise<CitizenDAO | null> {
     const qb = this.repo
       .createQueryBuilder("citizen")
       .where("LOWER(citizen.email) = LOWER(:email)", { email });
     if (opts?.withPassword) qb.addSelect("citizen.password");
+    if (opts?.withVerificationCode) {
+      qb.addSelect("citizen.verificationCode");
+      qb.addSelect("citizen.verificationCodeExpiresAt");
+    }
     return await qb.getOne();
   }
 
