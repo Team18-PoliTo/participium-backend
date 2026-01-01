@@ -14,7 +14,15 @@ describe("InternalUserMapper", () => {
         lastName: "Doe",
         createdAt: new Date("2024-01-01"),
         activeTasks: 5,
-        role: { id: 1, role: "Admin" },
+        roles: [
+          {
+            id: 1,
+            role: {
+              id: 1,
+              role: "Admin",
+            },
+          },
+        ],
         status: "ACTIVE",
       } as InternalUserDAO;
 
@@ -27,7 +35,13 @@ describe("InternalUserMapper", () => {
         lastName: "Doe",
         createdAt: new Date("2024-01-01"),
         activeTasks: 5,
-        role: "Admin",
+        roles: [
+          {
+            id: 1,
+            name: "Admin",
+            officeId: null,
+          },
+        ],
         status: "ACTIVE",
       });
     });
@@ -35,12 +49,20 @@ describe("InternalUserMapper", () => {
     it("should map user with role object containing only id", () => {
       const userDAO = {
         id: 2,
-        email: "test2@example.com",
-        firstName: "Jane",
-        lastName: "Smith",
-        createdAt: new Date("2024-01-02"),
-        activeTasks: 0,
-        role: { id: 2 },
+        email: "test@example.com",
+        firstName: "John",
+        lastName: "Doe",
+        createdAt: new Date("2024-01-01"),
+        activeTasks: 5,
+        roles: [
+          {
+            id: 2,
+            role: {
+              id: 1,
+              role: "Admin",
+            },
+          },
+        ],
         status: "ACTIVE",
       } as InternalUserDAO;
 
@@ -48,17 +70,23 @@ describe("InternalUserMapper", () => {
 
       expect(dto).toEqual({
         id: 2,
-        email: "test2@example.com",
-        firstName: "Jane",
-        lastName: "Smith",
-        createdAt: new Date("2024-01-02"),
-        activeTasks: 0,
-        role: 2,
+        email: "test@example.com",
+        firstName: "John",
+        lastName: "Doe",
+        createdAt: new Date("2024-01-01"),
+        activeTasks: 5,
+        roles: [
+          {
+            id: 1,
+            name: "Admin",
+            officeId: null,
+          },
+        ],
         status: "ACTIVE",
       });
     });
 
-    it("should default role to 0 when role is missing", () => {
+    it("should default roles to empty array when roles are missing", () => {
       const userDAO = {
         id: 3,
         email: "test3@example.com",
@@ -66,14 +94,15 @@ describe("InternalUserMapper", () => {
         lastName: "Johnson",
         createdAt: new Date("2024-01-03"),
         activeTasks: 3,
-        role: null,
+        roles: null,
         status: "ACTIVE",
       } as any;
 
       const dto = InternalUserMapper.toDTO(userDAO);
 
-      expect(dto.role).toBe(0);
+      expect(dto.roles).toEqual([]);
     });
+
 
     it("should default status to ACTIVE when status is missing", () => {
       const userDAO = {
@@ -102,7 +131,15 @@ describe("InternalUserMapper", () => {
         lastName: "User",
         createdAt: new Date("2024-01-05"),
         activeTasks: 2,
-        role: { id: 28, role: "External Maintainer" },
+        roles: [
+          {
+            id: 28,
+            role: {
+              id: 28,
+              role: "External Maintainer",
+            },
+          },
+        ],
         status: "ACTIVE",
         company: {
           id: 1,
@@ -114,11 +151,14 @@ describe("InternalUserMapper", () => {
 
       const dto = ExternalMaintainerMapper.toDTO(userDAO);
 
-      expect(dto.id).toBe(5);
-      expect(dto.email).toBe("maintainer@example.com");
-      expect(dto.firstName).toBe("Maintainer");
-      expect(dto.lastName).toBe("User");
-      expect(dto.roles).toBe("External Maintainer");
+      expect(dto.roles).toEqual([
+        {
+          id: 28,
+          name: "External Maintainer",
+          officeId: null,
+        },
+      ]);
+
       expect(dto.company).toEqual({
         id: 1,
         name: "FixIt Inc",

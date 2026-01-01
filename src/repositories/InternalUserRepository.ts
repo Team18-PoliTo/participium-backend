@@ -106,7 +106,12 @@ export class InternalUserRepository implements IInternalUserRepository {
   async findByIdWithRoleAndOffice(id: number): Promise<InternalUserDAO | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ["role", "role.office", "company"],
+      relations: [
+        "roles",
+        "roles.role",
+        "roles.role.office",
+        "company",
+      ],
     });
   }
 

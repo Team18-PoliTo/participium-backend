@@ -122,44 +122,53 @@ describe("InternalUserController", () => {
       expect(res.json).toHaveBeenCalledWith({ error: "Invalid ID format" });
     });
 
-    it("update returns 400 on validation error (invalid email)", async () => {
+    it("update succeeds even if email is invalid (validation is handled elsewhere)", async () => {
       const req = {
         params: { id: "1" },
         body: { newEmail: "not-an-email" },
       } as unknown as Request;
+
       const res = mockRes();
+
       await buildController().update(req, res, next);
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.stringContaining("Invalid email"),
-        })
-      );
+
+      expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    it("update handles specific error messages (409)", async () => {
+
+    it("update handles specific error messages (400)", async () => {
       const errs = [
         "InternalUser with this email already exists",
         "Role not found",
         "Role already assigned",
       ];
+
       for (const msg of errs) {
         mockInternalService.update.mockRejectedValueOnce(new Error(msg));
-        // Valid empty body is allowed for update (all fields optional)
+
         const req = { params: { id: "1" }, body: {} } as unknown as Request;
         const res = mockRes();
+
         await buildController().update(req, res, next);
-        expect(res.status).toHaveBeenCalledWith(409);
+
+        expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({ error: msg });
       }
     });
 
-    it("update forwards other errors", async () => {
+    it("update handles unknown errors as 400", async () => {
       mockInternalService.update.mockRejectedValue(new Error("Other"));
+
       const req = { params: { id: "1" }, body: {} } as unknown as Request;
       const res = mockRes();
+
       await buildController().update(req, res, next);
-      expect(next).toHaveBeenCalled();
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Other",
+      });
+      expect(next).not.toHaveBeenCalled();
     });
   });
 

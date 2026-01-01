@@ -59,7 +59,7 @@ describe("External Maintainer Workflow E2E", () => {
       firstName: "Bob",
       lastName: "Builder",
       password: await bcrypt.hash("test-password", 10),
-      role: maintainerRole,
+      roles: [{ role: maintainerRole }],
       company,
       status: "ACTIVE",
     });
@@ -69,7 +69,7 @@ describe("External Maintainer Workflow E2E", () => {
       firstName: "Tech",
       lastName: "Guy",
       password: await bcrypt.hash("test-password", 10),
-      role: techRole,
+      roles: [{ role: techRole }],
       status: "ACTIVE",
     });
 
@@ -78,17 +78,7 @@ describe("External Maintainer Workflow E2E", () => {
         sub: maintainer.id,
         kind: "internal",
         email: maintainer.email,
-        role: maintainerRole.role,
-      },
-      process.env.JWT_SECRET || "dev-secret"
-    );
-
-    jwt.sign(
-      {
-        sub: otherUser.id,
-        kind: "internal",
-        email: otherUser.email,
-        role: techRole.role,
+        roles: [maintainerRole.role],
       },
       process.env.JWT_SECRET || "dev-secret"
     );
@@ -97,7 +87,6 @@ describe("External Maintainer Workflow E2E", () => {
       name: "Potholes",
       description: "Road issues",
     });
-    //categoryId = category.id;
 
     const citizen = await citizenRepo.save({
       email: "c@test.com",
@@ -130,18 +119,20 @@ describe("External Maintainer Workflow E2E", () => {
     otherReportId = otherReport.id;
   });
 
-  afterAll(async () => {
-    if (AppDataSource.isInitialized) await AppDataSource.destroy();
-  });
-
   it("should login as external maintainer", async () => {
     const res = await request(app)
       .get("/api/auth/me")
       .set("Authorization", `Bearer ${maintainerToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.profile.role).toBe("External Maintainer");
+
+    const roleNames = res.body.profile.roles.map(
+      (r: any) => r.name
+    );
+
+    expect(roleNames).toContain("External Maintainer");
   });
+
 
   it("GET /api/internal/reports/assigned returns delegated reports", async () => {
     const res = await request(app)
@@ -197,7 +188,7 @@ describe("External Maintainer Workflow E2E", () => {
 
     expect([400, 403]).toContain(res.status);
     expect(res.body.error).toMatch(
-      /External maintainers .* transition reports/i
+      /only the assigned user can transition/i
     );
   });
 });

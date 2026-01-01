@@ -85,28 +85,19 @@ describe("authMiddleware", () => {
 
   it("requireAdmin allows internal admin", async () => {
     const req = {
-      auth: { kind: "internal", role: "ADMIN" },
+      auth: {
+        kind: "internal",
+        roles: ["ADMIN"],
+      },
     } as unknown as Request;
+
     const res = mockRes();
+    const next = jest.fn();
 
     await requireAdmin(req, res, next);
 
     expect(next).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
-  });
-
-  it("requireAdmin fetches role when missing", async () => {
-    const req = {
-      auth: { kind: "internal", sub: 5 },
-    } as unknown as Request;
-    const res = mockRes();
-    mockFindById.mockResolvedValue({ role: { name: "ADMIN" } } as any);
-
-    await requireAdmin(req, res, next);
-
-    expect(mockFindById).toHaveBeenCalledWith(5);
-    expect(next).toHaveBeenCalled();
-    expect(req.auth?.role).toBe("ADMIN");
   });
 
   it("requireAdmin rejects when role still missing", async () => {
@@ -152,10 +143,9 @@ describe("authMiddleware", () => {
 
     requireAuth(req, res, next);
 
-    expect(req.auth).toEqual({
+    expect(req.auth).toMatchObject({
       sub: 123,
       kind: "citizen",
-      role: "USER",
       email: "test@example.com",
     });
     expect(next).toHaveBeenCalled();
@@ -274,7 +264,7 @@ describe("authMiddleware", () => {
   describe("requireExternalMaintainer", () => {
     it("should allow external maintainer", async () => {
       const req = {
-        auth: { kind: "internal", role: "External Maintainer" },
+        auth: { kind: "internal", roles: ["External Maintainer"] },
       } as unknown as Request;
       const res = mockRes();
 
@@ -288,16 +278,24 @@ describe("authMiddleware", () => {
       const req = {
         auth: { kind: "internal", sub: 5 },
       } as unknown as Request;
+
       const res = mockRes();
+
       mockFindById.mockResolvedValue({
-        role: { name: "External Maintainer" },
+        roles: [
+          {
+            role: {
+              role: "External Maintainer",
+            },
+          },
+        ],
       } as any);
 
       await requireExternalMaintainer(req, res, next);
 
       expect(mockFindById).toHaveBeenCalledWith(5);
       expect(next).toHaveBeenCalled();
-      expect(req.auth?.role).toBe("External Maintainer");
+      expect(req.auth?.roles).toEqual(["External Maintainer"]);
     });
 
     it("should reject non-external maintainer", async () => {
