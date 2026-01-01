@@ -39,6 +39,7 @@ async function seedUsers(roleRepo: any) {
     firstName: "Test",
     lastName: "Citizen",
     status: "ACTIVE",
+    isEmailVerified: true,
   });
 
   const testRole = await roleRepo.findOne({ where: { id: 99 } });

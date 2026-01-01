@@ -22,6 +22,19 @@ jest.mock("../../../src/services/MinIoService", () => ({
   },
 }));
 
+jest.mock("../../../src/services/EmailService", () => {
+  return jest.fn().mockImplementation(() => ({
+    generateVerificationCode: jest.fn(() => "664749"),
+    getVerificationCodeExpiry: jest.fn(() => {
+      const expiry = new Date();
+      expiry.setMinutes(expiry.getMinutes() + 30);
+      return expiry;
+    }),
+    sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
+    validateEmailQuality: jest.fn(() => ({ valid: true })),
+  }));
+});
+
 import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import MinIoService from "../../../src/services/MinIoService";
@@ -35,7 +48,8 @@ jest.mock("../../../src/mappers/CitizenMapper", () => ({
       username: u.username,
       firstName: u.firstName,
       lastName: u.lastName,
-      status: u.status ?? "ACTIVE",
+      status: u.status ?? "PENDING",
+      isEmailVerified: u.isEmailVerified ?? false,
       createdAt: u.createdAt,
       // Convert null to undefined to match real mapper behavior
       telegramUsername: u.telegramUsername ?? undefined,
@@ -129,7 +143,13 @@ describe("CitizenService — complete tests", () => {
         ...citizenBase,
         email: "fresh@polito.it",
         username: "freshuser",
+        firstName: "Fresh",
+        lastName: "User",
         id: 77,
+        status: "PENDING",
+        isEmailVerified: false,
+        verificationCode: "664749",
+        verificationCodeExpiresAt: new Date(),
       };
       repo.create.mockResolvedValueOnce(created);
 
@@ -147,14 +167,17 @@ describe("CitizenService — complete tests", () => {
         firstName: "Fresh",
         lastName: "User",
         password: TEST_HASHED_PASSWORD,
-        status: "ACTIVE",
+        status: "PENDING",
+        isEmailVerified: false,
+        verificationCode: expect.any(String),
+        verificationCodeExpiresAt: expect.any(Date),
       });
       expect(dto).toEqual(
         expect.objectContaining({
           id: 77,
           email: "fresh@polito.it",
           username: "freshuser",
-          status: "ACTIVE",
+          status: "PENDING",
         })
       );
     });
@@ -166,6 +189,8 @@ describe("CitizenService — complete tests", () => {
         ...citizenBase,
         failedLoginAttempts: 3,
         password: TEST_HASHED_PASSWORD,
+        status: "ACTIVE",
+        isEmailVerified: true,
       });
 
       (bcrypt as any).compare = jest.fn(async () => true);
@@ -190,7 +215,8 @@ describe("CitizenService — complete tests", () => {
     it("login: treats missing status as ACTIVE and resets counters", async () => {
       repo.findByEmail.mockResolvedValueOnce({
         ...citizenBase,
-        status: undefined,
+        status: "ACTIVE",
+        isEmailVerified: true,
         failedLoginAttempts: undefined,
         password: TEST_HASHED_PASSWORD,
       });
@@ -227,6 +253,8 @@ describe("CitizenService — complete tests", () => {
         ...citizenBase,
         failedLoginAttempts: 1,
         password: TEST_HASHED_PASSWORD,
+        status: "ACTIVE",
+        isEmailVerified: true,
       });
 
       (bcrypt as any).compare = jest.fn(async () => false);
@@ -245,6 +273,8 @@ describe("CitizenService — complete tests", () => {
         ...citizenBase,
         failedLoginAttempts: undefined,
         password: TEST_HASHED_PASSWORD,
+        status: "ACTIVE",
+        isEmailVerified: true,
       });
 
       (bcrypt as any).compare = jest.fn(async () => false);
@@ -262,6 +292,7 @@ describe("CitizenService — complete tests", () => {
       repo.findByEmail.mockResolvedValueOnce({
         ...citizenBase,
         status: "SUSPENDED",
+        isEmailVerified: true,
       });
 
       await expect(
@@ -282,6 +313,8 @@ describe("CitizenService — complete tests", () => {
         ...citizenBase,
         failedLoginAttempts: 0,
         password: TEST_HASHED_PASSWORD,
+        status: "ACTIVE",
+        isEmailVerified: true,
       });
       (bcrypt as any).compare = jest.fn(async () => true);
       repo.update.mockResolvedValueOnce(citizenBase);

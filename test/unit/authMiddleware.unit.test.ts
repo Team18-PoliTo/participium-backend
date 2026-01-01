@@ -32,6 +32,8 @@ function makeRes() {
 }
 
 describe("auth middleware", () => {
+  // Imported for its Jest mock side-effects in some tests.
+  void internalUserRepo;
   let next: NextFunction;
 
   beforeEach(() => {

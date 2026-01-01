@@ -93,7 +93,8 @@ class EmailVerificationController {
         if (
           err.message.includes("already verified") ||
           err.message.includes("Too many resend requests") ||
-          err.message.includes("Failed to send verification email")
+          err.message.includes("Failed to send verification email") ||
+          err.message.includes("Please wait") // cooldown UX error
         ) {
           res.status(400).json({ error: err.message });
           return;

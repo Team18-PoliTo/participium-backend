@@ -1077,7 +1077,7 @@ describe("ReportService", () => {
   });
 
   describe("delegateReport", () => {
-    const delegatingOfficer = {
+    const _delegatingOfficer = {
       id: 10,
       firstName: "Tech",
       lastName: "Officer",

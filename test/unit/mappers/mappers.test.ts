@@ -21,7 +21,7 @@ describe("mappers", () => {
     mockGetPresignedUrl.mockClear();
   });
 
-  it("CitizenMapper defaults status to ACTIVE when missing", async () => {
+  it("CitizenMapper defaults status to PENDING when missing", async () => {
     const createdAt = new Date();
     mockGetPresignedUrl.mockResolvedValue("");
     const dto = await CitizenMapper.toDTO({
@@ -33,7 +33,7 @@ describe("mappers", () => {
       createdAt,
     } as any);
 
-    expect(dto.status).toBe("ACTIVE");
+    expect(dto.status).toBe("PENDING");
     expect(dto).toMatchObject({
       id: 1,
       email: "c@city.com",

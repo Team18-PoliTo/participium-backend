@@ -19,9 +19,17 @@ const entities = readdirSync(ENTITIES_PATH)
 // Path to migration files
 const MIGRATIONS_PATH = path.resolve(__dirname, "../data/migrations/*.{ts,js}");
 
+const isTestEnv =
+  process.env.NODE_ENV === "test" ||
+  typeof process.env.JEST_WORKER_ID === "string";
+
 export const AppDataSource = new DataSource({
   type: "sqlite",
-  database: path.resolve(__dirname, "../data/database.sqlite"),
+  // IMPORTANT: Jest must not share the dev sqlite file, otherwise test order and
+  // leftover data make the suite nondeterministic (FK errors, random OTP collisions).
+  database: isTestEnv
+    ? ":memory:"
+    : path.resolve(__dirname, "../data/database.sqlite"),
   entities: entities,
   migrations: [MIGRATIONS_PATH],
   synchronize: true,

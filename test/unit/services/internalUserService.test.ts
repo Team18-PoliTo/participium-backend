@@ -247,7 +247,7 @@ describe("InternalUserService", () => {
       );
       userRepositoryMock.save.mockResolvedValue(updatedUser);
 
-      const result = await service.update(2, {
+      const _result = await service.update(2, {
         roleIds: [28],
         companyId: 5,
       } as any);
@@ -266,11 +266,11 @@ describe("InternalUserService", () => {
         ...user,
       }));
 
-      const result = await service.update(2, {
+      const _result = await service.update(2, {
         email: "updated@city.com",
       } as any);
 
-      expect(result).toEqual(
+      expect(_result).toEqual(
         expect.objectContaining({ email: "updated@city.com" })
       );
       expect(userRepositoryMock.save).toHaveBeenCalled();
