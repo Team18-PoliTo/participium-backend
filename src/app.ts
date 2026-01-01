@@ -11,6 +11,7 @@ import internalUserRoutes from "./routes/internalUserRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 import roleRoutes from "./routes/roleRoutes";
+import emailVerificationRoutes from "./routes/emailVerificationRoutes";
 import {
   requireAuth,
   requireAdmin,
@@ -44,6 +45,7 @@ app.use("/api", publicReportsRoutes);
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
+app.use("/api/email-verification", emailVerificationRoutes);
 
 // Citizen routes (authentication handled at endpoint level)
 app.use("/api/citizens", citizenRoutes);

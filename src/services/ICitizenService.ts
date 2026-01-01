@@ -20,4 +20,11 @@ export interface ICitizenService {
       photoPath?: string;
     }
   ): Promise<CitizenDTO>;
+  verifyEmail(
+    email: string,
+    code: string
+  ): Promise<{ success: boolean; message: string }>;
+  resendVerificationCode(
+    email: string
+  ): Promise<{ success: boolean; message: string }>;
 }

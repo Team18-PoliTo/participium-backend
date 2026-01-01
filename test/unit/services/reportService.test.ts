@@ -29,7 +29,7 @@ const PR_OFFICER_USER = {
 };
 const MAINTAINER_ROLE = { id: 28, role: "External Maintainer" };
 const TECH_ROLE = { id: 4, role: "Technical Office Staff" };
-const loc = (latitude: number, longitude: number) =>
+const _loc = (latitude: number, longitude: number) =>
   JSON.stringify({ latitude, longitude });
 const assignedStaff = (id = 456) => ({
   id,

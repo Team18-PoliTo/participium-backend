@@ -10,7 +10,10 @@ import {
   IsArray,
   ArrayMinSize,
   ArrayMaxSize,
-  IsBoolean, ArrayNotEmpty,
+  IsBoolean,
+  ArrayNotEmpty,
+  Length,
+  Matches,
 } from "class-validator";
 
 export class RegisterCitizenRequestDTO {
@@ -150,4 +153,24 @@ export class CreateCommentRequestDTO {
   @IsNotEmpty({ message: "Comment text is required" })
   @MinLength(1, { message: "Comment cannot be empty" })
   comment: string;
+}
+
+export class VerifyEmailRequestDTO {
+  @IsEmail({}, { message: "Invalid email format" })
+  @IsNotEmpty({ message: "Email is required" })
+  email: string;
+
+  @IsString({ message: "Verification code must be a string" })
+  @IsNotEmpty({ message: "Verification code is required" })
+  @Length(6, 6, { message: "Verification code must be exactly 6 digits" })
+  @Matches(/^\d{6}$/, {
+    message: "Verification code must contain only numbers",
+  })
+  code: string;
+}
+
+export class ResendVerificationCodeRequestDTO {
+  @IsEmail({}, { message: "Invalid email format" })
+  @IsNotEmpty({ message: "Email is required" })
+  email: string;
 }
