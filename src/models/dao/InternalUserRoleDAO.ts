@@ -18,28 +18,21 @@ class InternalUserRoleDAO {
   @Column({ type: "integer", nullable: false })
   internalUserId: number;
 
-  @ManyToOne(
-    () => InternalUserDAO,
-    (user) => user.roles,
-    {
-      nullable: false,
-      onDelete: "CASCADE",
-    }
-  )
-  @JoinColumn({ name:  "internalUserId" })
+  @ManyToOne(() => InternalUserDAO, (user) => user.roles, {
+    nullable: false,
+    onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "internalUserId" })
   internalUser: InternalUserDAO;
 
   // ✅ ADDED:  Expose the foreign key column explicitly
   @Column({ type: "integer", nullable: false })
   roleId: number;
 
-  @ManyToOne(
-    () => RoleDAO,
-    {
-      nullable: false,
-      onDelete: "CASCADE",
-    }
-  )
+  @ManyToOne(() => RoleDAO, {
+    nullable: false,
+    onDelete: "CASCADE",
+  })
   @JoinColumn({ name: "roleId" })
   role: RoleDAO;
 }

@@ -165,7 +165,7 @@ export class InitialSeed1000000000001 implements MigrationInterface {
     );
 
     // Insert Initial Admin User and Internal Users for each technical role
-     const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await bcrypt.hash("password123", 10);
 
     await queryRunner.query(`
       INSERT INTO "internal-users"
@@ -243,7 +243,7 @@ export class InitialSeed1000000000001 implements MigrationInterface {
     JOIN internal_user_roles iur ON iur.internalUserId = iu.id
     WHERE iur.roleId = 13
     LIMIT 1
-`  );
+`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

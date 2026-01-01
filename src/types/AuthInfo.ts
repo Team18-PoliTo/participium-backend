@@ -4,4 +4,3 @@ export type AuthInfo = {
   roles?: string[];
   email?: string;
 };
-

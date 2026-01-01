@@ -48,16 +48,10 @@ export class InternalUserRepository implements IInternalUserRepository {
     return await qb.getOne();
   }
 
-
   async findById(id: number): Promise<InternalUserDAO | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: [
-        "roles",
-        "roles.role",
-        "roles.role.office",
-        "company",
-      ],
+      relations: ["roles", "roles.role", "roles.role.office", "company"],
     });
   }
 
@@ -67,12 +61,7 @@ export class InternalUserRepository implements IInternalUserRepository {
 
   async fetchAll(): Promise<InternalUserDAO[]> {
     return await this.repo.find({
-      relations: [
-        "roles",
-        "roles.role",
-        "roles.role.office",
-        "company",
-      ],
+      relations: ["roles", "roles.role", "roles.role.office", "company"],
     });
   }
 
@@ -106,12 +95,7 @@ export class InternalUserRepository implements IInternalUserRepository {
   async findByIdWithRoleAndOffice(id: number): Promise<InternalUserDAO | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: [
-        "roles",
-        "roles.role",
-        "roles.role.office",
-        "company",
-      ],
+      relations: ["roles", "roles.role", "roles.role.office", "company"],
     });
   }
 

@@ -186,7 +186,6 @@ describe("mappers", () => {
     ]);
   });
 
-
   it("InternalUserMapper maps role even if name missing", () => {
     const dto = InternalUserMapper.toDTO({
       id: 3,

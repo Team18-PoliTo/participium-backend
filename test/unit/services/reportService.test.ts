@@ -878,7 +878,9 @@ describe("ReportService", () => {
       ];
 
       internalUserRepository.findByIdWithRoleAndOffice.mockResolvedValue(staff);
-      categoryRoleRepository.findCategoriesByOffice.mockResolvedValue(categories);
+      categoryRoleRepository.findCategoriesByOffice.mockResolvedValue(
+        categories
+      );
       reportRepository.findByCategoryIds.mockResolvedValue(reportsDAO);
 
       const result = await service.getReportsByOffice(789);
@@ -897,7 +899,6 @@ describe("ReportService", () => {
       expect(result[0].id).toBe(1);
       expect(result[0].title).toBe("Test");
     });
-
 
     it("should throw when internal user not found", async () => {
       const { service, internalUserRepository } = buildService();
@@ -1138,10 +1139,12 @@ describe("ReportService", () => {
 
       reportRepository.findById.mockResolvedValue(report);
       internalUserRepository.findById.mockResolvedValue(assignedUser);
-      companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([company]);
-      internalUserRepository.findExternalMaintainersByCompany.mockResolvedValue([
-        maintainer,
+      companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
+        company,
       ]);
+      internalUserRepository.findExternalMaintainersByCompany.mockResolvedValue(
+        [maintainer]
+      );
       internalUserRepository.decrementActiveTasks.mockResolvedValue(undefined);
       internalUserRepository.incrementActiveTasks.mockResolvedValue(undefined);
       reportRepository.updateStatus.mockResolvedValue({
@@ -1155,14 +1158,18 @@ describe("ReportService", () => {
 
       expect(reportRepository.findById).toHaveBeenCalledWith(1);
       expect(internalUserRepository.findById).toHaveBeenCalledWith(10);
-      expect(companyCategoryRepository.findCompaniesByCategory).toHaveBeenCalledWith(
-        1
-      );
+      expect(
+        companyCategoryRepository.findCompaniesByCategory
+      ).toHaveBeenCalledWith(1);
       expect(
         internalUserRepository.findExternalMaintainersByCompany
       ).toHaveBeenCalledWith(5);
-      expect(internalUserRepository.decrementActiveTasks).toHaveBeenCalledWith(10);
-      expect(internalUserRepository.incrementActiveTasks).toHaveBeenCalledWith(20);
+      expect(internalUserRepository.decrementActiveTasks).toHaveBeenCalledWith(
+        10
+      );
+      expect(internalUserRepository.incrementActiveTasks).toHaveBeenCalledWith(
+        20
+      );
       expect(reportRepository.updateStatus).toHaveBeenCalledWith(
         1,
         ReportStatus.DELEGATED,
@@ -1255,7 +1262,6 @@ describe("ReportService", () => {
       );
     });
 
-
     it("should throw when company has no maintainers", async () => {
       const { service, reportRepository, internalUserRepository } =
         buildService();
@@ -1335,22 +1341,21 @@ describe("ReportService", () => {
       reportRepository.findById.mockResolvedValue(report);
       internalUserRepository.findById.mockResolvedValue(delegatingOfficer);
 
-      (service as any).companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
+      (
+        service as any
+      ).companyCategoryRepository.findCompaniesByCategory.mockResolvedValue([
         companyFixIt,
       ]);
 
-      internalUserRepository.findExternalMaintainersByCompany.mockResolvedValue([
-        null as any,
-      ]);
+      internalUserRepository.findExternalMaintainersByCompany.mockResolvedValue(
+        [null as any]
+      );
 
-      await expect(
-        service.delegateReport(1, 10, 5)
-      ).rejects.toThrow(
+      await expect(service.delegateReport(1, 10, 5)).rejects.toThrow(
         "This company does not have maintainers available"
       );
     });
   });
-
 
   describe("selectUnoccupiedOfficerByRole edge cases", () => {
     it("should throw when no officers found with role (line 45 coverage)", async () => {

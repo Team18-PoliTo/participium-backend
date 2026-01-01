@@ -6,9 +6,7 @@ export interface IInternalUserRoleRepository {
   deleteByInternalUserId(internalUserId: number): Promise<void>;
 }
 
-export class InternalUserRoleRepository
-  implements IInternalUserRoleRepository
-{
+export class InternalUserRoleRepository implements IInternalUserRoleRepository {
   private readonly repo: Repository<InternalUserRoleDAO>;
 
   constructor() {

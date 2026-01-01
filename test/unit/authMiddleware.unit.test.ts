@@ -39,7 +39,6 @@ describe("auth middleware", () => {
     next = jest.fn();
   });
 
-
   describe("requireAuth", () => {
     it("→ returns 401 if no token is provided", () => {
       const req = { header: () => "" } as unknown as Request;
@@ -117,7 +116,6 @@ describe("auth middleware", () => {
       expect(next).toHaveBeenCalledTimes(1);
       expect(res.status).not.toHaveBeenCalled();
     });
-
   });
 
   describe("requireCitizen", () => {

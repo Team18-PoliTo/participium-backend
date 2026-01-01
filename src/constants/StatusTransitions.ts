@@ -35,7 +35,9 @@ export const SINGLETON_ROLE_IDS = [
   UNASSIGNED_ROLE_ID,
 ] as const;
 
-export const isSingletonRoleId = (roleId: number): roleId is typeof SINGLETON_ROLE_IDS[number] => {
+export const isSingletonRoleId = (
+  roleId: number
+): roleId is (typeof SINGLETON_ROLE_IDS)[number] => {
   return (SINGLETON_ROLE_IDS as readonly number[]).includes(roleId);
 };
 

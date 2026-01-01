@@ -213,7 +213,6 @@ describe("InternalUserRepository", () => {
       expect(result).toEqual(users);
     });
 
-
     it("should return [] if none found", async () => {
       const qb = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
@@ -225,7 +224,6 @@ describe("InternalUserRepository", () => {
       const result = await repo.findByRoleId(99);
       expect(result).toEqual([]);
     });
-
   });
 
   describe("incrementActiveTasks", () => {

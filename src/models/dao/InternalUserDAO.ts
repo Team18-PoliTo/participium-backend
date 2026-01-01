@@ -29,7 +29,7 @@ class InternalUserDAO {
   @Column({ nullable: false })
   password: string;
 
-  @Column({ type: "varchar", default: () => "'ACTIVE'", nullable:  true })
+  @Column({ type: "varchar", default: () => "'ACTIVE'", nullable: true })
   status: InternalUserStatus;
 
   @Column({ default: () => 0, nullable: false })
@@ -41,14 +41,10 @@ class InternalUserDAO {
   /**
    * One internal user can have multiple roles
    */
-  @OneToMany(
-    () => InternalUserRoleDAO,
-    (ur) => ur.internalUser,
-    {
-      cascade: ["insert", "update", "remove"],
-      eager: true,
-    }
-  )
+  @OneToMany(() => InternalUserRoleDAO, (ur) => ur.internalUser, {
+    cascade: ["insert", "update", "remove"],
+    eager: true,
+  })
   roles: InternalUserRoleDAO[];
 
   @ManyToOne(() => CompanyDAO, (company) => company.internalUsers, {

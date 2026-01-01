@@ -283,7 +283,6 @@ describe("Internal User Management E2E Tests", () => {
     });
   });
 
-
   describe("Fetch Internal Users", () => {
     it("should fetch all internal users", async () => {
       const res = await request(app)
@@ -309,7 +308,6 @@ describe("Internal User Management E2E Tests", () => {
       }
     });
   });
-
 
   describe("Delete Internal User", () => {
     let testUserId: number;

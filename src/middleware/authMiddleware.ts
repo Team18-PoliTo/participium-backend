@@ -69,16 +69,14 @@ export const requireRole = (allowedRoles: string[]) => {
     next: NextFunction
   ): Promise<void> => {
     try {
-
       if (!req.auth) {
         res.status(401).json({ message: "Unauthorized" });
         return;
       }
 
       if (Array.isArray(req.auth.roles)) {
-
-        const hasRole = req.auth.roles.some((r: any) =>
-          typeof r === "string" && allowed.has(r.toUpperCase())
+        const hasRole = req.auth.roles.some(
+          (r: any) => typeof r === "string" && allowed.has(r.toUpperCase())
         );
 
         if (hasRole) {
@@ -88,17 +86,14 @@ export const requireRole = (allowedRoles: string[]) => {
       }
 
       if (req.auth.kind === "internal") {
-
         const internalUser = await internalUserRepo.findById(req.auth.sub);
 
         const roles = internalUser?.roles ?? [];
 
-        const hasRole = roles.some((ur) =>
-          ur.role &&
-          ur.role.role &&
-          allowed.has(ur.role.role.toUpperCase())
+        const hasRole = roles.some(
+          (ur) =>
+            ur.role && ur.role.role && allowed.has(ur.role.role.toUpperCase())
         );
-
 
         if (hasRole) {
           req.auth.roles = roles
@@ -109,15 +104,12 @@ export const requireRole = (allowedRoles: string[]) => {
         }
       }
 
-      res
-        .status(403)
-        .json({ message: "Forbidden: insufficient permissions" });
+      res.status(403).json({ message: "Forbidden: insufficient permissions" });
     } catch (e) {
       res.status(500).json({ message: "Cannot verify role" });
     }
   };
 };
-
 
 export const requireAdmin = requireRole(["ADMIN"]);
 

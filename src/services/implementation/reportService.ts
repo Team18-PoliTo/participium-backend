@@ -310,7 +310,6 @@ class ReportService implements IReportService {
       userRole?.includes(EXTERNAL_MAINTAINER_ROLE) ||
       user.roles?.some((role) => role.id === EXTERNAL_MAINTAINER_ROLE_ID);
 
-
     const isAssignedUser = report.assignedTo?.id === user.id;
 
     // External maintainers cannot change category
@@ -574,14 +573,10 @@ class ReportService implements IReportService {
       return [];
     }
 
-    const reports =
-      await this.reportRepository.findByCategoryIds(categoryIds);
+    const reports = await this.reportRepository.findByCategoryIds(categoryIds);
 
-    return Promise.all(
-      reports.map((r) => ReportMapper.toDTO(r, viewContext))
-    );
+    return Promise.all(reports.map((r) => ReportMapper.toDTO(r, viewContext)));
   }
-
 
   async getDelegatedReportsByUser(
     delegatedById: number

@@ -196,9 +196,9 @@ describe("InternalUserService", () => {
         undefined
       );
 
-      await expect(
-        service.update(2, { roleIds: [28] } as any)
-      ).rejects.toThrow("External Maintainers must be assigned to a company");
+      await expect(service.update(2, { roleIds: [28] } as any)).rejects.toThrow(
+        "External Maintainers must be assigned to a company"
+      );
     });
 
     it("should throw when company assigned but role is not external maintainer", async () => {
@@ -370,4 +370,3 @@ describe("InternalUserService", () => {
     });
   });
 });
-

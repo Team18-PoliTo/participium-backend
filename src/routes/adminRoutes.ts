@@ -178,7 +178,6 @@ router.post("/", internalUserController.create.bind(internalUserController));
  */
 router.put("/:id", internalUserController.update.bind(internalUserController));
 
-
 /**
  * @swagger
  * /admin/internal-users/{id}:

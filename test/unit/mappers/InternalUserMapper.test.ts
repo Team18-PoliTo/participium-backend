@@ -103,7 +103,6 @@ describe("InternalUserMapper", () => {
       expect(dto.roles).toEqual([]);
     });
 
-
     it("should default status to ACTIVE when status is missing", () => {
       const userDAO = {
         id: 4,

@@ -498,7 +498,11 @@ class InternalUserController {
       const users = await this.internalUserService.fetchUsers();
       const currentUser = users.find((u) => u.id === userId);
 
-      if (!currentUser || !currentUser.roles || currentUser.roles.length === 0) {
+      if (
+        !currentUser ||
+        !currentUser.roles ||
+        currentUser.roles.length === 0
+      ) {
         res.status(403).json({
           error: "Forbidden: User roles not found",
         });

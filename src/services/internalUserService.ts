@@ -15,9 +15,7 @@ import jwt from "jsonwebtoken";
 import { LoginRequestDTO } from "../models/dto/LoginRequestDTO";
 import CompanyRepository from "../repositories/implementation/CompanyRepository";
 import InternalUserRoleDAO from "../models/dao/InternalUserRoleDAO";
-import {
-  EXTERNAL_MAINTAINER_ROLE_ID,
-} from "../constants/StatusTransitions";
+import { EXTERNAL_MAINTAINER_ROLE_ID } from "../constants/StatusTransitions";
 import { InternalUserRoleRepository } from "../repositories/implementation/InternalUserRoleRepository";
 
 interface IInternalUserRepository {
@@ -73,7 +71,6 @@ class InternalUserService {
     return InternalUserMapper.toDTO(newInternalUser);
   }
 
-
   async update(
     id: number,
     data: UpdateInternalUserRequestDTO
@@ -103,8 +100,9 @@ class InternalUserService {
     }
 
     if (data.roleIds !== undefined) {
-
-      await this.internalUserRoleRepository.deleteByInternalUserId(internalUserDAO.id);
+      await this.internalUserRoleRepository.deleteByInternalUserId(
+        internalUserDAO.id
+      );
 
       internalUserDAO.roles = [];
 
@@ -139,14 +137,12 @@ class InternalUserService {
       internalUserDAO.company = company;
     }
 
-    const updatedInternalUser =
-      await this.userRepository.save(internalUserDAO);
+    const updatedInternalUser = await this.userRepository.save(internalUserDAO);
 
     return isExternalMaintainer
       ? ExternalMaintainerMapper.toDTO(updatedInternalUser)
       : InternalUserMapper.toDTO(updatedInternalUser);
   }
-
 
   async fetchUsers(): Promise<InternalUserDTO[]> {
     const users = await this.userRepository.fetchAll();
@@ -166,9 +162,9 @@ class InternalUserService {
   }
 
   async login({
-                email,
-                password,
-              }: LoginRequestDTO): Promise<{ access_token: string; token_type: "bearer" }> {
+    email,
+    password,
+  }: LoginRequestDTO): Promise<{ access_token: string; token_type: "bearer" }> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.userRepository.findByEmail(normalizedEmail, {
       withPassword: true,

@@ -1,4 +1,8 @@
-import { ExternalMaintainerDTO, InternalUserDTO, RoleDTO } from "../models/dto/InternalUserDTO";
+import {
+  ExternalMaintainerDTO,
+  InternalUserDTO,
+  RoleDTO,
+} from "../models/dto/InternalUserDTO";
 import { CompanyMapper } from "./CompanyMapper";
 import InternalUserDAO from "../models/dao/InternalUserDAO";
 
@@ -13,11 +17,13 @@ export class InternalUserMapper {
       activeTasks: userDAO.activeTasks,
 
       roles:
-        userDAO.roles?.map((userRole): RoleDTO => ({
-          id: userRole.role.id,
-          name: userRole.role.role,
-          officeId: userRole.role.office?.id ?? null,
-        })) ?? [],
+        userDAO.roles?.map(
+          (userRole): RoleDTO => ({
+            id: userRole.role.id,
+            name: userRole.role.role,
+            officeId: userRole.role.office?.id ?? null,
+          })
+        ) ?? [],
 
       status: userDAO.status ?? "ACTIVE",
     };

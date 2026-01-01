@@ -135,7 +135,6 @@ describe("InternalUserController", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-
     it("update handles specific error messages (400)", async () => {
       const errs = [
         "InternalUser with this email already exists",

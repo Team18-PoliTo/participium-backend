@@ -54,10 +54,7 @@ describe("Database E2E Tests", () => {
 
     const admin = await userRepo.findOne({
       where: { email: "admin@participium.com" },
-      relations: [
-        "roles",
-        "roles.role",
-      ],
+      relations: ["roles", "roles.role"],
     });
 
     expect(admin).toBeDefined();
@@ -68,7 +65,6 @@ describe("Database E2E Tests", () => {
     const isValid = await bcrypt.compare("password123", admin!.password);
     expect(isValid).toBe(true);
   });
-
 
   it("should not create duplicate admin user on re-initialization", async () => {
     const userRepo = AppDataSource.getRepository(InternalUserDAO);

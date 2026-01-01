@@ -22,20 +22,13 @@ class RoleDAO {
   })
   office: OfficeDAO | null;
 
-  @OneToMany(
-    () => InternalUserRoleDAO,
-    (ur) => ur.role
-  )
+  @OneToMany(() => InternalUserRoleDAO, (ur) => ur.role)
   userRoles: InternalUserRoleDAO[];
 
-  @OneToMany(
-    () => CategoryRoleDAO,
-    (categoryRole) => categoryRole.role,
-    {
-      cascade: true,
-      eager: false,
-    }
-  )
+  @OneToMany(() => CategoryRoleDAO, (categoryRole) => categoryRole.role, {
+    cascade: true,
+    eager: false,
+  })
   categoryRoles: CategoryRoleDAO[];
 }
 

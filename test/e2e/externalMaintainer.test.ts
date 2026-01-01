@@ -126,13 +126,10 @@ describe("External Maintainer Workflow E2E", () => {
 
     expect(res.status).toBe(200);
 
-    const roleNames = res.body.profile.roles.map(
-      (r: any) => r.name
-    );
+    const roleNames = res.body.profile.roles.map((r: any) => r.name);
 
     expect(roleNames).toContain("External Maintainer");
   });
-
 
   it("GET /api/internal/reports/assigned returns delegated reports", async () => {
     const res = await request(app)
@@ -187,8 +184,6 @@ describe("External Maintainer Workflow E2E", () => {
       });
 
     expect([400, 403]).toContain(res.status);
-    expect(res.body.error).toMatch(
-      /only the assigned user can transition/i
-    );
+    expect(res.body.error).toMatch(/only the assigned user can transition/i);
   });
 });
