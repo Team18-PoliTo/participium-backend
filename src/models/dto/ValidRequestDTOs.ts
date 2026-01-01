@@ -10,9 +10,10 @@ import {
   IsArray,
   ArrayMinSize,
   ArrayMaxSize,
+  IsBoolean,
+  ArrayNotEmpty,
   Length,
   Matches,
-  IsBoolean,
 } from "class-validator";
 
 export class RegisterCitizenRequestDTO {
@@ -61,21 +62,27 @@ export class RegisterInternalUserRequestDTO {
 export class UpdateInternalUserRequestDTO {
   @IsOptional()
   @IsEmail({}, { message: "Invalid email format" })
-  newEmail?: string;
+  email?: string;
+
   @IsOptional()
   @IsString()
-  newFirstName?: string;
+  firstName?: string;
+
   @IsOptional()
   @IsString()
-  newLastName?: string;
+  lastName?: string;
+
   @IsOptional()
-  @IsInt({ message: "newRoleId must be a number" })
-  @Min(0)
-  newRoleId?: number;
+  @IsArray({ message: "roleIds must be an array" })
+  @ArrayNotEmpty({ message: "roleIds cannot be empty" })
+  @IsInt({ each: true, message: "each roleId must be a number" })
+  @Min(0, { each: true })
+  roleIds?: number[];
+
   @IsOptional()
-  @IsInt({ message: "newCompanyId must be a number" })
-  @Min(0)
-  newCompanyId?: number;
+  @IsInt({ message: "companyId must be a number" })
+  @Min(1)
+  companyId?: number;
 }
 
 export class CreateReportRequestDTO {

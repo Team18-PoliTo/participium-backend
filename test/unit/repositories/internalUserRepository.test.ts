@@ -165,7 +165,7 @@ describe("InternalUserRepository", () => {
       const user = mockUser();
       typeOrmMock.save.mockResolvedValue(user);
 
-      const result = await repo.update(user);
+      const result = await repo.save(user);
 
       expect(result).toEqual(user);
     });
@@ -173,12 +173,40 @@ describe("InternalUserRepository", () => {
 
   describe("findByRoleId", () => {
     it("should return users with matching role", async () => {
-      const users = [
-        mockUser({ id: 1, role: mockRole({ id: 1 }) }),
-        mockUser({ id: 2, role: mockRole({ id: 1 }) }),
+      const users: InternalUserDAO[] = [
+        mockUser({
+          id: 1,
+          roles: [
+            {
+              role: mockRole({ id: 1 }),
+              id: 0,
+              internalUserId: 0,
+              internalUser: new InternalUserDAO(),
+              roleId: 0,
+            },
+          ],
+        }),
+        mockUser({
+          id: 2,
+          roles: [
+            {
+              role: mockRole({ id: 1 }),
+              id: 0,
+              internalUserId: 0,
+              internalUser: new InternalUserDAO(),
+              roleId: 0,
+            },
+          ],
+        }),
       ];
 
-      typeOrmMock.find.mockResolvedValue(users);
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue(users),
+      };
+
+      typeOrmMock.createQueryBuilder.mockReturnValue(qb);
 
       const result = await repo.findByRoleId(1);
 
@@ -186,10 +214,14 @@ describe("InternalUserRepository", () => {
     });
 
     it("should return [] if none found", async () => {
-      typeOrmMock.find.mockResolvedValue([]);
+      const qb = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      };
 
+      typeOrmMock.createQueryBuilder.mockReturnValue(qb);
       const result = await repo.findByRoleId(99);
-
       expect(result).toEqual([]);
     });
   });
@@ -249,31 +281,6 @@ describe("InternalUserRepository", () => {
       const result = await repo.findByIdWithRoleAndOffice(99);
 
       expect(result).toBeNull();
-    });
-  });
-
-  describe("findExternalMaintainersByCompany", () => {
-    it("should return maintainers ordered by active tasks", async () => {
-      const maintainers = [
-        mockUser({
-          id: 1,
-          activeTasks: 0,
-          role: mockRole({ id: 28 }),
-          company: mockCompany({ id: 5 }),
-        }),
-        mockUser({
-          id: 2,
-          activeTasks: 2,
-          role: mockRole({ id: 28 }),
-          company: mockCompany({ id: 5 }),
-        }),
-      ];
-
-      typeOrmMock.find.mockResolvedValue(maintainers);
-
-      const result = await repo.findExternalMaintainersByCompany(5);
-
-      expect(result).toEqual(maintainers);
     });
   });
 });

@@ -167,102 +167,42 @@ export class InitialSeed1000000000001 implements MigrationInterface {
     // Insert Initial Admin User and Internal Users for each technical role
     const hashedPassword = await bcrypt.hash("password123", 10);
 
-    const internalUsers = [
-      {
-        email: "admin@participium.com",
-        firstName: "Admin",
-        lastName: "User",
-        roleId: 1,
-        company: null,
-      },
-      {
-        email: "marco.rossi@participium.com",
-        firstName: "Marco",
-        lastName: "Rossi",
-        roleId: 10,
-        company: null,
-      },
-      {
-        email: "giovanni.ferrari@participium.com",
-        firstName: "Giovanni",
-        lastName: "Ferrari",
-        roleId: 11,
-        company: null,
-      },
-      {
-        email: "luigi.bianchi@participium.com",
-        firstName: "Luigi",
-        lastName: "Bianchi",
-        roleId: 12,
-        company: null,
-      },
-      {
-        email: "francesco.rizzo@participium.com",
-        firstName: "Francesco",
-        lastName: "Rizzo",
-        roleId: 13,
-        company: null,
-      },
-      {
-        email: "antonio.russo@participium.com",
-        firstName: "Antonio",
-        lastName: "Russo",
-        roleId: 14,
-        company: null,
-      },
-      {
-        email: "paolo.moretti@participium.com",
-        firstName: "Paolo",
-        lastName: "Moretti",
-        roleId: 15,
-        company: null,
-      },
-      {
-        email: "andrea.romano@participium.com",
-        firstName: "Andrea",
-        lastName: "Romano",
-        roleId: 16,
-        company: null,
-      },
-      {
-        email: "matteo.colombo@participium.com",
-        firstName: "Matteo",
-        lastName: "Colombo",
-        roleId: 17,
-        company: null,
-      },
-      {
-        email: "giulio.spinetti@enelx.it",
-        firstName: "Giulio",
-        lastName: "Spinetti",
-        roleId: 28,
-        company: 9,
-      },
-      {
-        email: "giorgio.nanni@iren.it",
-        firstName: "Giorgio",
-        lastName: "Nanni",
-        roleId: 28,
-        company: 3,
-      },
-      {
-        email: "francesco.magetti@manital.it",
-        firstName: "Francesco",
-        lastName: "Magetti",
-        roleId: 28,
-        company: 8,
-      },
-    ];
+    await queryRunner.query(`
+      INSERT INTO "internal-users"
+        (id, email, firstName, lastName, password, status, companyId)
+      VALUES
+        (1, 'admin@participium.com', 'Admin', 'User', '${hashedPassword}', 'ACTIVE', NULL),
+        (2, 'marco.rossi@participium.com', 'Marco', 'Rossi', '${hashedPassword}', 'ACTIVE', NULL),
+        (3, 'giovanni.ferrari@participium.com', 'Giovanni', 'Ferrari', '${hashedPassword}', 'ACTIVE', NULL),
+        (4, 'luigi.bianchi@participium.com', 'Luigi', 'Bianchi', '${hashedPassword}', 'ACTIVE', NULL),
+        (5, 'francesco.rizzo@participium.com', 'Francesco', 'Rizzo', '${hashedPassword}', 'ACTIVE', NULL),
+        (6, 'antonio.russo@participium.com', 'Antonio', 'Russo', '${hashedPassword}', 'ACTIVE', NULL),
+        (7, 'paolo.moretti@participium.com', 'Paolo', 'Moretti', '${hashedPassword}', 'ACTIVE', NULL),
+        (8, 'andrea.romano@participium.com', 'Andrea', 'Romano', '${hashedPassword}', 'ACTIVE', NULL),
+        (9, 'matteo.colombo@participium.com', 'Matteo', 'Colombo', '${hashedPassword}', 'ACTIVE', NULL),
+        (10, 'giulio.spinetti@enelx.it', 'Giulio', 'Spinetti', '${hashedPassword}', 'ACTIVE', 9),
+        (11, 'giorgio.nanni@iren.it', 'Giorgio', 'Nanni', '${hashedPassword}', 'ACTIVE', 3),
+        (12, 'francesco.magetti@manital.it', 'Francesco', 'Magetti', '${hashedPassword}', 'ACTIVE', 8)
+    `);
 
-    for (const user of internalUsers) {
-      await queryRunner.query(
-        `INSERT INTO "internal-users" (email, firstName, lastName, password, roleId, status, companyId)
-                 VALUES ('${user.email}', '${user.firstName}', '${
-                   user.lastName
-                 }', '${hashedPassword}', ${user.roleId},
-                         'ACTIVE', ${user.company ? user.company : "NULL"})`
-      );
-    }
+    /**
+     * 5️⃣ INTERNAL USER ↔ ROLES (JOIN TABLE)
+     */
+    await queryRunner.query(`
+      INSERT INTO internal_user_roles (internalUserId, roleId) VALUES
+        (1, 1),   -- ADMIN
+        (2, 10),
+        (3, 11),
+        (4, 12),
+        (5, 13),
+        (6, 14),
+        (7, 15),
+        (8, 16),
+        (9, 17),
+        (10, 28),
+        (11, 28),
+        (12, 28)
+    `);
 
     // Insert Example Citizens
     // NEW citizen with explicit ID = 1 (needed for all mock reports)
@@ -295,41 +235,38 @@ export class InitialSeed1000000000001 implements MigrationInterface {
     // This allows proper image upload to MinIO storage
     console.log("Reports will be seeded after MinIO initialization...");
 
-    // Insert Delegated Reports
-    await queryRunner.query(
-      `INSERT INTO delegated_reports (reportId, delegatedById, delegatedAt)
-       SELECT 5, id, CURRENT_TIMESTAMP
-       FROM "internal-users"
-       WHERE roleId = 13
-       LIMIT 1`
-    );
+    //Insert Delegated Reports
+    await queryRunner.query(`
+    INSERT INTO delegated_reports (reportId, delegatedById, delegatedAt)
+    SELECT 5, iu.id, CURRENT_TIMESTAMP
+    FROM "internal-users" iu
+    JOIN internal_user_roles iur ON iur.internalUserId = iu.id
+    WHERE iur.roleId = 13
+    LIMIT 1
+`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Delete data in reverse order
-    await queryRunner.query(`DELETE
-                                 FROM delegated_reports`);
-    await queryRunner.query(`DELETE
-                                 FROM company_categories`);
-    await queryRunner.query(`DELETE
-                                 FROM companies`);
-    await queryRunner.query(`DELETE
-                                 FROM category_roles`);
-    await queryRunner.query(`DELETE
-                                 FROM categories`);
-    await queryRunner.query(`DELETE
-                                 FROM citizens
-                                 WHERE email = 'yusaerguven@gmail.com'`);
-    await queryRunner.query(`DELETE
-                                 FROM "internal-users"
-                                 WHERE roleId IN (1, 10, 11, 12, 13, 14, 15, 16, 17)`);
-    await queryRunner.query(`DELETE
-                                 FROM roles
-                                 WHERE id NOT IN (0, 1)`);
-    await queryRunner.query(`DELETE
-                                 FROM roles
-                                 WHERE id IN (0, 1)`);
-    await queryRunner.query(`DELETE
-                                 FROM offices`);
+    await queryRunner.query(`DELETE FROM delegated_reports`);
+    await queryRunner.query(`DELETE FROM company_categories`);
+    await queryRunner.query(`DELETE FROM companies`);
+    await queryRunner.query(`DELETE FROM category_roles`);
+    await queryRunner.query(`DELETE FROM categories`);
+
+    await queryRunner.query(`
+    DELETE FROM citizens
+    WHERE email = 'yusaerguven@gmail.com'
+  `);
+    await queryRunner.query(`
+    DELETE FROM "internal-users"
+    WHERE id IN (
+      SELECT DISTINCT internalUserId
+      FROM internal_user_roles
+      WHERE roleId IN (1, 10, 11, 12, 13, 14, 15, 16, 17)
+    )
+  `);
+    await queryRunner.query(`DELETE FROM internal_user_roles`);
+    await queryRunner.query(`DELETE FROM roles`);
+    await queryRunner.query(`DELETE FROM offices`);
   }
 }

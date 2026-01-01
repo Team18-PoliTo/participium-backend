@@ -308,7 +308,7 @@ class ReportService implements IReportService {
     const isExternalMaintainer =
       userRole === EXTERNAL_MAINTAINER_ROLE ||
       userRole?.includes(EXTERNAL_MAINTAINER_ROLE) ||
-      user.role?.id === EXTERNAL_MAINTAINER_ROLE_ID;
+      user.roles?.some((role) => role.id === EXTERNAL_MAINTAINER_ROLE_ID);
 
     const isAssignedUser = report.assignedTo?.id === user.id;
 
@@ -460,13 +460,24 @@ class ReportService implements IReportService {
     // Get the delegating officer's role to ensure they can delegate
     const delegatingOfficer =
       await this.internalUserRepository.findById(userId);
-    if (!delegatingOfficer || !delegatingOfficer.role) {
+    if (
+      !delegatingOfficer ||
+      !Array.isArray(delegatingOfficer.roles) ||
+      delegatingOfficer.roles.length === 0
+    ) {
       throw new Error("Delegating officer not found");
     }
 
     // Check that the officer's role can delegate (not 0, 1, 10, 28)
     const nonDelegatingRoles = [0, 1, 10, 28];
-    if (nonDelegatingRoles.includes(delegatingOfficer.role.id)) {
+    const hasForbiddenRole = delegatingOfficer.roles.some((role) =>
+      nonDelegatingRoles.includes(role.id)
+    );
+    if (hasForbiddenRole) {
+      throw new Error("Your role does not have permission to delegate reports");
+    }
+
+    if (hasForbiddenRole) {
       throw new Error("Your role does not have permission to delegate reports");
     }
 
@@ -541,17 +552,21 @@ class ReportService implements IReportService {
   ): Promise<ReportDTO[]> {
     const staff =
       await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
+
     if (!staff) {
       throw new Error("Internal user not found");
     }
 
-    const officeId = staff.role.office?.id;
+    const officeId = staff.roles
+      ?.map((ur) => ur.role.office?.id)
+      .find((id): id is number => typeof id === "number");
+
     if (!officeId) {
       return [];
     }
-
     const categories =
       await this.categoryRoleRepository.findCategoriesByOffice(officeId);
+
     const categoryIds = categories.map((c) => c.id);
 
     if (categoryIds.length === 0) {

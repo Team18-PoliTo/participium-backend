@@ -9,7 +9,7 @@ interface IInternalUserRepository {
     opts?: { withPassword?: boolean }
   ): Promise<InternalUserDAO | null>;
   findById(id: number): Promise<InternalUserDAO | null>;
-  update(user: InternalUserDAO): Promise<InternalUserDAO>;
+  save(user: InternalUserDAO): Promise<InternalUserDAO>;
   fetchAll(): Promise<InternalUserDAO[]>;
   findByRoleId(roleId: number): Promise<InternalUserDAO[]>;
   incrementActiveTasks(userId: number): Promise<void>;
@@ -38,36 +38,40 @@ export class InternalUserRepository implements IInternalUserRepository {
   ): Promise<InternalUserDAO | null> {
     const qb = this.repo
       .createQueryBuilder("internalUser")
-      .leftJoinAndSelect("internalUser.role", "role")
+      .leftJoinAndSelect("internalUser.roles", "roles")
       .leftJoinAndSelect("internalUser.company", "company")
       .where("LOWER(internalUser.email) = LOWER(:email)", { email });
-    if (opts?.withPassword) qb.addSelect("internalUser.password");
+
+    if (opts?.withPassword) {
+      qb.addSelect("internalUser.password");
+    }
     return await qb.getOne();
   }
 
   async findById(id: number): Promise<InternalUserDAO | null> {
-    // include role and company relations so callers receive the entities populated
     return await this.repo.findOne({
       where: { id },
-      relations: ["role", "company"],
+      relations: ["roles", "roles.role", "roles.role.office", "company"],
     });
   }
 
-  async update(user: InternalUserDAO): Promise<InternalUserDAO> {
+  async save(user: InternalUserDAO): Promise<InternalUserDAO> {
     return await this.repo.save(user);
   }
 
   async fetchAll(): Promise<InternalUserDAO[]> {
     return await this.repo.find({
-      relations: ["role", "company"],
+      relations: ["roles", "roles.role", "roles.role.office", "company"],
     });
   }
 
   async findByRoleId(roleId: number): Promise<InternalUserDAO[]> {
-    return await this.repo.find({
-      where: { role: { id: roleId } },
-      relations: ["role", "company"],
-    });
+    return await this.repo
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.roles", "role")
+      .leftJoinAndSelect("user.company", "company")
+      .where("role.id = :roleId", { roleId })
+      .getMany();
   }
 
   async incrementActiveTasks(userId: number): Promise<void> {
@@ -91,21 +95,21 @@ export class InternalUserRepository implements IInternalUserRepository {
   async findByIdWithRoleAndOffice(id: number): Promise<InternalUserDAO | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ["role", "role.office", "company"],
+      relations: ["roles", "roles.role", "roles.role.office", "company"],
     });
   }
 
   async findExternalMaintainersByCompany(
     companyId: number
   ): Promise<InternalUserDAO[]> {
-    return await this.repo.find({
-      where: {
-        role: { id: 28 },
-        company: { id: companyId },
-      },
-      relations: ["role", "company"],
-      order: { activeTasks: "ASC" },
-    });
+    return await this.repo
+      .createQueryBuilder("user")
+      .leftJoinAndSelect("user.roles", "role")
+      .leftJoinAndSelect("user.company", "company")
+      .where("company.id = :companyId", { companyId })
+      .andWhere("role.id = :roleId", { roleId: 28 })
+      .orderBy("user.activeTasks", "ASC")
+      .getMany();
   }
 }
 

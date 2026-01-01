@@ -26,6 +26,20 @@ import { ReportStatus, ReportStatusType } from "./ReportStatus";
 export const PR_OFFICER_ROLE = "Public Relations Officer";
 export const EXTERNAL_MAINTAINER_ROLE = "External Maintainer";
 export const EXTERNAL_MAINTAINER_ROLE_ID = 28;
+export const ADMIN_ROLE = "ADMIN";
+export const ADMIN_ROLE_ID = 1;
+export const UNASSIGNED_ROLE_ID = 0;
+export const SINGLETON_ROLE_IDS = [
+  ADMIN_ROLE_ID,
+  EXTERNAL_MAINTAINER_ROLE_ID,
+  UNASSIGNED_ROLE_ID,
+] as const;
+
+export const isSingletonRoleId = (
+  roleId: number
+): roleId is (typeof SINGLETON_ROLE_IDS)[number] => {
+  return (SINGLETON_ROLE_IDS as readonly number[]).includes(roleId);
+};
 
 // Transition rules structure
 interface TransitionRule {

@@ -51,13 +51,15 @@ describe("Database E2E Tests", () => {
 
   it("should have created default admin user", async () => {
     const userRepo = AppDataSource.getRepository(InternalUserDAO);
+
     const admin = await userRepo.findOne({
       where: { email: "admin@participium.com" },
-      relations: ["role"],
+      relations: ["roles", "roles.role"],
     });
 
     expect(admin).toBeDefined();
-    expect(admin!.role.role).toBe("ADMIN");
+    expect(admin!.roles).toHaveLength(1);
+    expect(admin!.roles[0].role.role).toBe("ADMIN");
     expect(admin!.status).toBe("ACTIVE");
 
     const isValid = await bcrypt.compare("password123", admin!.password);
