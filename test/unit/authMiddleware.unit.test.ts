@@ -21,8 +21,6 @@ jest.mock("../../src/repositories/InternalUserRepository", () => ({
   },
 }));
 
-import _internalUserRepo from "../../src/repositories/InternalUserRepository";
-
 function makeRes() {
   const res: Partial<Response> = {
     status: jest.fn().mockReturnThis(),
@@ -32,7 +30,6 @@ function makeRes() {
 }
 
 describe("auth middleware", () => {
-  // Imported for its Jest mock side-effects in some tests.
   let next: NextFunction;
 
   beforeEach(() => {
