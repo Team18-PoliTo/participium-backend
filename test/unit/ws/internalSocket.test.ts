@@ -1,6 +1,9 @@
 import { createServer } from "http";
 import jwt from "jsonwebtoken";
 
+// We do NOT import internalSocket statically here.
+// We import it dynamically in beforeEach after setting up mocks.
+
 describe("internalSocket", () => {
   let mockIo: any;
   let mockNsp: any;
@@ -10,9 +13,11 @@ describe("internalSocket", () => {
   let emitCommentCreated: any;
 
   beforeEach(() => {
+    // 1. Clear the module cache to remove any pre-loaded version of internalSocket
     jest.resetModules();
     jest.clearAllMocks();
 
+    // 2. Setup mock structures
     mockNsp = {
       use: jest.fn(),
       on: jest.fn(),
@@ -23,8 +28,10 @@ describe("internalSocket", () => {
       of: jest.fn().mockReturnValue(mockNsp),
     };
 
+    // 3. Define module mocks using doMock (hoisted above the require below)
     jest.doMock("socket.io", () => {
       return {
+        // The Server class constructor returns our mockIo instance
         Server: jest.fn().mockImplementation(() => mockIo),
       };
     });
@@ -33,9 +40,13 @@ describe("internalSocket", () => {
       verify: jest.fn(),
     }));
 
+    // 4. Dynamically require the module under test
+    // This ensures it uses the mocks defined above
     const internalSocketModule = require("../../../src/ws/internalSocket");
     initInternalSocket = internalSocketModule.initInternalSocket;
     emitCommentCreated = internalSocketModule.emitCommentCreated;
+
+    // 5. Setup test data
     mockSocket = {
       handshake: { auth: {}, headers: {} },
       data: {},
@@ -100,6 +111,17 @@ describe("internalSocket", () => {
       
       const { verify } = require("jsonwebtoken");
       verify.mockReturnValue("string_payload");
+
+      authMiddleware(mockSocket, next);
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: "Unauthorized: malformed token" }));
+    });
+
+    it("calls next(Error) if token payload is missing required properties", () => {
+      const next = jest.fn();
+      mockSocket.handshake.auth = { token: "token" };
+      
+      const { verify } = require("jsonwebtoken");
+      verify.mockReturnValue({ sub: 1 }); // Missing 'kind'
 
       authMiddleware(mockSocket, next);
       expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: "Unauthorized: malformed token" }));

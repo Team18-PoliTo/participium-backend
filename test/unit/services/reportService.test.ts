@@ -66,6 +66,8 @@ describe("ReportService", () => {
       findByAssignedStaff: jest.fn().mockResolvedValue([baseReport]),
       findByCategoryIds: jest.fn().mockResolvedValue([baseReport]),
       findAllApproved: jest.fn().mockResolvedValue([baseReport]),
+      createComment: jest.fn(),
+      findCommentsByReportId: jest.fn(),
     };
     const citizenRepository = {
       findById: jest.fn().mockResolvedValue(citizen),
@@ -97,6 +99,7 @@ describe("ReportService", () => {
       create: jest.fn().mockResolvedValue(undefined),
       deleteByReportId: jest.fn().mockResolvedValue(undefined),
       findByReportId: jest.fn().mockResolvedValue(null),
+      findReportsByDelegatedBy: jest.fn().mockResolvedValue([]),
     };
 
     return {
@@ -163,6 +166,30 @@ describe("ReportService", () => {
       expect(reportRepository.update).toHaveBeenCalled();
       expect(validateTempFilesSpy).toHaveBeenCalledWith(["1"]);
       expect(moveMultipleToPermanentSpy).toHaveBeenCalled();
+    });
+
+    it("creates an ANONYMOUS report correctly", async () => {
+      const { service, reportRepository, citizenRepository } = buildService();
+
+      await service.create(
+        {
+          title: "Secret",
+          description: "Hush",
+          categoryId: 1,
+          location: { latitude: 45, longitude: 9 },
+          photoIds: ["1"],
+          isAnonymous: true,
+        } as any,
+        citizen.id
+      );
+
+      // Verify the repo create was called with isAnonymous: true
+      expect(reportRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isAnonymous: true,
+          citizen: expect.objectContaining({ id: citizen.id }),
+        })
+      );
     });
 
     it("throws when citizen cannot be located", async () => {

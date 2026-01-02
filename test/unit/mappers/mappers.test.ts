@@ -1,4 +1,3 @@
-// Mock MinIoService BEFORE importing CitizenMapper
 jest.mock("../../../src/services/MinIoService", () => ({
   __esModule: true,
   default: {
@@ -10,7 +9,6 @@ import { CitizenMapper } from "../../../src/mappers/CitizenMapper";
 import { InternalUserMapper } from "../../../src/mappers/InternalUserMapper";
 import MinIoService from "../../../src/services/MinIoService";
 
-// Get the mock function after import
 const mockGetPresignedUrl = MinIoService.getPresignedUrl as jest.MockedFunction<
   typeof MinIoService.getPresignedUrl
 >;
