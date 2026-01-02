@@ -244,7 +244,6 @@ describe("Email Verification E2E Tests", () => {
 
   describe("POST /api/email-verification/resend", () => {
     let userEmail: string;
-    let _verificationCode: string;
 
     beforeEach(async () => {
       userEmail = "resend@example.com";
@@ -256,8 +255,6 @@ describe("Email Verification E2E Tests", () => {
         lastName: "User",
         password: "password123",
       }).expect(201);
-
-      verificationCode = await getVerificationCode(userEmail);
     });
 
     it("should resend verification code successfully", async () => {

@@ -1,15 +1,9 @@
 // test/unit/services/emailVerification.test.ts
 jest.mock("../../../src/services/EmailService", () => {
-  return jest.fn().mockImplementation(() => ({
-    generateVerificationCode: jest.fn(() => "123456"),
-    getVerificationCodeExpiry: jest.fn(() => {
-      const expiry = new Date();
-      expiry.setMinutes(expiry.getMinutes() + 30);
-      return expiry;
-    }),
-    sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
-    validateEmailQuality: jest.fn(() => ({ valid: true })),
-  }));
+  const {
+    buildMockEmailService,
+  } = require("../../utils/mocks/emailServiceMock");
+  return buildMockEmailService({ code: "123456" });
 });
 
 // Mock bcrypt as a namespace export since it's imported as `import * as bcrypt`
@@ -24,26 +18,12 @@ const mockBcrypt = {
 
 jest.mock("bcrypt", () => mockBcrypt);
 
-jest.mock("../../../src/mappers/CitizenMapper", () => ({
-  CitizenMapper: {
-    toDTO: jest.fn(async (u: any) => ({
-      id: u.id,
-      email: u.email,
-      username: u.username,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      status: u.status ?? "PENDING",
-      isEmailVerified: u.isEmailVerified ?? false,
-      createdAt: u.createdAt,
-      telegramUsername: u.telegramUsername ?? undefined,
-      emailNotificationsEnabled: u.emailNotificationsEnabled ?? undefined,
-      accountPhoto: u.accountPhotoUrl
-        ? `https://presigned-url.com/${u.accountPhotoUrl}`
-        : undefined,
-      lastLoginAt: u.lastLoginAt ?? undefined,
-    })),
-  },
-}));
+jest.mock("../../../src/mappers/CitizenMapper", () => {
+  const {
+    buildCitizenMapperMock,
+  } = require("../../utils/mocks/citizenMapperMock");
+  return buildCitizenMapperMock();
+});
 
 import { ICitizenRepository } from "../../../src/repositories/ICitizenRepository";
 import CitizenDAO from "../../../src/models/dao/CitizenDAO";

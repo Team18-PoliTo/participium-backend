@@ -23,16 +23,11 @@ jest.mock("../../../src/services/MinIoService", () => ({
 }));
 
 jest.mock("../../../src/services/EmailService", () => {
-  return jest.fn().mockImplementation(() => ({
-    generateVerificationCode: jest.fn(() => "664749"),
-    getVerificationCodeExpiry: jest.fn(() => {
-      const expiry = new Date();
-      expiry.setMinutes(expiry.getMinutes() + 30);
-      return expiry;
-    }),
-    sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
-    validateEmailQuality: jest.fn(() => ({ valid: true })),
-  }));
+  // Reuse a shared mock factory to avoid duplication across unit test suites.
+  const {
+    buildMockEmailService,
+  } = require("../../utils/mocks/emailServiceMock");
+  return buildMockEmailService({ code: "664749" });
 });
 
 import * as bcrypt from "bcrypt";
@@ -40,27 +35,12 @@ import jwt from "jsonwebtoken";
 import MinIoService from "../../../src/services/MinIoService";
 import { LoginRequestDTO } from "../../../src/models/dto/LoginRequestDTO";
 
-jest.mock("../../../src/mappers/CitizenMapper", () => ({
-  CitizenMapper: {
-    toDTO: jest.fn(async (u: any) => ({
-      id: u.id,
-      email: u.email,
-      username: u.username,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      status: u.status ?? "PENDING",
-      isEmailVerified: u.isEmailVerified ?? false,
-      createdAt: u.createdAt,
-      // Convert null to undefined to match real mapper behavior
-      telegramUsername: u.telegramUsername ?? undefined,
-      emailNotificationsEnabled: u.emailNotificationsEnabled ?? undefined,
-      accountPhoto: u.accountPhotoUrl
-        ? `https://presigned-url.com/${u.accountPhotoUrl}`
-        : undefined,
-      lastLoginAt: u.lastLoginAt ?? undefined,
-    })),
-  },
-}));
+jest.mock("../../../src/mappers/CitizenMapper", () => {
+  const {
+    buildCitizenMapperMock,
+  } = require("../../utils/mocks/citizenMapperMock");
+  return buildCitizenMapperMock();
+});
 
 import { ICitizenRepository } from "../../../src/repositories/ICitizenRepository";
 const TEST_PWD = process.env.TEST_PWD ?? "pass123";
