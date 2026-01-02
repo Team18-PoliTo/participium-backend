@@ -872,9 +872,9 @@ describe("InternalUserController", () => {
     it("returns 403 if user not found or has no roles", async () => {
       const req = { auth: { sub: 99 } } as any;
       const res = mockRes();
-      mockInternalService.fetchUsers.mockResolvedValue([]); 
-  
-      mockInternalService.fetchUsers.mockResolvedValue([]); 
+      mockInternalService.fetchUsers.mockResolvedValue([]);
+
+      mockInternalService.fetchUsers.mockResolvedValue([]);
 
       (mockInternalService as any).findById = jest.fn().mockResolvedValue(null);
 
@@ -889,7 +889,7 @@ describe("InternalUserController", () => {
     it("returns 403 if user has forbidden role", async () => {
       const req = { auth: { sub: 1 } } as any;
       const res = mockRes();
-      
+
       const user = { id: 1, roles: [{ id: 28, name: "External Maintainer" }] };
       (mockInternalService as any).findById = jest.fn().mockResolvedValue(user);
 

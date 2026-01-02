@@ -5,7 +5,7 @@ describe("DelegatedReportMapper", () => {
   describe("toDTO", () => {
     it("maps DAO to DTO including base report fields", async () => {
       const mockDate = new Date();
-      
+
       const mockReportDao = {
         id: 1,
         title: "Test Report",
@@ -24,25 +24,25 @@ describe("DelegatedReportMapper", () => {
           id: 5,
           firstName: "John",
           lastName: "Doe",
-          email: "john@example.com"
+          email: "john@example.com",
         },
         category: {
           id: 2,
           name: "Pothole",
-          description: "Road issues"
+          description: "Road issues",
         },
-        assignedTo: null
+        assignedTo: null,
       };
 
       const mockDelegatedDao = {
         delegatedAt: mockDate,
-        report: mockReportDao, 
+        report: mockReportDao,
       };
 
       const result = await DelegatedReportMapper.toDTO(mockDelegatedDao as any);
 
       expect(result.delegatedAt).toBe(mockDate);
-      
+
       expect(result.id).toBe(1);
       expect(result.title).toBe("Test Report");
       expect(result.category.name).toBe("Pothole");

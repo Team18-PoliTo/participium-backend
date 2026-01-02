@@ -27,15 +27,15 @@ describe("EmailService", () => {
 
   describe("constructor", () => {
     it("warns if API key is missing", () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
       delete process.env.RESEND_API_KEY;
-      
+
       try {
-     
         new EmailService();
-      } catch (error) {
-      }
-      
+      } catch (error) {}
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("RESEND_API_KEY not found")
       );
@@ -46,7 +46,9 @@ describe("EmailService", () => {
   describe("sendVerificationEmail", () => {
     it("sends an email successfully", async () => {
       mockSend.mockResolvedValue({ id: "123" });
-      const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, "log")
+        .mockImplementation(() => {});
 
       await emailService.sendVerificationEmail(
         "test@example.com",
@@ -69,7 +71,9 @@ describe("EmailService", () => {
 
     it("throws error when sending fails", async () => {
       mockSend.mockRejectedValue(new Error("API Error"));
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
 
       await expect(
         emailService.sendVerificationEmail("test@example.com", "123456", "John")
@@ -94,7 +98,7 @@ describe("EmailService", () => {
       const now = new Date();
       const expiry = emailService.getVerificationCodeExpiry();
       const diffMinutes = (expiry.getTime() - now.getTime()) / 1000 / 60;
-      expect(diffMinutes).toBeCloseTo(30, 0); 
+      expect(diffMinutes).toBeCloseTo(30, 0);
     });
   });
 
@@ -117,7 +121,9 @@ describe("EmailService", () => {
     });
 
     it("warns on role-based emails", () => {
-      const consoleSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = jest
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
       const result = emailService.validateEmailQuality("admin@company.com");
       expect(result.valid).toBe(true);
       expect(consoleSpy).toHaveBeenCalledWith(

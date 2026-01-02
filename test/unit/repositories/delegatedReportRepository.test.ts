@@ -43,7 +43,9 @@ describe("DelegatedReportRepository", () => {
       },
     }));
 
-    const { DelegatedReportRepository } = require("../../../src/repositories/implementation/DelegatedReportRepository");
+    const {
+      DelegatedReportRepository,
+    } = require("../../../src/repositories/implementation/DelegatedReportRepository");
     repository = new DelegatedReportRepository();
   });
 
@@ -61,8 +63,13 @@ describe("DelegatedReportRepository", () => {
       const result = await repository.create(1, 2);
 
       expect(mockReportRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(mockInternalUserRepo.findOne).toHaveBeenCalledWith({ where: { id: 2 } });
-      expect(mockRepo.create).toHaveBeenCalledWith({ report, delegatedBy: user });
+      expect(mockInternalUserRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 2 },
+      });
+      expect(mockRepo.create).toHaveBeenCalledWith({
+        report,
+        delegatedBy: user,
+      });
       expect(mockRepo.save).toHaveBeenCalledWith(delegatedReport);
       expect(result).toEqual(delegatedReport);
     });
@@ -88,9 +95,9 @@ describe("DelegatedReportRepository", () => {
   describe("deleteByReportId", () => {
     it("should delete delegation by report id", async () => {
       mockRepo.delete.mockResolvedValue({ affected: 1 });
-      
+
       await repository.deleteByReportId(10);
-      
+
       expect(mockRepo.delete).toHaveBeenCalledWith({ report: { id: 10 } });
     });
   });
