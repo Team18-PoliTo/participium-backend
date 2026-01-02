@@ -1,7 +1,7 @@
 jest.mock("minio", () => {
   return {
     Client: jest.fn().mockImplementation(() => ({
-      listBuckets: jest.fn().mockResolvedValue([{ name: "reports" }]),
+      listBuckets: jest.fn().mockResolvedValue([{ name: "uploads" }]),
       bucketExists: jest.fn().mockResolvedValue(true),
       makeBucket: jest.fn().mockResolvedValue(undefined),
       putObject: jest.fn().mockResolvedValue("etag"),
