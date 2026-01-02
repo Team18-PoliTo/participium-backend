@@ -105,7 +105,12 @@ export const requireRole = (allowedRoles: string[]) => {
       }
 
       res.status(403).json({ message: "Forbidden: insufficient permissions" });
-    } catch (_e) {
+    } catch (error_) {
+      // Avoid leaking internals to clients, but keep a server-side signal for debugging.
+      // (Guarded to keep test output clean.)
+      if (process.env.NODE_ENV !== "test") {
+        console.error("Cannot verify role", error_);
+      }
       res.status(500).json({ message: "Cannot verify role" });
     }
   };

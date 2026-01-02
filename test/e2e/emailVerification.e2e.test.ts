@@ -20,7 +20,7 @@ import type { Test } from "supertest";
 
 function nextDifferent6Digit(code: string, add = 1): string {
   // Guarantee a different 6-digit numeric string to avoid rare OTP collisions in tests.
-  const n = /^\d{6}$/.test(code) ? parseInt(code, 10) : 0;
+  const n = /^\d{6}$/.test(code) ? Number.parseInt(code, 10) : 0;
   return ((n + add) % 1_000_000).toString().padStart(6, "0");
 }
 
