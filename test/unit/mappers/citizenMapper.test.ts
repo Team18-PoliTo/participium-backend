@@ -42,6 +42,7 @@ describe("CitizenMapper", () => {
         firstName: "Test",
         lastName: "User",
         status: "ACTIVE",
+        isEmailVerified: false,
         createdAt: citizenDAO.createdAt,
         accountPhoto: undefined,
         telegramUsername: undefined,
@@ -160,7 +161,7 @@ describe("CitizenMapper", () => {
       expect(result.lastLoginAt).toEqual(new Date("2024-01-01"));
     });
 
-    it("should use default status ACTIVE when status is null", async () => {
+    it("should use default status PENDING when status is null", async () => {
       const citizenDAO = {
         id: 1,
         email: "test@example.com",
@@ -177,7 +178,7 @@ describe("CitizenMapper", () => {
 
       const result = await CitizenMapper.toDTO(citizenDAO);
 
-      expect(result.status).toBe("ACTIVE");
+      expect(result.status).toBe("PENDING");
     });
   });
 });

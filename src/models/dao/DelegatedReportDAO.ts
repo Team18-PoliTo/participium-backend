@@ -13,7 +13,8 @@ class DelegatedReportDAO {
   @PrimaryColumn({ name: "reportId", type: "integer" })
   reportId: number;
 
-  @ManyToOne(() => ReportDAO, { eager: true })
+  // When a report is deleted (e.g. force seeding), delegated rows must be removed too.
+  @ManyToOne(() => ReportDAO, { eager: true, onDelete: "CASCADE" })
   @JoinColumn({ name: "reportId" })
   report: ReportDAO;
 

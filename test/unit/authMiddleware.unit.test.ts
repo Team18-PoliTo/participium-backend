@@ -21,8 +21,6 @@ jest.mock("../../src/repositories/InternalUserRepository", () => ({
   },
 }));
 
-import internalUserRepo from "../../src/repositories/InternalUserRepository";
-
 function makeRes() {
   const res: Partial<Response> = {
     status: jest.fn().mockReturnThis(),
