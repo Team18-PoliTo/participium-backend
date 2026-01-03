@@ -60,7 +60,7 @@ describe("internalSocket", () => {
   describe("initInternalSocket", () => {
     it("initializes Socket.IO with the server", () => {
       initInternalSocket(mockHttpServer);
-
+      
       const { Server } = require("socket.io");
       expect(Server).toHaveBeenCalledWith(mockHttpServer, expect.any(Object));
       expect(mockIo.of).toHaveBeenCalledWith("/ws/internal");
@@ -69,10 +69,7 @@ describe("internalSocket", () => {
     it("registers authentication middleware and connection handler", () => {
       initInternalSocket(mockHttpServer);
       expect(mockNsp.use).toHaveBeenCalled();
-      expect(mockNsp.on).toHaveBeenCalledWith(
-        "connection",
-        expect.any(Function)
-      );
+      expect(mockNsp.on).toHaveBeenCalledWith("connection", expect.any(Function));
     });
   });
 
@@ -98,7 +95,7 @@ describe("internalSocket", () => {
     it("extracts token from Bearer header if auth.token is missing", () => {
       const next = jest.fn();
       mockSocket.handshake.headers = { authorization: "Bearer valid_token" };
-
+      
       const { verify } = require("jsonwebtoken");
       verify.mockReturnValue({ sub: 1, kind: "internal" });
 
@@ -111,40 +108,34 @@ describe("internalSocket", () => {
     it("calls next(Error) if token is malformed", () => {
       const next = jest.fn();
       mockSocket.handshake.auth = { token: "token" };
-
+      
       const { verify } = require("jsonwebtoken");
       verify.mockReturnValue("string_payload");
 
       authMiddleware(mockSocket, next);
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "Unauthorized: malformed token" })
-      );
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: "Unauthorized: malformed token" }));
     });
 
     it("calls next(Error) if token payload is missing required properties", () => {
       const next = jest.fn();
       mockSocket.handshake.auth = { token: "token" };
-
+      
       const { verify } = require("jsonwebtoken");
       verify.mockReturnValue({ sub: 1 }); // Missing 'kind'
 
       authMiddleware(mockSocket, next);
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "Unauthorized: malformed token" })
-      );
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: "Unauthorized: malformed token" }));
     });
 
     it("calls next(Error) if kind is not internal", () => {
       const next = jest.fn();
       mockSocket.handshake.auth = { token: "token" };
-
+      
       const { verify } = require("jsonwebtoken");
       verify.mockReturnValue({ sub: 1, kind: "citizen" });
 
       authMiddleware(mockSocket, next);
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "Forbidden: not an internal user" })
-      );
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: "Forbidden: not an internal user" }));
     });
   });
 
@@ -153,69 +144,58 @@ describe("internalSocket", () => {
 
     beforeEach(() => {
       initInternalSocket(mockHttpServer);
-      const call = mockNsp.on.mock.calls.find(
-        (c: any) => c[0] === "connection"
-      );
+      const call = mockNsp.on.mock.calls.find((c: any) => c[0] === "connection");
       connectionHandler = call[1];
     });
 
     it("registers join_report and leave_report listeners", () => {
       connectionHandler(mockSocket);
-      expect(mockSocket.on).toHaveBeenCalledWith(
-        "join_report",
-        expect.any(Function)
-      );
-      expect(mockSocket.on).toHaveBeenCalledWith(
-        "leave_report",
-        expect.any(Function)
-      );
+      expect(mockSocket.on).toHaveBeenCalledWith("join_report", expect.any(Function));
+      expect(mockSocket.on).toHaveBeenCalledWith("leave_report", expect.any(Function));
     });
 
     describe("Socket Events", () => {
-      let joinHandler: Function;
-      let leaveHandler: Function;
-
-      beforeEach(() => {
-        connectionHandler(mockSocket);
-        const joinCall = mockSocket.on.mock.calls.find(
-          (c: any) => c[0] === "join_report"
-        );
-        const leaveCall = mockSocket.on.mock.calls.find(
-          (c: any) => c[0] === "leave_report"
-        );
-        joinHandler = joinCall[1];
-        leaveHandler = leaveCall[1];
+        let joinHandler: Function;
+        let leaveHandler: Function;
+  
+        beforeEach(() => {
+          connectionHandler(mockSocket);
+          const joinCall = mockSocket.on.mock.calls.find((c: any) => c[0] === "join_report");
+          const leaveCall = mockSocket.on.mock.calls.find((c: any) => c[0] === "leave_report");
+          joinHandler = joinCall[1];
+          leaveHandler = leaveCall[1];
+        });
+  
+        it("join_report joins the correct room", () => {
+          joinHandler({ reportId: 5 });
+          expect(mockSocket.join).toHaveBeenCalledWith("report:5");
+        });
+  
+        it("join_report ignores invalid IDs", () => {
+          joinHandler({ reportId: "bad" });
+          joinHandler({ reportId: 0 });
+          joinHandler({});
+          expect(mockSocket.join).not.toHaveBeenCalled();
+        });
+  
+        it("leave_report leaves the correct room", () => {
+          leaveHandler({ reportId: 10 });
+          expect(mockSocket.leave).toHaveBeenCalledWith("report:10");
+        });
+  
+        it("leave_report ignores invalid IDs", () => {
+          leaveHandler({ reportId: -1 });
+          leaveHandler({ reportId: "invalid" });
+          expect(mockSocket.leave).not.toHaveBeenCalled();
+        });
       });
-
-      it("join_report joins the correct room", () => {
-        joinHandler({ reportId: 5 });
-        expect(mockSocket.join).toHaveBeenCalledWith("report:5");
-      });
-
-      it("join_report ignores invalid IDs", () => {
-        joinHandler({ reportId: "bad" });
-        joinHandler({ reportId: 0 });
-        joinHandler({});
-        expect(mockSocket.join).not.toHaveBeenCalled();
-      });
-
-      it("leave_report leaves the correct room", () => {
-        leaveHandler({ reportId: 10 });
-        expect(mockSocket.leave).toHaveBeenCalledWith("report:10");
-      });
-
-      it("leave_report ignores invalid IDs", () => {
-        leaveHandler({ reportId: -1 });
-        expect(mockSocket.leave).not.toHaveBeenCalled();
-      });
-    });
   });
 
   describe("emitCommentCreated", () => {
     it("emits event to the specific room", () => {
       initInternalSocket(mockHttpServer);
       const payload = { id: 1, text: "New Comment" };
-
+      
       emitCommentCreated(99, payload);
 
       expect(mockIo.of).toHaveBeenCalledWith("/ws/internal");

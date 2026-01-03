@@ -20,7 +20,7 @@ describe("DelegatedReportRepository", () => {
         leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]), //ignore
+        getMany: jest.fn().mockResolvedValue([]), //ignore 
       })),
     };
 
@@ -43,9 +43,7 @@ describe("DelegatedReportRepository", () => {
       },
     }));
 
-    const {
-      DelegatedReportRepository,
-    } = require("../../../src/repositories/implementation/DelegatedReportRepository");
+    const { DelegatedReportRepository } = require("../../../src/repositories/implementation/DelegatedReportRepository");
     repository = new DelegatedReportRepository();
   });
 
@@ -63,13 +61,8 @@ describe("DelegatedReportRepository", () => {
       const result = await repository.create(1, 2);
 
       expect(mockReportRepo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(mockInternalUserRepo.findOne).toHaveBeenCalledWith({
-        where: { id: 2 },
-      });
-      expect(mockRepo.create).toHaveBeenCalledWith({
-        report,
-        delegatedBy: user,
-      });
+      expect(mockInternalUserRepo.findOne).toHaveBeenCalledWith({ where: { id: 2 } });
+      expect(mockRepo.create).toHaveBeenCalledWith({ report, delegatedBy: user });
       expect(mockRepo.save).toHaveBeenCalledWith(delegatedReport);
       expect(result).toEqual(delegatedReport);
     });
@@ -95,9 +88,9 @@ describe("DelegatedReportRepository", () => {
   describe("deleteByReportId", () => {
     it("should delete delegation by report id", async () => {
       mockRepo.delete.mockResolvedValue({ affected: 1 });
-
+      
       await repository.deleteByReportId(10);
-
+      
       expect(mockRepo.delete).toHaveBeenCalledWith({ report: { id: 10 } });
     });
   });
@@ -119,6 +112,18 @@ describe("DelegatedReportRepository", () => {
       mockRepo.findOne.mockResolvedValue(null);
       const result = await repository.findByReportId(1);
       expect(result).toBeNull();
+    });
+  });
+
+  describe("findReportsByDelegatedBy", () => {
+    it("should use query builder to find reports delegated by a specific user", async () => {
+      const delegations = [{ id: 1 }, { id: 2 }];
+      const qbMock = mockRepo.createQueryBuilder(); 
+      qbMock.getMany.mockResolvedValue(delegations);
+
+      const result = await repository.findReportsByDelegatedBy(5);
+
+      expect(mockRepo.createQueryBuilder).toHaveBeenCalledWith("delegated");
     });
   });
 });
