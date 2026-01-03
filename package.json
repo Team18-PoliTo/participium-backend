@@ -11,6 +11,7 @@
     "typeorm": "ts-node ./node_modules/typeorm/cli.js",
     "migration:run": "npm run typeorm -- migration:run -d ./src/config/database.ts",
     "test": "npx jest --runInBand --detectOpenHandles --coverage",
+    "test-unit": "npx jest --runInBand --detectOpenHandles --coverage test/unit",
     "test-e2e": "npx jest --runInBand --detectOpenHandles --coverage test/e2e/",
     "swagger:generate": "ts-node ./swagger.ts",
     "lint": "eslint . --ext .ts",

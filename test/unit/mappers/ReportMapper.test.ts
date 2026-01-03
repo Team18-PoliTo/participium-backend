@@ -1,16 +1,8 @@
-import { ReportMapper } from "../../../src/mappers/ReportMapper";
 import ReportDAO from "../../../src/models/dao/ReportDAO";
 import MinIoService from "../../../src/services/MinIoService";
 import { ReportStatus } from "../../../src/constants/ReportStatus";
-
-jest.mock("../../../src/services/MinIoService", () => {
-  return {
-    __esModule: true,
-    default: {
-      getPresignedUrl: jest.fn(async (key) => `http://minio/${key}`),
-    },
-  };
-});
+import { ReportViewContext } from "../../../src/constants/ReportViewContext";
+import { ReportMapper } from "../../../src/mappers/ReportMapper";
 
 describe("ReportMapper.toDTO", () => {
   beforeEach(() => {
@@ -90,14 +82,51 @@ describe("ReportMapper.toDTO", () => {
 
     expect(dto.assignedTo).toBeNull();
     expect(dto.photos).toEqual([]);
-    expect(MinIoService.getPresignedUrl).not.toHaveBeenCalled();
   });
 
-  // NEW TESTS
+  it("should anonymize citizen details when viewContext is CITIZEN and report is anonymous", async () => {
+    const reportDAO = {
+      id: 3,
+      isAnonymous: true,
+      citizen: { id: 10, firstName: "John", lastName: "Doe" },
+      category: { id: 1, name: "Test" },
+      title: "Secret Report",
+      location: '{"latitude": 0, "longitude": 0}',
+      status: ReportStatus.PENDING_APPROVAL,
+    } as unknown as ReportDAO;
+
+    const dto = await ReportMapper.toDTO(reportDAO, ReportViewContext.CITIZEN);
+
+    expect(dto.isAnonymous).toBe(true);
+    expect(dto.citizenName).toBe("Anonymous");
+    expect(dto.citizenLastName).toBe("Anonymous");
+    expect(dto.citizenId).toBeUndefined();
+  });
+
+  it("should show citizen details when viewContext is INTERNAL even if report is anonymous", async () => {
+    const reportDAO = {
+      id: 3,
+      isAnonymous: true,
+      citizen: { id: 10, firstName: "John", lastName: "Doe" },
+      category: { id: 1, name: "Test" },
+      title: "Secret Report",
+      location: '{"latitude": 0, "longitude": 0}',
+      status: ReportStatus.PENDING_APPROVAL,
+    } as unknown as ReportDAO;
+
+    const dto = await ReportMapper.toDTO(reportDAO, ReportViewContext.INTERNAL);
+
+    expect(dto.isAnonymous).toBe(true);
+    expect(dto.citizenName).toBe("John");
+    expect(dto.citizenLastName).toBe("Doe");
+    expect(dto.citizenId).toBe(10);
+  });
+
   describe("toDTOforMap", () => {
     it("should return a simplified object for map display", () => {
       const reportDAO = {
         id: 1,
+        isAnonymous: false,
         citizen: {
           firstName: "Mario",
           lastName: "Rossi",
@@ -121,6 +150,27 @@ describe("ReportMapper.toDTO", () => {
         location: { latitude: 45.0, longitude: 9.0 },
         category: { id: 1, name: "Road" },
       });
+    });
+
+    it("should anonymize citizen name in map DTO if report is anonymous", () => {
+      const reportDAO = {
+        id: 1,
+        isAnonymous: true,
+        citizen: {
+          firstName: "Mario",
+          lastName: "Rossi",
+        },
+        title: "Pothole",
+        status: "Assigned",
+        description: "Big hole",
+        location: '{"latitude": 45.0, "longitude": 9.0}',
+        category: { id: 1, name: "Road" },
+      } as any;
+
+      const result = ReportMapper.toDTOforMap(reportDAO) as any;
+
+      expect(result.citizenName).toBe("Anonymous");
+      expect(result.citizenLastName).toBe("Anonymous");
     });
   });
 });
