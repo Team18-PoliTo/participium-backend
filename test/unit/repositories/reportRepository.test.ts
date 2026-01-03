@@ -37,7 +37,9 @@ describe("ReportRepository", () => {
     }));
 
     // 4. Dynamically import class under test
-    const { ReportRepository } = require("../../../src/repositories/implementation/ReportRepository");
+    const {
+      ReportRepository,
+    } = require("../../../src/repositories/implementation/ReportRepository");
     repository = new ReportRepository();
   });
 
@@ -138,12 +140,14 @@ describe("ReportRepository", () => {
       mockRepo.update.mockResolvedValue({ affected: 1 });
       mockRepo.findOne.mockResolvedValue(report);
 
-      const result = await repository.updateStatus(1, "RESOLVED", "Done", { id: 2 });
+      const result = await repository.updateStatus(1, "RESOLVED", "Done", {
+        id: 2,
+      });
 
-      expect(mockRepo.update).toHaveBeenCalledWith(1, { 
-        status: "RESOLVED", 
-        explanation: "Done", 
-        assignedTo: { id: 2 } 
+      expect(mockRepo.update).toHaveBeenCalledWith(1, {
+        status: "RESOLVED",
+        explanation: "Done",
+        assignedTo: { id: 2 },
       });
       expect(result).toEqual(report);
     });
@@ -165,9 +169,14 @@ describe("ReportRepository", () => {
 
   describe("updateReport", () => {
     it("should update report fields and return updated report", async () => {
-      const updates = { status: "TEST", explanation: "exp", assignedTo: { id: 1 }, categoryId: 5 };
+      const updates = {
+        status: "TEST",
+        explanation: "exp",
+        assignedTo: { id: 1 },
+        categoryId: 5,
+      };
       const updatedReport = { id: 1, ...updates };
-      
+
       mockRepo.update.mockResolvedValue({ affected: 1 });
       mockRepo.findOne.mockResolvedValue(updatedReport);
 
@@ -183,19 +192,19 @@ describe("ReportRepository", () => {
     });
 
     it("should handle update without categoryId", async () => {
-        const updates = { status: "TEST" };
-        mockRepo.update.mockResolvedValue({ affected: 1 });
-        mockRepo.findOne.mockResolvedValue({ id: 1 });
-  
-        await repository.updateReport(1, updates);
-  
-        expect(mockRepo.update).toHaveBeenCalledWith(1, {
-          status: updates.status,
-          explanation: undefined,
-          assignedTo: undefined,
-          category: undefined,
-        });
+      const updates = { status: "TEST" };
+      mockRepo.update.mockResolvedValue({ affected: 1 });
+      mockRepo.findOne.mockResolvedValue({ id: 1 });
+
+      await repository.updateReport(1, updates);
+
+      expect(mockRepo.update).toHaveBeenCalledWith(1, {
+        status: updates.status,
+        explanation: undefined,
+        assignedTo: undefined,
+        category: undefined,
       });
+    });
   });
 
   describe("findByAssignedStaff", () => {
@@ -223,16 +232,16 @@ describe("ReportRepository", () => {
 
       expect(mockRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({
-            where: { category: { id: expect.anything() } },
-            relations: ["assignedTo", "category"],
-            order: { createdAt: "DESC" },
+          where: { category: { id: expect.anything() } },
+          relations: ["assignedTo", "category"],
+          order: { createdAt: "DESC" },
         })
       );
     });
   });
 
   // --- NEW TESTS FOR COMMENT METHODS ---
-  
+
   describe("findCommentsByReportId", () => {
     it("should return comments for a report", async () => {
       const comments = [{ id: 1, text: "comment" }];
@@ -251,9 +260,13 @@ describe("ReportRepository", () => {
 
   describe("createComment", () => {
     it("should create and save a comment", async () => {
-      const commentData = { comment: "text", comment_owner: { id: 2 }, report: { id: 1 } };
+      const commentData = {
+        comment: "text",
+        comment_owner: { id: 2 },
+        report: { id: 1 },
+      };
       const savedComment = { id: 1, ...commentData };
-      
+
       mockCommentRepo.create.mockReturnValue(commentData);
       mockCommentRepo.save.mockResolvedValue(savedComment);
 
