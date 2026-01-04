@@ -62,7 +62,6 @@ export class InternalUserRepository implements IInternalUserRepository {
     });
   }
 
-
   async save(user: InternalUserDAO): Promise<InternalUserDAO> {
     return await this.repo.save(user);
   }

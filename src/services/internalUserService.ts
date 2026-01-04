@@ -159,22 +159,16 @@ class InternalUserService {
     }
 
     return isExternalMaintainer
-      ? ExternalMaintainerMapper.toDTO(
-        userAfterUpdate ?? internalUserDAO
-      )
-      : InternalUserMapper.toDTO(
-        userAfterUpdate ?? internalUserDAO
-      );
+      ? ExternalMaintainerMapper.toDTO(userAfterUpdate ?? internalUserDAO)
+      : InternalUserMapper.toDTO(userAfterUpdate ?? internalUserDAO);
   }
 
   private async resetAssignedReportsIfNeeded(
     userBeforeUpdate: InternalUserDAO,
     userAfterUpdate: InternalUserDAO
   ): Promise<void> {
-
     const beforeCategoryIds = new Set<number>();
     for (const ur of userBeforeUpdate.roles) {
-
       for (const cr of ur.role.categoryRoles ?? []) {
         beforeCategoryIds.add(cr.category.id);
       }
@@ -182,7 +176,6 @@ class InternalUserService {
 
     const afterCategoryIds = new Set<number>();
     for (const ur of userAfterUpdate.roles) {
-
       for (const cr of ur.role.categoryRoles ?? []) {
         afterCategoryIds.add(cr.category.id);
       }
@@ -190,16 +183,15 @@ class InternalUserService {
 
     const categoriesChanged =
       beforeCategoryIds.size !== afterCategoryIds.size ||
-      [...beforeCategoryIds].some(id => !afterCategoryIds.has(id));
-
+      [...beforeCategoryIds].some((id) => !afterCategoryIds.has(id));
 
     if (!categoriesChanged) {
       return;
     }
 
-    const assignedReports =
-      await this.reportRepository.findByAssignedStaff(userAfterUpdate.id);
-
+    const assignedReports = await this.reportRepository.findByAssignedStaff(
+      userAfterUpdate.id
+    );
 
     if (assignedReports.length === 0) {
       return;
@@ -210,9 +202,7 @@ class InternalUserService {
 
       const stillAllowed = afterCategoryIds.has(reportCategoryId);
 
-
       if (!stillAllowed) {
-
         await this.reportRepository.updateReport(report.id, {
           status: ReportStatus.PENDING_APPROVAL,
           assignedTo: undefined,
