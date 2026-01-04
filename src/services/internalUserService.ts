@@ -17,6 +17,8 @@ import CompanyRepository from "../repositories/implementation/CompanyRepository"
 import InternalUserRoleDAO from "../models/dao/InternalUserRoleDAO";
 import { EXTERNAL_MAINTAINER_ROLE_ID } from "../constants/StatusTransitions";
 import { InternalUserRoleRepository } from "../repositories/implementation/InternalUserRoleRepository";
+import { ReportRepository } from "../repositories/implementation/ReportRepository";
+import { ReportStatus } from "../constants/ReportStatus";
 
 interface IInternalUserRepository {
   create(user: Partial<InternalUserDAO>): Promise<InternalUserDAO>;
@@ -34,7 +36,8 @@ class InternalUserService {
     private readonly userRepository: IInternalUserRepository = new InternalUserRepository(),
     private readonly roleRepository: RoleRepository = new RoleRepository(),
     private readonly companyRepository: CompanyRepository = new CompanyRepository(),
-    private readonly internalUserRoleRepository = new InternalUserRoleRepository()
+    private readonly internalUserRoleRepository = new InternalUserRoleRepository(),
+    private readonly reportRepository: ReportRepository = new ReportRepository()
   ) {}
 
   async register(
@@ -75,12 +78,12 @@ class InternalUserService {
     id: number,
     data: UpdateInternalUserRequestDTO
   ): Promise<InternalUserDTO> {
-    console.log("➡️ UPDATE internal user", { id, data });
-
     const internalUserDAO = await this.userRepository.findById(id);
     if (!internalUserDAO) {
       throw new Error("InternalUser not found");
     }
+
+    const userBeforeUpdate = structuredClone(internalUserDAO);
 
     if (data.firstName !== undefined) {
       internalUserDAO.firstName = data.firstName;
@@ -99,14 +102,16 @@ class InternalUserService {
       internalUserDAO.email = newEmail;
     }
 
-    if (data.roleIds !== undefined) {
+    const rolesWereUpdated = data.roleIds !== undefined;
+
+    if (rolesWereUpdated) {
       await this.internalUserRoleRepository.deleteByInternalUserId(
         internalUserDAO.id
       );
 
       internalUserDAO.roles = [];
 
-      for (const roleId of data.roleIds) {
+      for (const roleId of data.roleIds!) {
         const role = await this.roleRepository.findById(roleId);
         if (!role) {
           throw new Error(`Role not found: ${roleId}`);
@@ -137,11 +142,83 @@ class InternalUserService {
       internalUserDAO.company = company;
     }
 
-    const updatedInternalUser = await this.userRepository.save(internalUserDAO);
+    await this.userRepository.save(internalUserDAO);
+
+    let userAfterUpdate: InternalUserDAO | null = null;
+
+    if (rolesWereUpdated) {
+      userAfterUpdate = await this.userRepository.findById(id);
+      if (!userAfterUpdate) {
+        throw new Error("InternalUser not found after update");
+      }
+
+      await this.resetAssignedReportsIfNeeded(
+        userBeforeUpdate,
+        userAfterUpdate
+      );
+    }
 
     return isExternalMaintainer
-      ? ExternalMaintainerMapper.toDTO(updatedInternalUser)
-      : InternalUserMapper.toDTO(updatedInternalUser);
+      ? ExternalMaintainerMapper.toDTO(
+        userAfterUpdate ?? internalUserDAO
+      )
+      : InternalUserMapper.toDTO(
+        userAfterUpdate ?? internalUserDAO
+      );
+  }
+
+  private async resetAssignedReportsIfNeeded(
+    userBeforeUpdate: InternalUserDAO,
+    userAfterUpdate: InternalUserDAO
+  ): Promise<void> {
+
+    const beforeCategoryIds = new Set<number>();
+    for (const ur of userBeforeUpdate.roles) {
+
+      for (const cr of ur.role.categoryRoles ?? []) {
+        beforeCategoryIds.add(cr.category.id);
+      }
+    }
+
+    const afterCategoryIds = new Set<number>();
+    for (const ur of userAfterUpdate.roles) {
+
+      for (const cr of ur.role.categoryRoles ?? []) {
+        afterCategoryIds.add(cr.category.id);
+      }
+    }
+
+    const categoriesChanged =
+      beforeCategoryIds.size !== afterCategoryIds.size ||
+      [...beforeCategoryIds].some(id => !afterCategoryIds.has(id));
+
+
+    if (!categoriesChanged) {
+      return;
+    }
+
+    const assignedReports =
+      await this.reportRepository.findByAssignedStaff(userAfterUpdate.id);
+
+
+    if (assignedReports.length === 0) {
+      return;
+    }
+
+    for (const report of assignedReports) {
+      const reportCategoryId = report.category.id;
+
+      const stillAllowed = afterCategoryIds.has(reportCategoryId);
+
+
+      if (!stillAllowed) {
+
+        await this.reportRepository.updateReport(report.id, {
+          status: ReportStatus.PENDING_APPROVAL,
+          assignedTo: undefined,
+        });
+      }
+    }
   }
 
   async fetchUsers(): Promise<InternalUserDTO[]> {
