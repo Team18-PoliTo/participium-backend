@@ -103,9 +103,7 @@ class ReportService implements IReportService {
       );
     }
 
-    await this.internalUserRepository.incrementActiveTasks(
-      chosenMaintainer.id
-    );
+    await this.internalUserRepository.incrementActiveTasks(chosenMaintainer.id);
     return chosenMaintainer;
   }
 
@@ -438,7 +436,6 @@ class ReportService implements IReportService {
     userId: number,
     companyId: number
   ): Promise<ExternalMaintainerDTO> {
-
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
       throw new Error("Report not found");
@@ -448,7 +445,7 @@ class ReportService implements IReportService {
         "Only the currently assigned officer can delegate this report"
       );
     }
-  if (
+    if (
       report.status !== ReportStatus.ASSIGNED &&
       report.status !== ReportStatus.IN_PROGRESS &&
       report.assignedTo

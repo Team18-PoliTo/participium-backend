@@ -111,9 +111,14 @@ export class InternalUserRepository implements IInternalUserRepository {
   ): Promise<InternalUserDAO[]> {
     return this.repo
       .createQueryBuilder("user")
-      .innerJoinAndSelect("user.company", "company", "company.id = :companyId", {
-        companyId,
-      })
+      .innerJoinAndSelect(
+        "user.company",
+        "company",
+        "company.id = :companyId",
+        {
+          companyId,
+        }
+      )
       .innerJoin("user.roles", "ur")
       .innerJoinAndSelect("ur.role", "role")
       .where("role.id = :roleId", { roleId: 28 })
