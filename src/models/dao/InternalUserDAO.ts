@@ -50,7 +50,7 @@ class InternalUserDAO {
   @ManyToOne(() => CompanyDAO, (company) => company.internalUsers, {
     nullable: true,
   })
-  company: CompanyDAO;
+  company: CompanyDAO | null;
 
   @ManyToOne(() => CommentDAO, (comment) => comment.comment_owner, {
     nullable: true,

@@ -35,7 +35,7 @@ export class ExternalMaintainerMapper {
     const baseDTO = InternalUserMapper.toDTO(userDAO);
     return {
       ...baseDTO,
-      company: CompanyMapper.toDTO(userDAO.company),
+      company: userDAO.company ? CompanyMapper.toDTO(userDAO.company) : null,
     } as ExternalMaintainerDTO;
   }
 }
