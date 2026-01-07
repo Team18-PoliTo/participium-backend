@@ -1,9 +1,19 @@
+const MINIO_BUCKET = process.env.MINIO_BUCKET || "reports";
+
 jest.mock("minio", () => {
+  const buckets: { name: string }[] = [];
   return {
     Client: jest.fn().mockImplementation(() => ({
-      listBuckets: jest.fn().mockResolvedValue([{ name: "uploads" }]),
+      listBuckets: jest.fn().mockImplementation(async () => {
+        return buckets;
+      }),
       bucketExists: jest.fn().mockResolvedValue(true),
-      makeBucket: jest.fn().mockResolvedValue(undefined),
+      makeBucket: jest.fn().mockImplementation(async (bucketName: string) => {
+        if (!buckets.some((b) => b.name === bucketName)) {
+          buckets.push({ name: bucketName });
+        }
+        return undefined;
+      }),
       putObject: jest.fn().mockResolvedValue("etag"),
       getObject: jest.fn().mockResolvedValue({
         on: (event: string, cb: Function) => {
@@ -20,8 +30,6 @@ jest.mock("minio", () => {
 });
 
 import { Client } from "minio";
-
-const MINIO_BUCKET = process.env.MINIO_BUCKET || "reports";
 
 describe("MinIO E2E Tests (Mocked)", () => {
   let minioClient: Client;

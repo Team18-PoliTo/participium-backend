@@ -129,6 +129,11 @@ class InternalUserService {
       (r) => r.role.id === EXTERNAL_MAINTAINER_ROLE_ID
     );
 
+    // If company is assigned, user must be external maintainer
+    if (data.companyId && !isExternalMaintainer) {
+      throw new Error("Only External Maintainers can be assigned to a company");
+    }
+
     if (isExternalMaintainer) {
       if (!data.companyId) {
         throw new Error("External Maintainers must be assigned to a company");
@@ -140,6 +145,9 @@ class InternalUserService {
       }
 
       internalUserDAO.company = company;
+    } else if (data.companyId === null || data.companyId === undefined) {
+      // If not external maintainer and companyId is explicitly set to null/undefined, clear company
+      internalUserDAO.company = null;
     }
 
     await this.userRepository.save(internalUserDAO);

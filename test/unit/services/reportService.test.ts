@@ -24,7 +24,14 @@ const DEFAULT_CITIZEN = { id: 123, firstName: "Test", lastName: "Test" };
 const ROAD_CATEGORY = { id: 1, name: "Road", description: "Road issues" };
 const PR_OFFICER_USER = {
   id: 1,
-  role: { id: 10, name: "Public Relations Officer" },
+  roles: [
+    {
+      role: {
+        id: 10,
+        role: "Public Relations Officer",
+      },
+    },
+  ],
   company: null,
 };
 const MAINTAINER_ROLE = { id: 28, role: "External Maintainer" };
@@ -169,7 +176,7 @@ describe("ReportService", () => {
     });
 
     it("creates an ANONYMOUS report correctly", async () => {
-      const { service, reportRepository, citizenRepository } = buildService();
+      const { service, reportRepository } = buildService();
 
       await service.create(
         {

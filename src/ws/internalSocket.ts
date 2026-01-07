@@ -51,20 +51,29 @@ export function initInternalSocket(server: HttpServer): void {
         );
 
       if (!token) {
+        console.error("[WebSocket] Connection rejected: missing token");
         return next(new Error("Unauthorized: missing token"));
       }
 
       const decoded = jwt.verify(token, JWT_SECRET);
       if (typeof decoded === "string" || !isAuthTokenPayload(decoded)) {
+        console.error("[WebSocket] Connection rejected: malformed token");
         return next(new Error("Unauthorized: malformed token"));
       }
       if (decoded.kind !== "internal") {
+        console.error(
+          `[WebSocket] Connection rejected: user kind is "${decoded.kind}", expected "internal" (user ID: ${decoded.sub})`
+        );
         return next(new Error("Forbidden: not an internal user"));
       }
 
       (socket.data as any).auth = decoded as AuthPayload;
+      console.log(
+        `[WebSocket] Connection accepted: internal user ${decoded.sub} (${decoded.email || "no email"})`
+      );
       next();
-    } catch (_err) {
+    } catch (err) {
+      console.error("[WebSocket] Connection rejected: invalid token", err);
       next(new Error("Unauthorized: invalid token"));
     }
   });

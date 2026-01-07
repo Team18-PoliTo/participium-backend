@@ -13,6 +13,7 @@ import { plainToClass } from "class-transformer";
 import { IReportService } from "../services/IReportService";
 import { ReportStatus } from "../constants/ReportStatus";
 import { ReportViewContext } from "../constants/ReportViewContext";
+import InternalUserRepository from "../repositories/InternalUserRepository";
 
 interface IInternalUserService {
   register(data: RegisterInternalUserRequestDTO): Promise<InternalUserDTO>;
@@ -25,6 +26,8 @@ interface IInternalUserService {
 }
 
 class InternalUserController {
+  private readonly internalUserRepository = new InternalUserRepository();
+
   constructor(
     private readonly internalUserService: IInternalUserService,
     private readonly reportService?: IReportService
@@ -211,8 +214,50 @@ class InternalUserController {
         return;
       }
 
-      const userRole = (req as any).auth?.role;
-      const userId = (req as any).auth?.sub;
+      const userId = req.auth?.sub;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      // Get user roles - either from token or fetch from DB
+      let userRoles: string[] = [];
+      if (Array.isArray(req.auth?.roles) && req.auth.roles.length > 0) {
+        // If roles are already in token as strings, use them
+        userRoles = req.auth.roles.filter(
+          (r): r is string => typeof r === "string"
+        );
+      }
+
+      // If no roles in token, fetch from database (similar to requireRole middleware)
+      if (userRoles.length === 0 && req.auth?.kind === "internal") {
+        try {
+          const internalUser =
+            await this.internalUserRepository.findById(userId);
+          if (internalUser?.roles && Array.isArray(internalUser.roles)) {
+            userRoles = internalUser.roles
+              .filter((ur) => ur.role)
+              .map((ur) => ur.role.role);
+            // Update req.auth.roles for future use
+            if (req.auth) {
+              req.auth.roles = userRoles;
+            }
+          } else if ((internalUser as any)?.role) {
+            // Handle old format with single role
+            const roleName =
+              (internalUser as any).role?.name || (internalUser as any).role;
+            if (roleName) {
+              userRoles = [roleName];
+            }
+          }
+        } catch (_error) {
+          // If DB fetch fails (e.g., in tests), continue with empty roles
+          // The service will handle it
+        }
+      }
+
+      // Use the first role for backward compatibility with single-role code
+      const userRole = userRoles.length > 0 ? userRoles[0] : "";
 
       const updatedReport = await this.reportService.updateReport(
         reportId,

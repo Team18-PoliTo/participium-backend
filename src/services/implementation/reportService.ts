@@ -305,9 +305,35 @@ class ReportService implements IReportService {
       throw new Error("Internal user not found");
     }
 
+    // Extract role names from user object
+    // Support both old format (role) and new format (roles array)
+    let userRoleNames: string[] = [];
+
+    if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+      // New format: roles array
+      userRoleNames = user.roles
+        .filter((ur) => ur.role)
+        .map((ur) => ur.role.role);
+    } else if ((user as any).role && (user as any).role.name) {
+      // Old format: single role object with name property
+      userRoleNames = [(user as any).role.name];
+    } else if ((user as any).role && typeof (user as any).role === "string") {
+      // Old format: single role string
+      userRoleNames = [(user as any).role];
+    }
+
+    // Fallback to userRole parameter if no roles found in user object
+    if (userRoleNames.length === 0 && userRole) {
+      userRoleNames = [userRole];
+    }
+
+    // Use the first role name for backward compatibility, or combine them
+    const primaryUserRole = userRoleNames.length > 0 ? userRoleNames[0] : "";
+    // For role checking, we'll check if any role matches
+    const userRolesString = userRoleNames.join(", ");
+
     const isExternalMaintainer =
-      userRole === EXTERNAL_MAINTAINER_ROLE ||
-      userRole?.includes(EXTERNAL_MAINTAINER_ROLE) ||
+      userRoleNames.includes(EXTERNAL_MAINTAINER_ROLE) ||
       user.roles?.some((role) => role.id === EXTERNAL_MAINTAINER_ROLE_ID);
 
     const isAssignedUser = report.assignedTo?.id === user.id;
@@ -324,11 +350,11 @@ class ReportService implements IReportService {
       );
     }
 
-    // Validate status transition
+    // Validate status transition - check if any of the user's roles match
     const transitionResult = validateStatusTransition(
       report.status,
       data.status,
-      userRole || "",
+      userRolesString || primaryUserRole || "",
       isExternalMaintainer,
       isAssignedUser
     );
@@ -338,10 +364,8 @@ class ReportService implements IReportService {
     }
 
     // PR Officers can update only Pending Approval
-    if (
-      userRole === "Public Relations Officer" ||
-      userRole?.includes("Public Relations Officer")
-    ) {
+    const isPROfficer = userRoleNames.includes("Public Relations Officer");
+    if (isPROfficer) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
           `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
