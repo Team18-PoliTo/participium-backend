@@ -97,16 +97,14 @@ class ReportService implements IReportService {
     // since they are ordered by activeTasks ASC, the first one has the minimum
     const chosenMaintainer = maintainersInCompany[0];
 
-    if (chosenMaintainer) {
-      await this.internalUserRepository.incrementActiveTasks(
-        chosenMaintainer.id
-      );
-      return chosenMaintainer;
-    } else {
+    if (!chosenMaintainer) {
       throw new Error(
         "This company does not have maintainers available at the moment, please choose another company"
       );
     }
+
+    await this.internalUserRepository.incrementActiveTasks(chosenMaintainer.id);
+    return chosenMaintainer;
   }
 
   async create(

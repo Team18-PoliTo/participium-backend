@@ -25,7 +25,6 @@ class InternalUserRoleDAO {
   @JoinColumn({ name: "internalUserId" })
   internalUser: InternalUserDAO;
 
-  // ✅ ADDED:  Expose the foreign key column explicitly
   @Column({ type: "integer", nullable: false })
   roleId: number;
 
