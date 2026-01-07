@@ -18,5 +18,5 @@ export class InternalUserDTO {
 }
 
 export class ExternalMaintainerDTO extends InternalUserDTO {
-  company: CompanyDTO;
+  company: CompanyDTO | null;
 }

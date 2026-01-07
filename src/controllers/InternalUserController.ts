@@ -331,7 +331,7 @@ class InternalUserController {
 
       res.status(200).json({
         assignedTo: assignedTo.id,
-        message: `Report delegated successfully to maintainer ${assignedTo.firstName} ${assignedTo.lastName} from company ${assignedTo.company.name}`,
+        message: `Report delegated successfully to maintainer ${assignedTo.firstName} ${assignedTo.lastName} from company ${assignedTo.company?.name || "Unknown"}`,
       });
     } catch (error) {
       if (error instanceof Error) {
