@@ -25,11 +25,21 @@ let io: Server | null = null;
  * Rooms: report:<id>
  */
 export function initInternalSocket(server: HttpServer): void {
+  const allowedOrigins =
+    process.env.FRONTEND_ORIGINS?.split(",")
+      .map((o) => o.trim())
+      .filter(Boolean) || "*";
+
   io = new Server(server, {
-    // no cors configuration
+    path: "/ws/internal",
+    cors: {
+      origin: allowedOrigins,
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
   });
 
-  const nsp = io.of("/ws/internal");
+  const nsp = io.of("/");
 
   // Auth middleware for namespace
   nsp.use((socket: Socket, next: (err?: ExtendedError) => void) => {
@@ -90,5 +100,5 @@ function extractBearer(authHeader?: string): string | null {
  */
 export function emitCommentCreated(reportId: number, payload: any): void {
   if (!io) return;
-  io.of("/ws/internal").to(roomName(reportId)).emit("comment.created", payload);
+  io.of("/").to(roomName(reportId)).emit("comment.created", payload);
 }
