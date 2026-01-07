@@ -62,8 +62,11 @@ describe("internalSocket", () => {
       initInternalSocket(mockHttpServer);
 
       const { Server } = require("socket.io");
-      expect(Server).toHaveBeenCalledWith(mockHttpServer, expect.any(Object));
-      expect(mockIo.of).toHaveBeenCalledWith("/ws/internal");
+      expect(Server).toHaveBeenCalledWith(mockHttpServer, expect.objectContaining({
+        path: "/ws/internal",
+      }));
+      // The namespace is "/" (root), not "/ws/internal" - path is set in Server constructor
+      expect(mockIo.of).toHaveBeenCalledWith("/");
     });
 
     it("registers authentication middleware and connection handler", () => {
@@ -219,7 +222,8 @@ describe("internalSocket", () => {
 
       emitCommentCreated(99, payload);
 
-      expect(mockIo.of).toHaveBeenCalledWith("/ws/internal");
+      // The namespace is "/" (root), path is "/ws/internal" in Server constructor
+      expect(mockIo.of).toHaveBeenCalledWith("/");
       expect(mockNsp.to).toHaveBeenCalledWith("report:99");
       expect(mockNsp.emit).toHaveBeenCalledWith("comment.created", payload);
     });
