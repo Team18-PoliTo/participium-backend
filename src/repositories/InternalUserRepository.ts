@@ -109,12 +109,14 @@ export class InternalUserRepository implements IInternalUserRepository {
   async findExternalMaintainersByCompany(
     companyId: number
   ): Promise<InternalUserDAO[]> {
-    return await this.repo
+    return this.repo
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.roles", "role")
-      .leftJoinAndSelect("user.company", "company")
-      .where("company.id = :companyId", { companyId })
-      .andWhere("role.id = :roleId", { roleId: 28 })
+      .innerJoinAndSelect("user.company", "company", "company.id = :companyId", {
+        companyId,
+      })
+      .innerJoin("user.roles", "ur")
+      .innerJoinAndSelect("ur.role", "role")
+      .where("role.id = :roleId", { roleId: 28 })
       .orderBy("user.activeTasks", "ASC")
       .getMany();
   }

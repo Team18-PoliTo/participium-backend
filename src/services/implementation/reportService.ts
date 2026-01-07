@@ -97,16 +97,16 @@ class ReportService implements IReportService {
     // since they are ordered by activeTasks ASC, the first one has the minimum
     const chosenMaintainer = maintainersInCompany[0];
 
-    if (chosenMaintainer) {
-      await this.internalUserRepository.incrementActiveTasks(
-        chosenMaintainer.id
-      );
-      return chosenMaintainer;
-    } else {
+    if (!chosenMaintainer) {
       throw new Error(
         "This company does not have maintainers available at the moment, please choose another company"
       );
     }
+
+    await this.internalUserRepository.incrementActiveTasks(
+      chosenMaintainer.id
+    );
+    return chosenMaintainer;
   }
 
   async create(
@@ -438,6 +438,7 @@ class ReportService implements IReportService {
     userId: number,
     companyId: number
   ): Promise<ExternalMaintainerDTO> {
+
     const report = await this.reportRepository.findById(reportId);
     if (!report) {
       throw new Error("Report not found");
@@ -447,7 +448,7 @@ class ReportService implements IReportService {
         "Only the currently assigned officer can delegate this report"
       );
     }
-    if (
+  if (
       report.status !== ReportStatus.ASSIGNED &&
       report.status !== ReportStatus.IN_PROGRESS &&
       report.assignedTo
