@@ -308,7 +308,7 @@ class ReportService implements IReportService {
     // Extract role names from user object
     // Support both old format (role) and new format (roles array)
     let userRoleNames: string[] = [];
-    
+
     if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
       // New format: roles array
       userRoleNames = user.roles
@@ -321,12 +321,12 @@ class ReportService implements IReportService {
       // Old format: single role string
       userRoleNames = [(user as any).role];
     }
-    
+
     // Fallback to userRole parameter if no roles found in user object
     if (userRoleNames.length === 0 && userRole) {
       userRoleNames = [userRole];
     }
-    
+
     // Use the first role name for backward compatibility, or combine them
     const primaryUserRole = userRoleNames.length > 0 ? userRoleNames[0] : "";
     // For role checking, we'll check if any role matches

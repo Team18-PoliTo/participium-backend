@@ -1,5 +1,4 @@
 import { createServer } from "http";
-import jwt from "jsonwebtoken";
 
 // We do NOT import internalSocket statically here.
 // We import it dynamically in beforeEach after setting up mocks.
@@ -62,9 +61,12 @@ describe("internalSocket", () => {
       initInternalSocket(mockHttpServer);
 
       const { Server } = require("socket.io");
-      expect(Server).toHaveBeenCalledWith(mockHttpServer, expect.objectContaining({
-        path: "/ws/internal",
-      }));
+      expect(Server).toHaveBeenCalledWith(
+        mockHttpServer,
+        expect.objectContaining({
+          path: "/ws/internal",
+        })
+      );
       // The namespace is "/" (root), not "/ws/internal" - path is set in Server constructor
       expect(mockIo.of).toHaveBeenCalledWith("/");
     });

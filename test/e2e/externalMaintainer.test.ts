@@ -185,6 +185,8 @@ describe("External Maintainer Workflow E2E", () => {
 
     expect([400, 403]).toContain(res.status);
     // External maintainers cannot transition from ASSIGNED (they receive DELEGATED status)
-    expect(res.body.error).toMatch(/(only the assigned user can transition|External maintainers cannot transition)/i);
+    expect(res.body.error).toMatch(
+      /(only the assigned user can transition|External maintainers cannot transition)/i
+    );
   });
 });

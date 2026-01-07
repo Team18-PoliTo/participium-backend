@@ -1,5 +1,4 @@
 import ReportDAO from "../../../src/models/dao/ReportDAO";
-import MinIoService from "../../../src/services/MinIoService";
 import { ReportStatus } from "../../../src/constants/ReportStatus";
 import { ReportViewContext } from "../../../src/constants/ReportViewContext";
 import { ReportMapper } from "../../../src/mappers/ReportMapper";

@@ -371,13 +371,16 @@ describe("InternalUserController", () => {
       } as any;
       const res = mockRes();
       mockReportService.updateReport.mockResolvedValue({});
-      
+
       // Mock the repository to return a user with roles
-      const InternalUserRepository = require("../../../src/repositories/InternalUserRepository").default;
-      jest.spyOn(InternalUserRepository.prototype, "findById").mockResolvedValue({
-        id: 99,
-        roles: [{ role: { role: "Admin" } }],
-      });
+      const InternalUserRepository =
+        require("../../../src/repositories/InternalUserRepository").default;
+      jest
+        .spyOn(InternalUserRepository.prototype, "findById")
+        .mockResolvedValue({
+          id: 99,
+          roles: [{ role: { role: "Admin" } }],
+        });
 
       await buildController().updateReportStatus(req, res, next);
 
@@ -400,13 +403,16 @@ describe("InternalUserController", () => {
         auth: { sub: 99, kind: "internal" },
       } as any;
       const res = mockRes();
-      
+
       // Mock the repository to return a user
-      const InternalUserRepository = require("../../../src/repositories/InternalUserRepository").default;
-      jest.spyOn(InternalUserRepository.prototype, "findById").mockResolvedValue({
-        id: 99,
-        roles: [],
-      });
+      const InternalUserRepository =
+        require("../../../src/repositories/InternalUserRepository").default;
+      jest
+        .spyOn(InternalUserRepository.prototype, "findById")
+        .mockResolvedValue({
+          id: 99,
+          roles: [],
+        });
 
       await buildController().updateReportStatus(req, res, next);
       expect(res.status).toHaveBeenCalledWith(403);
@@ -425,14 +431,17 @@ describe("InternalUserController", () => {
         auth: { sub: 99, kind: "internal" },
       } as any;
       const res = mockRes();
-      
+
       // Mock the repository to return a user
-      const InternalUserRepository = require("../../../src/repositories/InternalUserRepository").default;
-      jest.spyOn(InternalUserRepository.prototype, "findById").mockResolvedValue({
-        id: 99,
-        roles: [],
-      });
-      
+      const InternalUserRepository =
+        require("../../../src/repositories/InternalUserRepository").default;
+      jest
+        .spyOn(InternalUserRepository.prototype, "findById")
+        .mockResolvedValue({
+          id: 99,
+          roles: [],
+        });
+
       await buildController().updateReportStatus(req, res, next);
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ error: "Logic error" });
@@ -446,14 +455,17 @@ describe("InternalUserController", () => {
         auth: { sub: 99, kind: "internal" },
       } as any;
       const res = mockRes();
-      
+
       // Mock the repository to return a user
-      const InternalUserRepository = require("../../../src/repositories/InternalUserRepository").default;
-      jest.spyOn(InternalUserRepository.prototype, "findById").mockResolvedValue({
-        id: 99,
-        roles: [],
-      });
-      
+      const InternalUserRepository =
+        require("../../../src/repositories/InternalUserRepository").default;
+      jest
+        .spyOn(InternalUserRepository.prototype, "findById")
+        .mockResolvedValue({
+          id: 99,
+          roles: [],
+        });
+
       await buildController().updateReportStatus(req, res, next);
       expect(next).toHaveBeenCalledWith("weird error");
     });

@@ -176,7 +176,7 @@ describe("ReportService", () => {
     });
 
     it("creates an ANONYMOUS report correctly", async () => {
-      const { service, reportRepository, citizenRepository } = buildService();
+      const { service, reportRepository } = buildService();
 
       await service.create(
         {

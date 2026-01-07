@@ -187,7 +187,9 @@ export function validateStatusTransition(
   } else {
     // Check if user's role is in the allowed roles
     // userRole can be a single role string or comma-separated roles
-    const userRolesList = userRole ? userRole.split(",").map((r) => r.trim()) : [];
+    const userRolesList = userRole
+      ? userRole.split(",").map((r) => r.trim())
+      : [];
     const hasRole = rule.allowedRoles.some((allowedRole) => {
       // Check if any of the user's roles matches the allowed role
       return userRolesList.some(
@@ -224,7 +226,9 @@ export function getValidNextStatuses(
       return isAssignedUser;
     } else {
       // userRole can be a single role string or comma-separated roles
-      const userRolesList = userRole ? userRole.split(",").map((r) => r.trim()) : [];
+      const userRolesList = userRole
+        ? userRole.split(",").map((r) => r.trim())
+        : [];
       return rule.allowedRoles.some((allowedRole) => {
         // Check if any of the user's roles matches the allowed role
         return userRolesList.some(

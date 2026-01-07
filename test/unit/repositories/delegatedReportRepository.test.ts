@@ -128,7 +128,7 @@ describe("DelegatedReportRepository", () => {
       const qbMock = mockRepo.createQueryBuilder();
       qbMock.getMany.mockResolvedValue(delegations);
 
-      const result = await repository.findReportsByDelegatedBy(5);
+      await repository.findReportsByDelegatedBy(5);
 
       expect(mockRepo.createQueryBuilder).toHaveBeenCalledWith("delegated");
     });

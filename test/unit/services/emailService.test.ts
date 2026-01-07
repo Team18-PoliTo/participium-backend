@@ -34,7 +34,7 @@ describe("EmailService", () => {
 
       try {
         new EmailService();
-      } catch (error) {}
+      } catch (_error) {}
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("RESEND_API_KEY not found")

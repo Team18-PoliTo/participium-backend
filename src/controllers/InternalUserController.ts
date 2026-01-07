@@ -224,13 +224,16 @@ class InternalUserController {
       let userRoles: string[] = [];
       if (Array.isArray(req.auth?.roles) && req.auth.roles.length > 0) {
         // If roles are already in token as strings, use them
-        userRoles = req.auth.roles.filter((r): r is string => typeof r === "string");
+        userRoles = req.auth.roles.filter(
+          (r): r is string => typeof r === "string"
+        );
       }
 
       // If no roles in token, fetch from database (similar to requireRole middleware)
       if (userRoles.length === 0 && req.auth?.kind === "internal") {
         try {
-          const internalUser = await this.internalUserRepository.findById(userId);
+          const internalUser =
+            await this.internalUserRepository.findById(userId);
           if (internalUser?.roles && Array.isArray(internalUser.roles)) {
             userRoles = internalUser.roles
               .filter((ur) => ur.role)
@@ -241,12 +244,13 @@ class InternalUserController {
             }
           } else if ((internalUser as any)?.role) {
             // Handle old format with single role
-            const roleName = (internalUser as any).role?.name || (internalUser as any).role;
+            const roleName =
+              (internalUser as any).role?.name || (internalUser as any).role;
             if (roleName) {
               userRoles = [roleName];
             }
           }
-        } catch (error) {
+        } catch (_error) {
           // If DB fetch fails (e.g., in tests), continue with empty roles
           // The service will handle it
         }
