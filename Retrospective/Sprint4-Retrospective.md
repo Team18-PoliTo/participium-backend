@@ -102,15 +102,15 @@ Index:
 
 What caused your errors in estimation (if any)?
 
-- Similarly to the previous sprint, due to excessive workload we had some diversions in the timeline.
+- The working period was interrupted by a week of festivities and this shift from hard work and total rest, was the sole impact on our estimations.
 
 What lessons did you learn (both positive and negative) in this sprint?
 
-- The importance of keeping track of technical debt and the system up to date with the user requirements (positive), and learning best practices to write code more consistent and maintainable creating less issues for the future techincal debt (negative).
+- As we finished the final sprint of the project we learned that consistency and punctuality is the key to delivering to product owners and shareholders and that the end of project is the easiest time to overlook bugs and erros. 
 
 Which improvement goals set in the previous retrospective were you able to achieve?
 
-- Testing was a success on both fronts, regression for the entire system (newly implemented and refactored features) manual testing for the client side part of the application.
+- Last retrospective, one of the 2 goals was to increase the number of story points and in comparison to last spring committed story number has tripled and story points have doubled.
 
 Which ones you were not able to achieve? Why?
 
@@ -118,9 +118,8 @@ Which ones you were not able to achieve? Why?
 
 Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
-- Increasing the number of story points to be implemented while keeping the same level of time and technical debt management
-- Stay on the same level of presentation and restrospective analysis
+- There is no next sprint.
 
 One thing you are proud of as a Team!!
 
-- Through coordination of the members, goals such as, resolving technical debt, regression testing and implementing new features while keeping nearly the same time management (as made evident by the Burndown chart for both the actual and previous sprint) were successfully achieved.
+- After months of design, development and testing, team 18 managed to deploy a software of considerable quality through sheer will, excessive communication and admirable teamwork.
