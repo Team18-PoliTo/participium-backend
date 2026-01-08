@@ -110,7 +110,7 @@ What lessons did you learn (both positive and negative) in this sprint?
 
 Which improvement goals set in the previous retrospective were you able to achieve?
 
-- Last retrospective, one of the 2 goals was to increase the number of story points and in comparison to last spring committed story number has tripled and story points have doubled.
+- Last retrospective, one of the 2 goals was to increase the number of story points and in comparison to last sprint committed story number has tripled and story points have doubled.
 
 Which ones you were not able to achieve? Why?
 
