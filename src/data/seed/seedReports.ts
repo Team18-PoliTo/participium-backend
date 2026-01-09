@@ -6,6 +6,8 @@ import ReportDAO from "../../models/dao/ReportDAO";
 import CitizenDAO from "../../models/dao/CitizenDAO";
 import CategoryDAO from "../../models/dao/CategoryDAO";
 import InternalUserDAO from "../../models/dao/InternalUserDAO";
+import DelegatedReportDAO from "../../models/dao/DelegatedReportDAO";
+import CommentDAO from "../../models/dao/CommentDAO";
 import MinIoService from "../../services/MinIoService";
 import { MINIO_BUCKET } from "../../config/minioClient";
 import { SeedReport } from "./seedReport";
@@ -37,6 +39,14 @@ export async function seedReports(
     console.log(
       `[Seed] Force seed enabled. Deleting ${existingCount} existing reports...`
     );
+    // IMPORTANT: clear child tables first to satisfy FK constraints (SQLite enforces these)
+    // delegated_reports -> reports (can block deletion)
+    // comments -> reports (should cascade, but clearing explicitly is safer across DBs)
+    const delegatedReportRepo = dataSource.getRepository(DelegatedReportDAO);
+    const commentRepo = dataSource.getRepository(CommentDAO);
+
+    await delegatedReportRepo.clear();
+    await commentRepo.clear();
     await reportRepo.clear();
   }
 
@@ -125,6 +135,7 @@ export async function seedReports(
 
       const report = reportRepo.create({
         citizen,
+        isAnonymous: seedReport.isAnonymous,
         title: seedReport.title,
         description: seedReport.description,
         category,

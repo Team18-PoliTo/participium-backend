@@ -317,7 +317,7 @@ describe("Report E2E Tests", () => {
     const reportId = createRes.body.id;
 
     const res = await request(app)
-      .get(`/api/citizens/reports/getById/${reportId}`)
+      .get(`/api/reports/getById/${reportId}`)
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(200);
@@ -327,7 +327,7 @@ describe("Report E2E Tests", () => {
 
   it("should return 404 for non-existent report ID", async () => {
     const res = await request(app)
-      .get(`/api/citizens/reports/getById/99999`)
+      .get(`/api/reports/getById/99999`)
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(404);
@@ -363,7 +363,7 @@ describe("Report E2E Tests", () => {
     });
 
     const res = await request(app)
-      .post("/api/citizens/reports/map")
+      .post("/api/reports/map")
       .set("Authorization", `Bearer ${token}`)
       .send({
         corners: [
@@ -381,7 +381,7 @@ describe("Report E2E Tests", () => {
 
   it("should return 400 for invalid map request", async () => {
     const res = await request(app)
-      .post("/api/citizens/reports/map")
+      .post("/api/reports/map")
       .set("Authorization", `Bearer ${token}`)
       .send({
         corners: [{ latitude: 45, longitude: 9 }],

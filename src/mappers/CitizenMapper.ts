@@ -40,7 +40,8 @@ export class CitizenMapper {
       username: citizenDAO.username,
       firstName: citizenDAO.firstName,
       lastName: citizenDAO.lastName,
-      status: citizenDAO.status ?? "ACTIVE",
+      status: citizenDAO.status ?? "PENDING",
+      isEmailVerified: citizenDAO.isEmailVerified ?? false,
       createdAt: citizenDAO.createdAt,
       accountPhoto, // Use "accountPhoto" to match PATCH /me field name
       // Convert null to undefined for optional fields

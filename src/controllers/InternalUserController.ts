@@ -1,5 +1,6 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import {
+  CreateCommentRequestDTO,
   DelegateReportRequestDTO,
   RegisterInternalUserRequestDTO,
   UpdateInternalUserRequestDTO,
@@ -11,6 +12,8 @@ import { validate } from "class-validator";
 import { plainToClass } from "class-transformer";
 import { IReportService } from "../services/IReportService";
 import { ReportStatus } from "../constants/ReportStatus";
+import { ReportViewContext } from "../constants/ReportViewContext";
+import InternalUserRepository from "../repositories/InternalUserRepository";
 
 interface IInternalUserService {
   register(data: RegisterInternalUserRequestDTO): Promise<InternalUserDTO>;
@@ -23,6 +26,8 @@ interface IInternalUserService {
 }
 
 class InternalUserController {
+  private readonly internalUserRepository = new InternalUserRepository();
+
   constructor(
     private readonly internalUserService: IInternalUserService,
     private readonly reportService?: IReportService
@@ -69,6 +74,7 @@ class InternalUserController {
 
       const updateDTO = plainToClass(UpdateInternalUserRequestDTO, req.body);
       const errors = await validate(updateDTO);
+
       if (errors.length > 0) {
         const errorMessages = errors
           .map((err) => Object.values(err.constraints || {}).join(", "))
@@ -80,13 +86,8 @@ class InternalUserController {
       const updatedUser = await this.internalUserService.update(id, updateDTO);
       res.status(200).json(updatedUser);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message === "InternalUser with this email already exists" ||
-          error.message === "Role not found" ||
-          error.message === "Role already assigned")
-      ) {
-        res.status(409).json({ error: error.message });
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
         return;
       }
       next(error);
@@ -163,8 +164,10 @@ class InternalUserController {
         status = status || ReportStatus.PENDING_APPROVAL;
       }
 
-      const reports: ReportDTO[] =
-        await this.reportService.getReportsByStatus(status);
+      const reports: ReportDTO[] = await this.reportService.getReportsByStatus(
+        status,
+        ReportViewContext.INTERNAL
+      );
       res.status(200).json(reports);
     } catch (error) {
       if (error instanceof Error) {
@@ -211,8 +214,50 @@ class InternalUserController {
         return;
       }
 
-      const userRole = (req as any).auth?.role;
-      const userId = (req as any).auth?.sub;
+      const userId = req.auth?.sub;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      // Get user roles - either from token or fetch from DB
+      let userRoles: string[] = [];
+      if (Array.isArray(req.auth?.roles) && req.auth.roles.length > 0) {
+        // If roles are already in token as strings, use them
+        userRoles = req.auth.roles.filter(
+          (r): r is string => typeof r === "string"
+        );
+      }
+
+      // If no roles in token, fetch from database (similar to requireRole middleware)
+      if (userRoles.length === 0 && req.auth?.kind === "internal") {
+        try {
+          const internalUser =
+            await this.internalUserRepository.findById(userId);
+          if (internalUser?.roles && Array.isArray(internalUser.roles)) {
+            userRoles = internalUser.roles
+              .filter((ur) => ur.role)
+              .map((ur) => ur.role.role);
+            // Update req.auth.roles for future use
+            if (req.auth) {
+              req.auth.roles = userRoles;
+            }
+          } else if ((internalUser as any)?.role) {
+            // Handle old format with single role
+            const roleName =
+              (internalUser as any).role?.name || (internalUser as any).role;
+            if (roleName) {
+              userRoles = [roleName];
+            }
+          }
+        } catch (_error) {
+          // If DB fetch fails (e.g., in tests), continue with empty roles
+          // The service will handle it
+        }
+      }
+
+      // Use the first role for backward compatibility with single-role code
+      const userRole = userRoles.length > 0 ? userRoles[0] : "";
 
       const updatedReport = await this.reportService.updateReport(
         reportId,
@@ -286,7 +331,7 @@ class InternalUserController {
 
       res.status(200).json({
         assignedTo: assignedTo.id,
-        message: `Report delegated successfully to maintainer ${assignedTo.firstName} ${assignedTo.lastName} from company ${assignedTo.company.name}`,
+        message: `Report delegated successfully to maintainer ${assignedTo.firstName} ${assignedTo.lastName} from company ${assignedTo.company?.name || "Unknown"}`,
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -335,7 +380,8 @@ class InternalUserController {
 
       const reports = await this.reportService.getReportsForStaff(
         staffId,
-        statusFilter
+        statusFilter,
+        ReportViewContext.INTERNAL
       );
 
       res.status(200).json(reports);
@@ -373,7 +419,10 @@ class InternalUserController {
         res.status(403).json({ error: "PR Officers cannot filter by office" });
         return;
       }
-      const reports = await this.reportService.getReportsByOffice(staffId);
+      const reports = await this.reportService.getReportsByOffice(
+        staffId,
+        ReportViewContext.INTERNAL
+      );
 
       res.status(200).json(reports);
     } catch (error) {
@@ -381,6 +430,152 @@ class InternalUserController {
         res.status(400).json({ error: error.message });
         return;
       }
+      next(error);
+    }
+  }
+
+  async getReportComments(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const reportId = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(reportId)) {
+        res.status(400).json({ error: "Invalid report ID" });
+        return;
+      }
+
+      const comments = await this.reportService.getCommentsByReportId(reportId);
+      res.status(200).json(comments);
+    } catch (error) {
+      if (error instanceof Error && error.message === "Report not found") {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  async createReportComment(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not configured" });
+        return;
+      }
+
+      const reportId = Number.parseInt(req.params.id, 10);
+      if (Number.isNaN(reportId)) {
+        res.status(400).json({ error: "Invalid report ID" });
+        return;
+      }
+
+      const userId = (req as any).auth?.sub;
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      const createCommentDTO = plainToClass(CreateCommentRequestDTO, req.body);
+      const errors = await validate(createCommentDTO);
+
+      if (errors.length > 0) {
+        const errorMessages = errors
+          .map((err) => Object.values(err.constraints || {}).join(", "))
+          .join("; ");
+        res.status(400).json({ error: errorMessages });
+        return;
+      }
+
+      const newComment = await this.reportService.createComment(
+        reportId,
+        userId,
+        createCommentDTO.comment
+      );
+      res.status(201).json(newComment);
+    } catch (error) {
+      if (error instanceof Error) {
+        if (
+          error.message === "Report not found" ||
+          error.message === "Internal user not found"
+        ) {
+          res.status(404).json({ error: error.message });
+          return;
+        }
+        if (error.message === "Comment text cannot be empty") {
+          res.status(400).json({ error: error.message });
+          return;
+        }
+      }
+      next(error);
+    }
+  }
+
+  async getDelegatedReports(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const userId = (req as any).auth?.sub;
+
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      if (!this.internalUserService) {
+        res.status(500).json({ error: "Internal user service not available" });
+        return;
+      }
+
+      const nonDelegatingRoles = [0, 1, 10, 28];
+
+      const users = await this.internalUserService.fetchUsers();
+      const currentUser = users.find((u) => u.id === userId);
+
+      if (
+        !currentUser ||
+        !currentUser.roles ||
+        currentUser.roles.length === 0
+      ) {
+        res.status(403).json({
+          error: "Forbidden: User roles not found",
+        });
+        return;
+      }
+
+      const hasForbiddenRole = currentUser.roles.some((role) =>
+        nonDelegatingRoles.includes(role.id)
+      );
+
+      if (hasForbiddenRole) {
+        res.status(403).json({
+          error:
+            "Forbidden: Your role does not have permission to delegate reports",
+        });
+        return;
+      }
+
+      if (!this.reportService) {
+        res.status(500).json({ error: "Report service not available" });
+        return;
+      }
+
+      const reports =
+        await this.reportService.getDelegatedReportsByUser(userId);
+
+      res.status(200).json(reports);
+    } catch (error) {
       next(error);
     }
   }

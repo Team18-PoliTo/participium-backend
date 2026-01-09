@@ -11,6 +11,7 @@ import internalUserRoutes from "./routes/internalUserRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 import roleRoutes from "./routes/roleRoutes";
+import emailVerificationRoutes from "./routes/emailVerificationRoutes";
 import {
   requireAuth,
   requireAdmin,
@@ -23,6 +24,7 @@ import reportRoutes from "./routes/reportRoutes";
 import categoryRoutes from "./routes/categoryRoutes";
 import fileRoutes from "./routes/fileRoutes";
 import companyRoutes from "./routes/companyRoutes";
+import publicReportsRoutes from "./routes/publicReportsRoutes";
 
 const app = express();
 
@@ -39,9 +41,11 @@ app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 app.get("/api/health", (req: Request, res: Response) => {
   res.json({ status: "ok", message: "Participium API is running" });
 });
+app.use("/api", publicReportsRoutes);
 
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
+app.use("/api/email-verification", emailVerificationRoutes);
 
 // Citizen routes (authentication handled at endpoint level)
 app.use("/api/citizens", citizenRoutes);

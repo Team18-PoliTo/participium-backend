@@ -5,9 +5,16 @@ import {
   CategoryDTO,
 } from "../models/dto/ReportDTO";
 import MinIoService from "../services/MinIoService";
+import { ReportViewContext } from "../constants/ReportViewContext";
 
 export class ReportMapper {
-  static async toDTO(reportDAO: ReportDAO): Promise<ReportDTO> {
+  static async toDTO(
+    reportDAO: ReportDAO,
+    // Default INTERNAL because this mapper is primarily used
+    // by internal/staff endpoints. Citizen endpoints must
+    // explicitly pass ReportViewContext.CITIZEN.
+    viewContext: ReportViewContext = ReportViewContext.INTERNAL
+  ): Promise<ReportDTO> {
     let assignedTo: AssignedOfficerDTO | null = null;
     if (reportDAO.assignedTo) {
       assignedTo = {
@@ -30,17 +37,24 @@ export class ReportMapper {
       reportDAO.photo3,
     ].filter((key): key is string => Boolean(key));
 
-    // Generate pre-signed URLs for each photo (valid for 7 days)
     const photoUrlsRaw = await Promise.all(
       photoKeys.map((key) => MinIoService.getPresignedUrl(key))
     );
     const photoUrls = photoUrlsRaw.filter(Boolean);
 
+    const isAnonymous = reportDAO.isAnonymous;
+    const showRealCitizen =
+      viewContext === ReportViewContext.INTERNAL || !isAnonymous;
+
     return {
       id: reportDAO.id,
-      citizenId: reportDAO.citizen.id,
-      citizenName: reportDAO.citizen.firstName,
-      citizenLastName: reportDAO.citizen.lastName,
+      isAnonymous,
+      citizenId: showRealCitizen ? reportDAO.citizen.id : undefined,
+      citizenName: showRealCitizen ? reportDAO.citizen.firstName : "Anonymous",
+      citizenLastName: showRealCitizen
+        ? reportDAO.citizen.lastName
+        : "Anonymous",
+
       title: reportDAO.title,
       description: reportDAO.description,
       category: categoryDTO,
@@ -55,10 +69,12 @@ export class ReportMapper {
   }
 
   static toDTOforMap(reportDAO: ReportDAO): object {
+    const isAnonymous = reportDAO.isAnonymous;
+
     return {
       id: reportDAO.id,
-      citizenName: reportDAO.citizen.firstName,
-      citizenLastName: reportDAO.citizen.lastName,
+      citizenName: isAnonymous ? "Anonymous" : reportDAO.citizen.firstName,
+      citizenLastName: isAnonymous ? "Anonymous" : reportDAO.citizen.lastName,
       title: reportDAO.title,
       status: reportDAO.status,
       description: reportDAO.description,

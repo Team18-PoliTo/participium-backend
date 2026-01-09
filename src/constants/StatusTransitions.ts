@@ -26,6 +26,20 @@ import { ReportStatus, ReportStatusType } from "./ReportStatus";
 export const PR_OFFICER_ROLE = "Public Relations Officer";
 export const EXTERNAL_MAINTAINER_ROLE = "External Maintainer";
 export const EXTERNAL_MAINTAINER_ROLE_ID = 28;
+export const ADMIN_ROLE = "ADMIN";
+export const ADMIN_ROLE_ID = 1;
+export const UNASSIGNED_ROLE_ID = 0;
+export const SINGLETON_ROLE_IDS = [
+  ADMIN_ROLE_ID,
+  EXTERNAL_MAINTAINER_ROLE_ID,
+  UNASSIGNED_ROLE_ID,
+] as const;
+
+export const isSingletonRoleId = (
+  roleId: number
+): roleId is (typeof SINGLETON_ROLE_IDS)[number] => {
+  return (SINGLETON_ROLE_IDS as readonly number[]).includes(roleId);
+};
 
 // Transition rules structure
 interface TransitionRule {
@@ -172,14 +186,20 @@ export function validateStatusTransition(
     }
   } else {
     // Check if user's role is in the allowed roles
-    const hasRole = rule.allowedRoles.some(
-      (allowedRole) =>
-        userRole === allowedRole || userRole?.includes(allowedRole)
-    );
+    // userRole can be a single role string or comma-separated roles
+    const userRolesList = userRole
+      ? userRole.split(",").map((r) => r.trim())
+      : [];
+    const hasRole = rule.allowedRoles.some((allowedRole) => {
+      // Check if any of the user's roles matches the allowed role
+      return userRolesList.some(
+        (ur) => ur === allowedRole || ur.includes(allowedRole)
+      );
+    });
     if (!hasRole) {
       return {
         valid: false,
-        errorMessage: `Users with role "${userRole}" cannot transition reports from "${currentStatus}" to "${newStatus}". Allowed roles: ${rule.allowedRoles.join(", ")}.`,
+        errorMessage: `Users with role "${userRole || "(no role)"}" cannot transition reports from "${currentStatus}" to "${newStatus}". Allowed roles: ${rule.allowedRoles.join(", ")}.`,
       };
     }
   }
@@ -205,10 +225,16 @@ export function getValidNextStatuses(
     if (rule.allowedRoles === "assigned") {
       return isAssignedUser;
     } else {
-      return rule.allowedRoles.some(
-        (allowedRole) =>
-          userRole === allowedRole || userRole?.includes(allowedRole)
-      );
+      // userRole can be a single role string or comma-separated roles
+      const userRolesList = userRole
+        ? userRole.split(",").map((r) => r.trim())
+        : [];
+      return rule.allowedRoles.some((allowedRole) => {
+        // Check if any of the user's roles matches the allowed role
+        return userRolesList.some(
+          (ur) => ur === allowedRole || ur.includes(allowedRole)
+        );
+      });
     }
   }).map((rule) => rule.to);
 }

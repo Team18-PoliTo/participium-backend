@@ -113,3 +113,14 @@ npm test
 
 Tests are located in the `test/` directory and use Jest with ts-jest.
 
+## WebSocket API (Internal)
+
+Real-time internal updates for report comments are provided via Socket.IO.
+
+- Namespace: `/ws/internal`
+- Auth: JWT in handshake (internal users only)
+- Rooms: `report:<id>` via `join_report` / `leave_report`
+- Event: `comment.created`
+
+See detailed usage and examples in [docs/websocket.md](docs/websocket.md).
+

@@ -79,8 +79,8 @@ describe("InternalUser E2E (real DB)", () => {
     const res = await request(app)
       .put(`/${created.body.id}`)
       .send({
-        newFirstName: "UpdatedFirst",
-        newLastName: "UpdatedLast",
+        firstName: "UpdatedFirst",
+        lastName: "UpdatedLast",
       })
       .expect(200);
 

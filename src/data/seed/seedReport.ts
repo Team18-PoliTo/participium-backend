@@ -8,4 +8,5 @@ export interface SeedReport {
   explanation: string | null;
   assignedToId: number | null;
   images: string[];
+  isAnonymous?: boolean;
 }

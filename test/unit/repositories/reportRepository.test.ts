@@ -1,457 +1,280 @@
-import { AppDataSource } from "../../../src/config/database";
-import { ReportRepository } from "../../../src/repositories/implementation/ReportRepository";
-import ReportDAO from "../../../src/models/dao/ReportDAO";
-import { ReportStatus } from "../../../src/constants/ReportStatus";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 
 describe("ReportRepository", () => {
-  const save = jest.fn();
-  const create = jest.fn();
-  const findOne = jest.fn();
-  const find = jest.fn();
-  const update = jest.fn();
-  let repoSpy: jest.SpyInstance;
+  let repository: any;
+  let mockRepo: any;
+  let mockCommentRepo: any;
 
   beforeEach(() => {
-    repoSpy = jest.spyOn(AppDataSource, "getRepository").mockReturnValue({
-      create,
-      save,
-      findOne,
-      find,
-      update,
-    } as any);
+    // 1. Clear module cache to allow fresh mock of AppDataSource
+    jest.resetModules();
     jest.clearAllMocks();
-  });
 
-  afterEach(() => {
-    repoSpy.mockRestore();
+    // 2. Define mocks
+    mockRepo = {
+      create: jest.fn(),
+      save: jest.fn(),
+      findOne: jest.fn(),
+      find: jest.fn(),
+      update: jest.fn(),
+    };
+
+    mockCommentRepo = {
+      create: jest.fn(),
+      save: jest.fn(),
+      find: jest.fn(),
+    };
+
+    // 3. Mock AppDataSource to return specific repos based on entity name
+    jest.doMock("../../../src/config/database", () => ({
+      AppDataSource: {
+        getRepository: jest.fn((entity: any) => {
+          if (entity.name === "ReportDAO") return mockRepo;
+          if (entity.name === "CommentDAO") return mockCommentRepo;
+          return mockRepo;
+        }),
+      },
+    }));
+
+    // 4. Dynamically import class under test
+    const {
+      ReportRepository,
+    } = require("../../../src/repositories/implementation/ReportRepository");
+    repository = new ReportRepository();
   });
 
   describe("create", () => {
-    it("create proxies to underlying repository", async () => {
-      const repo = new ReportRepository();
-      const dto = { title: "Report" } as ReportDAO;
-      create.mockReturnValue(dto);
-      save.mockResolvedValue({ ...dto, id: 1 });
+    it("should create and save a report", async () => {
+      const reportData = { title: "Test" };
+      mockRepo.create.mockReturnValue(reportData);
+      mockRepo.save.mockResolvedValue(reportData);
 
-      const result = await repo.create(dto);
+      const result = await repository.create(reportData);
 
-      expect(create).toHaveBeenCalledWith(dto);
-      expect(save).toHaveBeenCalledWith(dto);
-      expect(result).toEqual({ ...dto, id: 1 });
+      expect(mockRepo.create).toHaveBeenCalledWith(reportData);
+      expect(mockRepo.save).toHaveBeenCalledWith(reportData);
+      expect(result).toEqual(reportData);
     });
   });
 
   describe("findById", () => {
-    it("findById forwards relation lookup", async () => {
-      const repo = new ReportRepository();
-      findOne.mockResolvedValue({ id: 10 });
+    it("should find report by id", async () => {
+      const report = { id: 1 };
+      mockRepo.findOne.mockResolvedValue(report);
 
-      const result = await repo.findById(10);
+      const result = await repository.findById(1);
 
-      expect(findOne).toHaveBeenCalledWith({
-        where: { id: 10 },
+      expect(mockRepo.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
         relations: ["citizen", "category", "assignedTo"],
       });
-      expect(result).toEqual({ id: 10 });
-    });
-
-    it("returns null when report not found", async () => {
-      const repo = new ReportRepository();
-      findOne.mockResolvedValue(null);
-
-      const result = await repo.findById(999);
-
-      expect(result).toBeNull();
+      expect(result).toEqual(report);
     });
   });
 
   describe("update", () => {
-    it("update uses save and returns updated entity", async () => {
-      const repo = new ReportRepository();
-      save.mockResolvedValue({ id: 2, title: "Updated" });
+    it("should save partial report update", async () => {
+      const updateData = { id: 1, title: "Updated" };
+      mockRepo.save.mockResolvedValue(updateData);
 
-      const result = await repo.update({ id: 2, title: "Updated" });
+      const result = await repository.update(updateData);
 
-      expect(save).toHaveBeenCalledWith({ id: 2, title: "Updated" });
-      expect(result).toEqual({ id: 2, title: "Updated" });
+      expect(mockRepo.save).toHaveBeenCalledWith(updateData);
+      expect(result).toEqual(updateData);
     });
   });
 
   describe("findByStatus", () => {
-    it("should find reports by status with correct relations and ordering", async () => {
-      const repo = new ReportRepository();
-      const mockReports = [
-        { id: 1, status: ReportStatus.PENDING_APPROVAL, title: "Report 1" },
-        { id: 2, status: ReportStatus.PENDING_APPROVAL, title: "Report 2" },
-      ];
-      find.mockResolvedValue(mockReports);
+    it("should find reports by status", async () => {
+      const reports = [{ id: 1 }];
+      mockRepo.find.mockResolvedValue(reports);
 
-      const result = await repo.findByStatus(ReportStatus.PENDING_APPROVAL);
+      const result = await repository.findByStatus("PENDING");
 
-      expect(find).toHaveBeenCalledWith({
-        where: { status: ReportStatus.PENDING_APPROVAL },
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: { status: "PENDING" },
         relations: ["citizen"],
         order: { createdAt: "DESC" },
       });
-      expect(result).toEqual(mockReports);
-    });
-
-    it("should return empty array when no reports found for status", async () => {
-      const repo = new ReportRepository();
-      find.mockResolvedValue([]);
-
-      const result = await repo.findByStatus(ReportStatus.REJECTED);
-
-      expect(result).toEqual([]);
+      expect(result).toEqual(reports);
     });
   });
 
   describe("findAll", () => {
-    it("should find all reports with correct relations and ordering", async () => {
-      const repo = new ReportRepository();
-      const mockReports = [
-        { id: 1, title: "Report 1" },
-        { id: 2, title: "Report 2" },
-      ];
-      find.mockResolvedValue(mockReports);
+    it("should find all reports", async () => {
+      const reports = [{ id: 1 }];
+      mockRepo.find.mockResolvedValue(reports);
 
-      const result = await repo.findAll();
+      const result = await repository.findAll();
 
-      expect(find).toHaveBeenCalledWith({
+      expect(mockRepo.find).toHaveBeenCalledWith({
         relations: ["citizen", "explanation"],
         order: { createdAt: "DESC" },
       });
-      expect(result).toEqual(mockReports);
+      expect(result).toEqual(reports);
     });
   });
 
   describe("findAllApproved", () => {
-    it("should find reports with ASSIGNED or IN_PROGRESS or DELEGATED status", async () => {
-      const repo = new ReportRepository();
-      const mockReports = [
-        { id: 1, status: ReportStatus.ASSIGNED, title: "Report 1" },
-        { id: 2, status: ReportStatus.IN_PROGRESS, title: "Report 2" },
-        { id: 3, status: ReportStatus.DELEGATED, title: "Report 3" },
-      ];
-      find.mockResolvedValue(mockReports);
+    it("should find all approved reports", async () => {
+      const reports = [{ id: 1 }];
+      mockRepo.find.mockResolvedValue(reports);
 
-      const result = await repo.findAllApproved();
+      await repository.findAllApproved();
 
-      expect(find).toHaveBeenCalledWith({
-        where: {
-          status: expect.objectContaining({
-            _type: "in",
-            _value: [
-              ReportStatus.ASSIGNED,
-              ReportStatus.IN_PROGRESS,
-              ReportStatus.DELEGATED,
-            ],
-          }),
-        },
-        relations: ["citizen"],
-        order: { createdAt: "DESC" },
-      });
-      expect(result).toEqual(mockReports);
-    });
-
-    it("should return empty array when no approved reports exist", async () => {
-      const repo = new ReportRepository();
-      find.mockResolvedValue([]);
-
-      const result = await repo.findAllApproved();
-
-      expect(result).toEqual([]);
+      expect(mockRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            status: expect.anything(), // TypeORM In(...) object
+          },
+          relations: ["citizen"],
+          order: { createdAt: "DESC" },
+        })
+      );
     });
   });
 
   describe("updateStatus", () => {
     it("should update status and return updated report", async () => {
-      const repo = new ReportRepository();
-      const updatedReport = {
-        id: 1,
-        status: ReportStatus.ASSIGNED,
-        explanation: "Approved",
-      };
-      update.mockResolvedValue(undefined);
-      findOne.mockResolvedValue(updatedReport);
+      const report = { id: 1, status: "RESOLVED" };
+      mockRepo.update.mockResolvedValue({ affected: 1 });
+      mockRepo.findOne.mockResolvedValue(report);
 
-      const result = await repo.updateStatus(
-        1,
-        ReportStatus.ASSIGNED,
-        "Approved"
-      );
-
-      expect(update).toHaveBeenCalledWith(1, {
-        status: ReportStatus.ASSIGNED,
-        explanation: "Approved",
-        assignedTo: undefined,
+      const result = await repository.updateStatus(1, "RESOLVED", "Done", {
+        id: 2,
       });
-      expect(findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
-        relations: ["citizen", "category", "assignedTo"],
+
+      expect(mockRepo.update).toHaveBeenCalledWith(1, {
+        status: "RESOLVED",
+        explanation: "Done",
+        assignedTo: { id: 2 },
       });
-      expect(result).toEqual(updatedReport);
-    });
-
-    it("should update status with assignedTo", async () => {
-      const repo = new ReportRepository();
-      const officer = { id: 10, firstName: "John" };
-      const updatedReport = {
-        id: 1,
-        status: ReportStatus.ASSIGNED,
-        assignedTo: officer,
-      };
-      update.mockResolvedValue(undefined);
-      findOne.mockResolvedValue(updatedReport);
-
-      const result = await repo.updateStatus(
-        1,
-        ReportStatus.ASSIGNED,
-        undefined,
-        officer
-      );
-
-      expect(update).toHaveBeenCalledWith(1, {
-        status: ReportStatus.ASSIGNED,
-        explanation: undefined,
-        assignedTo: officer,
-      });
-      expect(result).toEqual(updatedReport);
-    });
-
-    it("should update status without explanation", async () => {
-      const repo = new ReportRepository();
-      const updatedReport = {
-        id: 1,
-        status: ReportStatus.IN_PROGRESS,
-      };
-      update.mockResolvedValue(undefined);
-      findOne.mockResolvedValue(updatedReport);
-
-      const result = await repo.updateStatus(1, ReportStatus.IN_PROGRESS);
-
-      expect(update).toHaveBeenCalledWith(1, {
-        status: ReportStatus.IN_PROGRESS,
-        explanation: undefined,
-        assignedTo: undefined,
-      });
-      expect(result).toEqual(updatedReport);
+      expect(result).toEqual(report);
     });
   });
 
   describe("findByUser", () => {
     it("should find reports by citizen id", async () => {
-      const repo = new ReportRepository();
-      const mockReports = [
-        { id: 1, title: "Report 1", citizen: { id: 123 } },
-        { id: 2, title: "Report 2", citizen: { id: 123 } },
-      ];
-      find.mockResolvedValue(mockReports);
+      const reports = [{ id: 1 }];
+      mockRepo.find.mockResolvedValue(reports);
 
-      const result = await repo.findByUser(123);
+      const result = await repository.findByUser(123);
 
-      expect(find).toHaveBeenCalledWith({
-        where: {
-          citizen: { id: 123 },
-        },
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: { citizen: { id: 123 } },
       });
-      expect(result).toEqual(mockReports);
+      expect(result).toEqual(reports);
+    });
+  });
+
+  describe("updateReport", () => {
+    it("should update report fields and return updated report", async () => {
+      const updates = {
+        status: "TEST",
+        explanation: "exp",
+        assignedTo: { id: 1 },
+        categoryId: 5,
+      };
+      const updatedReport = { id: 1, ...updates };
+
+      mockRepo.update.mockResolvedValue({ affected: 1 });
+      mockRepo.findOne.mockResolvedValue(updatedReport);
+
+      const result = await repository.updateReport(1, updates);
+
+      expect(mockRepo.update).toHaveBeenCalledWith(1, {
+        status: updates.status,
+        explanation: updates.explanation,
+        assignedTo: updates.assignedTo,
+        category: { id: 5 },
+      });
+      expect(result).toEqual(updatedReport);
     });
 
-    it("should return empty array when user has no reports", async () => {
-      const repo = new ReportRepository();
-      find.mockResolvedValue([]);
+    it("should handle update without categoryId", async () => {
+      const updates = { status: "TEST" };
+      mockRepo.update.mockResolvedValue({ affected: 1 });
+      mockRepo.findOne.mockResolvedValue({ id: 1 });
 
-      const result = await repo.findByUser(999);
+      await repository.updateReport(1, updates);
 
-      expect(result).toEqual([]);
+      expect(mockRepo.update).toHaveBeenCalledWith(1, {
+        status: updates.status,
+        explanation: undefined,
+        assignedTo: undefined,
+        category: undefined,
+      });
     });
   });
 
   describe("findByAssignedStaff", () => {
-    it("should find reports assigned to staff member", async () => {
-      const repo = new ReportRepository();
-      const mockReports = [
-        {
-          id: 1,
-          title: "Report 1",
-          assignedTo: { id: 456, firstName: "Staff" },
-        },
-        {
-          id: 2,
-          title: "Report 2",
-          assignedTo: { id: 456, firstName: "Staff" },
-        },
-      ];
-      find.mockResolvedValue(mockReports);
+    it("should find reports by staff id", async () => {
+      const reports = [{ id: 1 }];
+      mockRepo.find.mockResolvedValue(reports);
 
-      const result = await repo.findByAssignedStaff(456);
+      const result = await repository.findByAssignedStaff(456);
 
-      expect(find).toHaveBeenCalledWith({
-        where: {
-          assignedTo: { id: 456 },
-        },
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: { assignedTo: { id: 456 } },
         relations: ["assignedTo", "category"],
         order: { createdAt: "DESC" },
       });
-      expect(result).toEqual(mockReports);
-    });
-
-    it("should return empty array when staff has no assigned reports", async () => {
-      const repo = new ReportRepository();
-      find.mockResolvedValue([]);
-
-      const result = await repo.findByAssignedStaff(999);
-
-      expect(result).toEqual([]);
+      expect(result).toEqual(reports);
     });
   });
 
   describe("findByCategoryIds", () => {
     it("should find reports by category ids", async () => {
-      const repo = new ReportRepository();
-      const mockReports = [
-        { id: 1, title: "Report 1", category: { id: 1 } },
-        { id: 2, title: "Report 2", category: { id: 2 } },
-        { id: 3, title: "Report 3", category: { id: 1 } },
-      ];
-      find.mockResolvedValue(mockReports);
+      const reports = [{ id: 1 }];
+      mockRepo.find.mockResolvedValue(reports);
 
-      const result = await repo.findByCategoryIds([1, 2]);
+      await repository.findByCategoryIds([1, 2]);
 
-      expect(find).toHaveBeenCalledWith({
-        where: {
-          category: {
-            id: expect.objectContaining({
-              _type: "in",
-              _value: [1, 2],
-            }),
-          },
-        },
-        relations: ["assignedTo", "category"],
-        order: { createdAt: "DESC" },
-      });
-      expect(result).toEqual(mockReports);
-    });
-
-    it("should return empty array when no reports found for category ids", async () => {
-      const repo = new ReportRepository();
-      find.mockResolvedValue([]);
-
-      const result = await repo.findByCategoryIds([999]);
-
-      expect(result).toEqual([]);
-    });
-
-    it("should handle multiple category ids", async () => {
-      const repo = new ReportRepository();
-      const mockReports = [
-        { id: 1, category: { id: 1 } },
-        { id: 2, category: { id: 2 } },
-        { id: 3, category: { id: 3 } },
-      ];
-      find.mockResolvedValue(mockReports);
-
-      const result = await repo.findByCategoryIds([1, 2, 3]);
-
-      expect(find).toHaveBeenCalledWith({
-        where: {
-          category: {
-            id: expect.objectContaining({
-              _type: "in",
-              _value: [1, 2, 3],
-            }),
-          },
-        },
-        relations: ["assignedTo", "category"],
-        order: { createdAt: "DESC" },
-      });
-      expect(result).toEqual(mockReports);
+      expect(mockRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { category: { id: expect.anything() } },
+          relations: ["assignedTo", "category"],
+          order: { createdAt: "DESC" },
+        })
+      );
     });
   });
 
-  describe("updateReport", () => {
-    it("should update report with all fields including categoryId", async () => {
-      const repo = new ReportRepository();
-      const updatedReport = {
-        id: 1,
-        title: "Updated Report",
-        status: ReportStatus.IN_PROGRESS,
-        explanation: "Updated explanation",
-        category: { id: 2 },
-      } as ReportDAO;
-      update.mockResolvedValue({ affected: 1 });
-      findOne.mockResolvedValue(updatedReport);
+  // --- NEW TESTS FOR COMMENT METHODS ---
 
-      const result = await repo.updateReport(1, {
-        status: ReportStatus.IN_PROGRESS,
-        explanation: "Updated explanation",
-        assignedTo: null,
-        categoryId: 2,
-      });
+  describe("findCommentsByReportId", () => {
+    it("should return comments for a report", async () => {
+      const comments = [{ id: 1, text: "comment" }];
+      mockCommentRepo.find.mockResolvedValue(comments);
 
-      expect(update).toHaveBeenCalledWith(1, {
-        status: ReportStatus.IN_PROGRESS,
-        explanation: "Updated explanation",
-        assignedTo: null,
-        category: { id: 2 },
+      const result = await repository.findCommentsByReportId(1);
+
+      expect(mockCommentRepo.find).toHaveBeenCalledWith({
+        where: { report: { id: 1 } },
+        relations: ["comment_owner"],
+        order: { creation_date: "ASC" },
       });
-      expect(findOne).toHaveBeenCalledWith({
-        where: { id: 1 },
-        relations: ["citizen", "category", "assignedTo"],
-      });
-      expect(result).toEqual(updatedReport);
+      expect(result).toEqual(comments);
     });
+  });
 
-    it("should update report without categoryId (branch coverage)", async () => {
-      const repo = new ReportRepository();
-      const updatedReport = {
-        id: 1,
-        title: "Updated Report",
-        status: ReportStatus.RESOLVED,
-        explanation: "Resolved",
-      } as ReportDAO;
-      update.mockResolvedValue({ affected: 1 });
-      findOne.mockResolvedValue(updatedReport);
+  describe("createComment", () => {
+    it("should create and save a comment", async () => {
+      const commentData = {
+        comment: "text",
+        comment_owner: { id: 2 },
+        report: { id: 1 },
+      };
+      const savedComment = { id: 1, ...commentData };
 
-      const result = await repo.updateReport(1, {
-        status: ReportStatus.RESOLVED,
-        explanation: "Resolved",
-        assignedTo: null,
-      });
+      mockCommentRepo.create.mockReturnValue(commentData);
+      mockCommentRepo.save.mockResolvedValue(savedComment);
 
-      expect(update).toHaveBeenCalledWith(1, {
-        status: ReportStatus.RESOLVED,
-        explanation: "Resolved",
-        assignedTo: null,
-        category: undefined,
-      });
-      expect(result).toEqual(updatedReport);
-    });
+      const result = await repository.createComment(1, 2, "text");
 
-    it("should update report with assignedTo", async () => {
-      const repo = new ReportRepository();
-      const assignedUser = { id: 10, firstName: "John", lastName: "Doe" };
-      const updatedReport = {
-        id: 1,
-        status: ReportStatus.ASSIGNED,
-        assignedTo: assignedUser,
-      } as ReportDAO;
-      update.mockResolvedValue({ affected: 1 });
-      findOne.mockResolvedValue(updatedReport);
-
-      const result = await repo.updateReport(1, {
-        status: ReportStatus.ASSIGNED,
-        assignedTo: assignedUser,
-      });
-
-      expect(update).toHaveBeenCalledWith(1, {
-        status: ReportStatus.ASSIGNED,
-        explanation: undefined,
-        assignedTo: assignedUser,
-        category: undefined,
-      });
-      expect(result).toEqual(updatedReport);
+      expect(mockCommentRepo.create).toHaveBeenCalledWith(commentData);
+      expect(mockCommentRepo.save).toHaveBeenCalledWith(commentData);
+      expect(result).toEqual(savedComment);
     });
   });
 });

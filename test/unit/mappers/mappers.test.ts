@@ -1,4 +1,3 @@
-// Mock MinIoService BEFORE importing CitizenMapper
 jest.mock("../../../src/services/MinIoService", () => ({
   __esModule: true,
   default: {
@@ -10,7 +9,6 @@ import { CitizenMapper } from "../../../src/mappers/CitizenMapper";
 import { InternalUserMapper } from "../../../src/mappers/InternalUserMapper";
 import MinIoService from "../../../src/services/MinIoService";
 
-// Get the mock function after import
 const mockGetPresignedUrl = MinIoService.getPresignedUrl as jest.MockedFunction<
   typeof MinIoService.getPresignedUrl
 >;
@@ -21,7 +19,7 @@ describe("mappers", () => {
     mockGetPresignedUrl.mockClear();
   });
 
-  it("CitizenMapper defaults status to ACTIVE when missing", async () => {
+  it("CitizenMapper defaults status to PENDING when missing", async () => {
     const createdAt = new Date();
     mockGetPresignedUrl.mockResolvedValue("");
     const dto = await CitizenMapper.toDTO({
@@ -33,7 +31,7 @@ describe("mappers", () => {
       createdAt,
     } as any);
 
-    expect(dto.status).toBe("ACTIVE");
+    expect(dto.status).toBe("PENDING");
     expect(dto).toMatchObject({
       id: 1,
       email: "c@city.com",
@@ -156,36 +154,64 @@ describe("mappers", () => {
     }
   });
 
-  it("InternalUserMapper returns role name when available", () => {
+  it("InternalUserMapper returns roles when available", () => {
     const createdAt = new Date();
+
     const dto = InternalUserMapper.toDTO({
       id: 2,
       email: "admin@city.com",
       firstName: "Admin",
       lastName: "User",
       createdAt,
-      role: { role: "ADMIN" },
+      roles: [
+        {
+          role: {
+            id: 1,
+            role: "ADMIN",
+            office: null,
+          },
+        },
+      ],
       status: "ACTIVE",
     } as any);
 
-    expect(dto.role).toBe("ADMIN");
+    expect(dto.roles).toEqual([
+      {
+        id: 1,
+        name: "ADMIN",
+        officeId: null,
+      },
+    ]);
   });
 
-  it("InternalUserMapper falls back to role id when name missing", () => {
+  it("InternalUserMapper maps role even if name missing", () => {
     const dto = InternalUserMapper.toDTO({
       id: 3,
       email: "staff@city.com",
       firstName: "Staff",
       lastName: "Member",
       createdAt: new Date(),
-      role: { id: 7 },
+      roles: [
+        {
+          role: {
+            id: 7,
+            role: undefined,
+            office: null,
+          },
+        },
+      ],
     } as any);
 
-    expect(dto.role).toBe(7);
-    expect(dto.status).toBe("ACTIVE");
+    expect(dto.roles).toEqual([
+      {
+        id: 7,
+        name: undefined,
+        officeId: null,
+      },
+    ]);
   });
 
-  it("InternalUserMapper defaults role to 0 when role object missing entirely", () => {
+  it("InternalUserMapper returns empty roles array when no roles", () => {
     const dto = InternalUserMapper.toDTO({
       id: 4,
       email: "norole@city.com",
@@ -194,6 +220,6 @@ describe("mappers", () => {
       createdAt: new Date(),
     } as any);
 
-    expect(dto.role).toBe(0);
+    expect(dto.roles).toEqual([]);
   });
 });

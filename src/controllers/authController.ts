@@ -54,6 +54,13 @@ class AuthController {
       const result = await loginFn(dto);
       res.status(200).json(result);
     } catch (err) {
+      if (err instanceof Error && err.message === "EMAIL_NOT_VERIFIED") {
+        res.status(403).json({
+          error: "EMAIL_NOT_VERIFIED",
+          message: "Please verify your email before logging in",
+        });
+        return;
+      }
       if (err instanceof Error && err.message === "Invalid credentials") {
         res.status(401).json({ error: "Invalid credentials" });
         return;

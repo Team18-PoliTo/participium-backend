@@ -327,4 +327,153 @@ router.get(
   internalUserController.getReportsByOffice.bind(internalUserController)
 );
 
+/**
+ * @swagger
+ * /internal/reports/{id}/comments:
+ *   get:
+ *     summary: Get comments for a report (internal only)
+ *     description: Returns all comments associated with a report. Only internal users can access this endpoint.
+ *     tags: [Internal]
+ *     security:
+ *       - internalPassword: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Report ID
+ *     responses:
+ *       200:
+ *         description: List of comments for the report
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   comment:
+ *                     type: string
+ *                   commentOwner_id:
+ *                     type: integer
+ *                   creation_date:
+ *                     type: string
+ *                     format: date-time
+ *                   report_id:
+ *                     type: integer
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Only internal users
+ *       404:
+ *         description: Report not found
+ */
+router.get(
+  "/reports/:id/comments",
+  internalUserController.getReportComments.bind(internalUserController)
+);
+
+/**
+ * @swagger
+ * /internal/reports/{id}/comments:
+ *   post:
+ *     summary: Create a comment on a report (internal only)
+ *     description: Allows internal users to add a comment to a report. The comment is associated with the authenticated user.
+ *     tags: [Internal]
+ *     security:
+ *       - internalPassword: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: Report ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - comment
+ *             properties:
+ *               comment:
+ *                 type: string
+ *                 description: The comment text
+ *                 example: "This issue has been reviewed and assigned to the maintenance team."
+ *     responses:
+ *       201:
+ *         description: Comment created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 comment:
+ *                   type: string
+ *                 commentOwner_id:
+ *                   type: integer
+ *                 creation_date:
+ *                   type: string
+ *                   format: date-time
+ *                 report_id:
+ *                   type: integer
+ *       400:
+ *         description: Invalid request or empty comment
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Only internal users
+ *       404:
+ *         description: Report or user not found
+ */
+router.post(
+  "/reports/:id/comments",
+  internalUserController.createReportComment.bind(internalUserController)
+);
+
+/**
+ * @swagger
+ * /internal/delegated-reports:
+ *   get:
+ *     summary: Get all reports delegated by the authenticated user
+ *     description: Retrieve all reports that were delegated by the authenticated technical officer. Returns reports with all report fields plus a delegatedAt timestamp indicating when the delegation occurred. Only technical officers can access this endpoint.
+ *     tags: [Internal Reports]
+ *     security:
+ *       - internalPassword: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved delegated reports
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 allOf:
+ *                   - $ref: '#/components/schemas/ReportDTO'
+ *                   - type: object
+ *                     properties:
+ *                       delegatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Timestamp when the report was delegated
+ *                         example: "2024-01-15T10:30:00Z"
+ *       401:
+ *         description: Unauthorized - Missing or invalid authentication token
+ *       403:
+ *         description: Forbidden - User is not an internal user or role does not have permission to delegate reports
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  "/delegated-reports",
+  internalUserController.getDelegatedReports.bind(internalUserController)
+);
+
 export default router;

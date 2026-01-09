@@ -1,5 +1,7 @@
 import { ReportMapper } from "../../mappers/ReportMapper";
 import { ReportDTO } from "../../models/dto/ReportDTO";
+import DelegatedReportDTO from "../../models/dto/DelegatedReportDTO";
+import DelegatedReportMapper from "../../mappers/DelegatedReportMapper";
 import {
   CreateReportRequestDTO,
   UpdateReportRequestDTO,
@@ -24,6 +26,10 @@ import {
   EXTERNAL_MAINTAINER_ROLE,
   EXTERNAL_MAINTAINER_ROLE_ID,
 } from "../../constants/StatusTransitions";
+import { emitCommentCreated } from "../../ws/internalSocket";
+import { IDelegatedReportRepository } from "../../repositories/IDelegatedReportRepository";
+import DelegatedReportRepository from "../../repositories/implementation/DelegatedReportRepository";
+import { ReportViewContext } from "../../constants/ReportViewContext";
 class ReportService implements IReportService {
   constructor(
     private readonly reportRepository: IReportRepository = new ReportRepository(),
@@ -31,7 +37,8 @@ class ReportService implements IReportService {
     private readonly categoryRepository: CategoryRepository = new CategoryRepository(),
     private readonly categoryRoleRepository: CategoryRoleRepository = new CategoryRoleRepository(),
     private readonly internalUserRepository: InternalUserRepository = new InternalUserRepository(),
-    private readonly companyCategoryRepository = new CompanyCategoryRepository()
+    private readonly companyCategoryRepository = new CompanyCategoryRepository(),
+    private readonly delegatedReportRepository: IDelegatedReportRepository = new DelegatedReportRepository()
   ) {}
 
   /**
@@ -90,16 +97,14 @@ class ReportService implements IReportService {
     // since they are ordered by activeTasks ASC, the first one has the minimum
     const chosenMaintainer = maintainersInCompany[0];
 
-    if (chosenMaintainer) {
-      await this.internalUserRepository.incrementActiveTasks(
-        chosenMaintainer.id
-      );
-      return chosenMaintainer;
-    } else {
+    if (!chosenMaintainer) {
       throw new Error(
         "This company does not have maintainers available at the moment, please choose another company"
       );
     }
+
+    await this.internalUserRepository.incrementActiveTasks(chosenMaintainer.id);
+    return chosenMaintainer;
   }
 
   async create(
@@ -123,6 +128,7 @@ class ReportService implements IReportService {
     // Create report in database (without photo paths initially)
     const newReport = await this.reportRepository.create({
       citizen: citizen,
+      isAnonymous: data.isAnonymous,
       title: data.title,
       description: data.description,
       category: category,
@@ -168,10 +174,13 @@ class ReportService implements IReportService {
     }
   }
 
-  async getReportsByStatus(status: string): Promise<ReportDTO[]> {
+  async getReportsByStatus(
+    status: string,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByStatus(status);
     return await Promise.all(
-      reports.map((report) => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report, viewContext))
     );
   }
 
@@ -206,6 +215,68 @@ class ReportService implements IReportService {
     return ReportMapper.toDTO(report);
   }
 
+  async getCommentsByReportId(reportId: number): Promise<any[]> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+    const comments =
+      await this.reportRepository.findCommentsByReportId(reportId);
+    return comments.map((c) => ({
+      id: c.id,
+      comment: c.comment,
+      commentOwner_id: (c as any).comment_owner?.id,
+      creation_date: (c as any).creation_date,
+      report_id: reportId,
+    }));
+  }
+
+  async createComment(
+    reportId: number,
+    userId: number,
+    commentText: string
+  ): Promise<any> {
+    const report = await this.reportRepository.findById(reportId);
+    if (!report) {
+      throw new Error("Report not found");
+    }
+
+    const user = await this.internalUserRepository.findById(userId);
+    if (!user) {
+      throw new Error("Internal user not found");
+    }
+
+    if (!commentText || commentText.trim().length === 0) {
+      throw new Error("Comment text cannot be empty");
+    }
+
+    const comment = await this.reportRepository.createComment(
+      reportId,
+      userId,
+      commentText.trim()
+    );
+
+    const newCommentPayload = {
+      id: comment.id,
+      comment: comment.comment,
+      commentOwner_id: (comment as any).comment_owner?.id,
+      creation_date: (comment as any).creation_date,
+      report_id: reportId,
+    };
+
+    try {
+      emitCommentCreated(reportId, newCommentPayload);
+    } catch (e) {
+      console.error(
+        "Failed to emit comment.created via WebSocket for report",
+        reportId,
+        e
+      );
+    }
+
+    return newCommentPayload;
+  }
+
   async updateReport(
     reportId: number,
     data: UpdateReportRequestDTO,
@@ -232,10 +303,36 @@ class ReportService implements IReportService {
       throw new Error("Internal user not found");
     }
 
+    // Extract role names from user object
+    // Support both old format (role) and new format (roles array)
+    let userRoleNames: string[] = [];
+
+    if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+      // New format: roles array
+      userRoleNames = user.roles
+        .filter((ur) => ur.role)
+        .map((ur) => ur.role.role);
+    } else if ((user as any).role && (user as any).role.name) {
+      // Old format: single role object with name property
+      userRoleNames = [(user as any).role.name];
+    } else if ((user as any).role && typeof (user as any).role === "string") {
+      // Old format: single role string
+      userRoleNames = [(user as any).role];
+    }
+
+    // Fallback to userRole parameter if no roles found in user object
+    if (userRoleNames.length === 0 && userRole) {
+      userRoleNames = [userRole];
+    }
+
+    // Use the first role name for backward compatibility, or combine them
+    const primaryUserRole = userRoleNames.length > 0 ? userRoleNames[0] : "";
+    // For role checking, we'll check if any role matches
+    const userRolesString = userRoleNames.join(", ");
+
     const isExternalMaintainer =
-      userRole === EXTERNAL_MAINTAINER_ROLE ||
-      userRole?.includes(EXTERNAL_MAINTAINER_ROLE) ||
-      user.role?.id === EXTERNAL_MAINTAINER_ROLE_ID;
+      userRoleNames.includes(EXTERNAL_MAINTAINER_ROLE) ||
+      user.roles?.some((role) => role.id === EXTERNAL_MAINTAINER_ROLE_ID);
 
     const isAssignedUser = report.assignedTo?.id === user.id;
 
@@ -251,11 +348,11 @@ class ReportService implements IReportService {
       );
     }
 
-    // Validate status transition
+    // Validate status transition - check if any of the user's roles match
     const transitionResult = validateStatusTransition(
       report.status,
       data.status,
-      userRole || "",
+      userRolesString || primaryUserRole || "",
       isExternalMaintainer,
       isAssignedUser
     );
@@ -265,10 +362,8 @@ class ReportService implements IReportService {
     }
 
     // PR Officers can update only Pending Approval
-    if (
-      userRole === "Public Relations Officer" ||
-      userRole?.includes("Public Relations Officer")
-    ) {
+    const isPROfficer = userRoleNames.includes("Public Relations Officer");
+    if (isPROfficer) {
       if (report.status !== ReportStatus.PENDING_APPROVAL) {
         throw new Error(
           `PR officers can only update reports with status "${ReportStatus.PENDING_APPROVAL}". This report status is "${report.status}".`
@@ -339,11 +434,14 @@ class ReportService implements IReportService {
       }
     }
 
-    // Resolve → decrement tasks
+    // Resolve → decrement tasks and remove from delegated_reports
     if (data.status === ReportStatus.RESOLVED && report.assignedTo) {
       await this.internalUserRepository.decrementActiveTasks(
         report.assignedTo.id
       );
+
+      // Remove from delegated_reports if this was a delegated report
+      await this.delegatedReportRepository.deleteByReportId(reportId);
     }
 
     // Save final changes
@@ -381,6 +479,30 @@ class ReportService implements IReportService {
       );
     }
 
+    // Get the delegating officer's role to ensure they can delegate
+    const delegatingOfficer =
+      await this.internalUserRepository.findById(userId);
+    if (
+      !delegatingOfficer ||
+      !Array.isArray(delegatingOfficer.roles) ||
+      delegatingOfficer.roles.length === 0
+    ) {
+      throw new Error("Delegating officer not found");
+    }
+
+    // Check that the officer's role can delegate (not 0, 1, 10, 28)
+    const nonDelegatingRoles = [0, 1, 10, 28];
+    const hasForbiddenRole = delegatingOfficer.roles.some((role) =>
+      nonDelegatingRoles.includes(role.id)
+    );
+    if (hasForbiddenRole) {
+      throw new Error("Your role does not have permission to delegate reports");
+    }
+
+    if (hasForbiddenRole) {
+      throw new Error("Your role does not have permission to delegate reports");
+    }
+
     // checks that the category sent actually handles that category
     // a bit overkill but better to be sure
     const companies =
@@ -412,20 +534,27 @@ class ReportService implements IReportService {
       selectedMaintainer
     );
 
+    // Insert into delegated_reports table
+    await this.delegatedReportRepository.create(reportId, userId);
+
     return ExternalMaintainerMapper.toDTO(report.assignedTo);
   }
 
-  async getReportsByUser(citizenId: number): Promise<ReportDTO[]> {
+  async getReportsByUser(
+    citizenId: number,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]> {
     const reports = await this.reportRepository.findByUser(citizenId);
 
     return await Promise.all(
-      reports.map((report) => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report, viewContext))
     );
   }
 
   async getReportsForStaff(
     staffId: number,
-    statusFilter?: string
+    statusFilter?: string,
+    viewContext?: ReportViewContext
   ): Promise<ReportDTO[]> {
     let reports = await this.reportRepository.findByAssignedStaff(staffId);
 
@@ -435,24 +564,31 @@ class ReportService implements IReportService {
     }
 
     return await Promise.all(
-      reports.map((report) => ReportMapper.toDTO(report))
+      reports.map((report) => ReportMapper.toDTO(report, viewContext))
     );
   }
 
-  async getReportsByOffice(staffId: number): Promise<ReportDTO[]> {
+  async getReportsByOffice(
+    staffId: number,
+    viewContext?: ReportViewContext
+  ): Promise<ReportDTO[]> {
     const staff =
       await this.internalUserRepository.findByIdWithRoleAndOffice(staffId);
+
     if (!staff) {
       throw new Error("Internal user not found");
     }
 
-    const officeId = staff.role.office?.id;
+    const officeId = staff.roles
+      ?.map((ur) => ur.role.office?.id)
+      .find((id): id is number => typeof id === "number");
+
     if (!officeId) {
       return [];
     }
-
     const categories =
       await this.categoryRoleRepository.findCategoriesByOffice(officeId);
+
     const categoryIds = categories.map((c) => c.id);
 
     if (categoryIds.length === 0) {
@@ -461,7 +597,19 @@ class ReportService implements IReportService {
 
     const reports = await this.reportRepository.findByCategoryIds(categoryIds);
 
-    return Promise.all(reports.map((r) => ReportMapper.toDTO(r)));
+    return Promise.all(reports.map((r) => ReportMapper.toDTO(r, viewContext)));
+  }
+
+  async getDelegatedReportsByUser(
+    delegatedById: number
+  ): Promise<DelegatedReportDTO[]> {
+    const delegatedReports =
+      await this.delegatedReportRepository.findReportsByDelegatedBy(
+        delegatedById
+      );
+    return Promise.all(
+      delegatedReports.map((dr) => DelegatedReportMapper.toDTO(dr))
+    );
   }
 }
 export const reportService = new ReportService();

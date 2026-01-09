@@ -10,6 +10,10 @@ import {
   IsArray,
   ArrayMinSize,
   ArrayMaxSize,
+  IsBoolean,
+  ArrayNotEmpty,
+  Length,
+  Matches,
 } from "class-validator";
 
 export class RegisterCitizenRequestDTO {
@@ -58,21 +62,27 @@ export class RegisterInternalUserRequestDTO {
 export class UpdateInternalUserRequestDTO {
   @IsOptional()
   @IsEmail({}, { message: "Invalid email format" })
-  newEmail?: string;
+  email?: string;
+
   @IsOptional()
   @IsString()
-  newFirstName?: string;
+  firstName?: string;
+
   @IsOptional()
   @IsString()
-  newLastName?: string;
+  lastName?: string;
+
   @IsOptional()
-  @IsInt({ message: "newRoleId must be a number" })
-  @Min(0)
-  newRoleId?: number;
+  @IsArray({ message: "roleIds must be an array" })
+  @ArrayNotEmpty({ message: "roleIds cannot be empty" })
+  @IsInt({ each: true, message: "each roleId must be a number" })
+  @Min(0, { each: true })
+  roleIds?: number[];
+
   @IsOptional()
-  @IsInt({ message: "newCompanyId must be a number" })
-  @Min(0)
-  newCompanyId?: number;
+  @IsInt({ message: "companyId must be a number" })
+  @Min(1)
+  companyId?: number;
 }
 
 export class CreateReportRequestDTO {
@@ -99,6 +109,10 @@ export class CreateReportRequestDTO {
     latitude: number;
     longitude: number;
   };
+
+  @IsOptional()
+  @IsBoolean({ message: "isAnonymous must be a boolean" })
+  isAnonymous?: boolean;
 }
 
 export class UpdateReportRequestDTO {
@@ -132,4 +146,31 @@ export class GetAssignedReportsForMapRequestDTO {
     latitude: number;
     longitude: number;
   }[];
+}
+
+export class CreateCommentRequestDTO {
+  @IsString({ message: "Comment must be a string" })
+  @IsNotEmpty({ message: "Comment text is required" })
+  @MinLength(1, { message: "Comment cannot be empty" })
+  comment: string;
+}
+
+export class VerifyEmailRequestDTO {
+  @IsEmail({}, { message: "Invalid email format" })
+  @IsNotEmpty({ message: "Email is required" })
+  email: string;
+
+  @IsString({ message: "Verification code must be a string" })
+  @IsNotEmpty({ message: "Verification code is required" })
+  @Length(6, 6, { message: "Verification code must be exactly 6 digits" })
+  @Matches(/^\d{6}$/, {
+    message: "Verification code must contain only numbers",
+  })
+  code: string;
+}
+
+export class ResendVerificationCodeRequestDTO {
+  @IsEmail({}, { message: "Invalid email format" })
+  @IsNotEmpty({ message: "Email is required" })
+  email: string;
 }

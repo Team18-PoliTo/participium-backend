@@ -41,11 +41,10 @@ export const requireAuth = (
       return;
     }
 
-    // Store the authenticated user info in the request object
     req.auth = {
       sub: Number(decoded.sub),
       kind: decoded.kind,
-      role: decoded.role,
+      roles: decoded.roles,
       email: decoded.email,
     };
 
@@ -75,24 +74,43 @@ export const requireRole = (allowedRoles: string[]) => {
         return;
       }
 
-      let role = req.auth.role;
+      if (Array.isArray(req.auth.roles)) {
+        const hasRole = req.auth.roles.some(
+          (r: any) => typeof r === "string" && allowed.has(r.toUpperCase())
+        );
 
-      // If role is missing but it's an internal user, fetch from DB and cache it
-      if (!role && req.auth.kind === "internal") {
+        if (hasRole) {
+          next();
+          return;
+        }
+      }
+
+      if (req.auth.kind === "internal") {
         const internalUser = await internalUserRepo.findById(req.auth.sub);
-        role = (internalUser as any)?.role?.name as string | undefined;
-        if (role) req.auth.role = role;
+
+        const roles = internalUser?.roles ?? [];
+
+        const hasRole = roles.some(
+          (ur) =>
+            ur.role && ur.role.role && allowed.has(ur.role.role.toUpperCase())
+        );
+
+        if (hasRole) {
+          req.auth.roles = roles
+            .filter((ur) => ur.role)
+            .map((ur) => ur.role.role);
+          next();
+          return;
+        }
       }
 
-      if (!role || !allowed.has(String(role).toUpperCase())) {
-        res
-          .status(403)
-          .json({ message: "Forbidden: insufficient permissions" });
-        return;
+      res.status(403).json({ message: "Forbidden: insufficient permissions" });
+    } catch (error_) {
+      // Avoid leaking internals to clients, but keep a server-side signal for debugging.
+      // (Guarded to keep test output clean.)
+      if (process.env.NODE_ENV !== "test") {
+        console.error("Cannot verify role", error_);
       }
-
-      next();
-    } catch {
       res.status(500).json({ message: "Cannot verify role" });
     }
   };
