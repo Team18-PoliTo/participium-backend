@@ -116,7 +116,8 @@ export class InitialSeed1000000000001 implements MigrationInterface {
             (7, '2I Rete Gas', 'external.mantainers@2iretegas.it', 'Company specialized in gas distribution infrastructure'),
             (8, 'Manital', 'external.mantainers@manital.it', 'Facility management company offering maintenance and infrastructure services'),
             (9, 'Enel X', 'external.mantainers@enelx.it', 'Company specialized in smart city solutions and public lighting'),
-            (10, 'Hera', 'external.mantainers@hera.it', 'Multi-utility company providing energy and environmental services')
+            (10, 'Hera', 'external.mantainers@hera.it', 'Multi-utility company providing energy and environmental services'),
+            (11, 'FixRoads Srl', 'external.mantainers@fixroads.it', 'Company specialized in road maintenance and urban furnishings')
   `
     );
 
@@ -160,7 +161,10 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         (19, 8, 8),  -- Manital
 
         -- 9. Other
-        (20, 9, 10)  -- Hera
+        (20, 9, 10),  -- Hera
+
+        -- 7. Roads and Urban Furnishings (additional)
+        (21, 7, 11)  -- FixRoads Srl
       `
     );
 
@@ -182,7 +186,10 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         (9, 'matteo.colombo@participium.com', 'Matteo', 'Colombo', '${hashedPassword}', 'ACTIVE', NULL),
         (10, 'giulio.spinetti@enelx.it', 'Giulio', 'Spinetti', '${hashedPassword}', 'ACTIVE', 9),
         (11, 'giorgio.nanni@iren.it', 'Giorgio', 'Nanni', '${hashedPassword}', 'ACTIVE', 3),
-        (12, 'francesco.magetti@manital.it', 'Francesco', 'Magetti', '${hashedPassword}', 'ACTIVE', 8)
+        (12, 'francesco.magetti@manital.it', 'Francesco', 'Magetti', '${hashedPassword}', 'ACTIVE', 8),
+        (13, 'mimmo.schillaci@participium.com', 'Mimmo', 'Schillaci', '${hashedPassword}', 'ACTIVE', NULL),
+        (14, 'ada.lovelace@participium.com', 'Ada', 'Lovelace', '${hashedPassword}', 'ACTIVE', NULL),
+        (15, 'antonio.verdi@fixroads.it', 'Antonio', 'Verdi', '${hashedPassword}', 'ACTIVE', 11)
     `);
 
     /**
@@ -201,7 +208,10 @@ export class InitialSeed1000000000001 implements MigrationInterface {
         (9, 17),
         (10, 28),
         (11, 28),
-        (12, 28)
+        (12, 28),
+        (13, 10),  -- Public Relations Officer
+        (14, 11),  -- Street Maintenance Operator
+        (15, 28)   -- External Maintainer
     `);
 
     // Insert Example Citizens
@@ -229,6 +239,12 @@ export class InitialSeed1000000000001 implements MigrationInterface {
             INSERT INTO citizens (id, username, email, firstName, lastName, password, status, isEmailVerified)
             VALUES (4, 'giulia.rossi', 'giulia.rossi@example.com', 'Giulia', 'Rossi', '${hashedPassword}',
                     'ACTIVE', 1) ON CONFLICT (id) DO NOTHING;
+        `);
+
+    await queryRunner.query(`
+            INSERT INTO citizens (id, username, email, firstName, lastName, password, status, isEmailVerified, accountPhotoUrl)
+            VALUES (5, 'rosa.bianca', 'rosa.bianca@email.com', 'Rosa', 'Bianca', '${hashedPassword}',
+                    'ACTIVE', 1, 'citizens/5/profile.jpg') ON CONFLICT (id) DO NOTHING;
         `);
 
     // Reports are now seeded via seedReports.ts after MinIO is initialized

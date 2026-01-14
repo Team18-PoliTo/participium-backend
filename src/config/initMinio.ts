@@ -1,6 +1,7 @@
 import { minioClient, MINIO_BUCKET } from "./minioClient";
 import { AppDataSource } from "./database";
 import { seedReports } from "../data/seed/seedReports";
+import { seedCitizenProfiles } from "../data/seed/seedCitizenProfiles";
 
 export const initMinio = async () => {
   const PROFILE_BUCKET = process.env.MINIO_PROFILE_BUCKET || "profile-photos";
@@ -36,6 +37,12 @@ export const initMinio = async () => {
         `[Seed] Starting report seeding (forceSeed=${forceSeed}). MinIO may be unavailable, uploads will be skipped.`
       );
       await seedReports(AppDataSource, forceSeed);
+      
+      // Seed citizen profile photos
+      console.log(
+        `[Seed] Starting citizen profile photo seeding. MinIO may be unavailable, uploads will be skipped.`
+      );
+      await seedCitizenProfiles(AppDataSource);
     } else {
       console.warn("[Seed] Skipped: AppDataSource not initialized.");
     }
