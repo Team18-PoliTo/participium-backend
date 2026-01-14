@@ -42,6 +42,60 @@ class ReportService implements IReportService {
   ) {}
 
   /**
+   * Selects an internal officer with the least number of active tasks for a given category ID.
+   * Considers all roles that handle the category and selects the officer with the least tasks
+   * across all eligible officers. If multiple officers have the same minimum, one is selected randomly.
+   */
+  private async selectUnoccupiedOfficerByCategory(categoryId: number) {
+    // Get all roles that handle this category
+    const categoryRoleMappings =
+      await this.categoryRoleRepository.findByCategoryId(categoryId);
+
+    if (!categoryRoleMappings || categoryRoleMappings.length === 0) {
+      throw new Error(`No roles found for category ID ${categoryId}`);
+    }
+
+    // Collect all unique officers from all roles that handle this category
+    const officerMap = new Map<number, any>();
+
+    for (const mapping of categoryRoleMappings) {
+      const officersWithRole = await this.internalUserRepository.findByRoleId(
+        mapping.role.id
+      );
+      for (const officer of officersWithRole) {
+        // Use a map to avoid duplicates if an officer has multiple roles for the same category
+        officerMap.set(officer.id, officer);
+      }
+    }
+
+    const allOfficers = Array.from(officerMap.values());
+
+    if (allOfficers.length === 0) {
+      throw new Error(`No officers available for category ID ${categoryId}`);
+    }
+
+    // Sort by active tasks (ascending)
+    allOfficers.sort((a, b) => a.activeTasks - b.activeTasks);
+
+    const minActiveTasks = allOfficers[0].activeTasks;
+    // Officers who have the minimum active tasks
+    const filteredOfficers = allOfficers.filter(
+      (officer) => officer.activeTasks === minActiveTasks
+    );
+
+    console.log(
+      `Officers with the least active tasks (${minActiveTasks}) for category ${categoryId}: ${filteredOfficers.length}`
+    );
+
+    // Randomly selects one officer from those with the least active tasks, if more than one
+    const randomIndex = Math.floor(Math.random() * filteredOfficers.length);
+    const selectedOfficer = filteredOfficers[randomIndex];
+
+    await this.internalUserRepository.incrementActiveTasks(selectedOfficer.id);
+    return selectedOfficer;
+  }
+
+  /**
    * Selects an internal officer with the least number of active tasks for a given role ID.
    * If multiple officers have the same minimum number of active tasks, one is selected randomly.
    */
@@ -402,18 +456,26 @@ class ReportService implements IReportService {
 
     // Validate before assignment
     if (data.status === ReportStatus.ASSIGNED) {
-      const categoryRoleMapping =
-        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
+      const categoryRoleMappings =
+        await this.categoryRoleRepository.findByCategoryId(categoryToUse.id);
 
-      if (!categoryRoleMapping) {
+      if (!categoryRoleMappings || categoryRoleMappings.length === 0) {
         throw new Error(`No role found for category: ${categoryNameToUse}`);
       }
 
-      const officersWithRole = await this.internalUserRepository.findByRoleId(
-        categoryRoleMapping.role.id
-      );
+      // Check if any role has available officers
+      let anyOfficersAvailable = false;
+      for (const mapping of categoryRoleMappings) {
+        const officersWithRole = await this.internalUserRepository.findByRoleId(
+          mapping.role.id
+        );
+        if (officersWithRole.length > 0) {
+          anyOfficersAvailable = true;
+          break;
+        }
+      }
 
-      if (officersWithRole.length === 0) {
+      if (!anyOfficersAvailable) {
         throw new Error(
           `No officers available for category: ${categoryNameToUse}. Report remains in Pending Approval state.`
         );
@@ -424,14 +486,9 @@ class ReportService implements IReportService {
     let assignedTo = report.assignedTo;
 
     if (data.status === ReportStatus.ASSIGNED) {
-      const categoryRoleMapping =
-        await this.categoryRoleRepository.findRoleByCategory(categoryNameToUse);
-
-      if (categoryRoleMapping) {
-        assignedTo = await this.selectUnoccupiedOfficerByRole(
-          categoryRoleMapping.role.id
-        );
-      }
+      assignedTo = await this.selectUnoccupiedOfficerByCategory(
+        categoryToUse.id
+      );
     }
 
     // Resolve → decrement tasks and remove from delegated_reports

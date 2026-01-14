@@ -75,9 +75,10 @@ export class InternalUserRepository implements IInternalUserRepository {
   async findByRoleId(roleId: number): Promise<InternalUserDAO[]> {
     return await this.repo
       .createQueryBuilder("user")
-      .leftJoinAndSelect("user.roles", "role")
+      .leftJoinAndSelect("user.roles", "ur")
+      .leftJoinAndSelect("ur.role", "role")
       .leftJoinAndSelect("user.company", "company")
-      .where("role.id = :roleId", { roleId })
+      .where("ur.roleId = :roleId", { roleId })
       .getMany();
   }
 
