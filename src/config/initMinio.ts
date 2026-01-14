@@ -37,7 +37,7 @@ export const initMinio = async () => {
         `[Seed] Starting report seeding (forceSeed=${forceSeed}). MinIO may be unavailable, uploads will be skipped.`
       );
       await seedReports(AppDataSource, forceSeed);
-      
+
       // Seed citizen profile photos
       console.log(
         `[Seed] Starting citizen profile photo seeding. MinIO may be unavailable, uploads will be skipped.`

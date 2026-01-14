@@ -65,7 +65,7 @@ export async function seedCitizenProfiles(
       // 1. Extract filename from accountPhotoUrl (e.g., "profile.jpg" from "citizens/5/profile.jpg")
       const urlParts = citizen.accountPhotoUrl.split("/");
       const expectedFilename = urlParts[urlParts.length - 1]; // "profile.jpg"
-      
+
       // 2. Also try citizen ID-based filenames (e.g., "5.jpg", "5.png")
       const possibleFilenames = [
         expectedFilename, // "profile.jpg"
@@ -103,8 +103,8 @@ export async function seedCitizenProfiles(
           ext === ".png"
             ? "image/png"
             : ext === ".jpeg" || ext === ".jpg"
-            ? "image/jpeg"
-            : "image/jpeg"; // default
+              ? "image/jpeg"
+              : "image/jpeg"; // default
 
         // Use the accountPhotoUrl as the MinIO path
         const minioPath = citizen.accountPhotoUrl;
@@ -141,4 +141,3 @@ export async function seedCitizenProfiles(
 }
 
 export default seedCitizenProfiles;
-
