@@ -19,7 +19,14 @@ export class ReportRepository implements IReportRepository {
   async findById(id: number): Promise<ReportDAO | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ["citizen", "category", "assignedTo", "assignedTo.company"],
+      relations: [
+        "citizen",
+        "category",
+        "assignedTo",
+        "assignedTo.company",
+        "delegations",
+        "delegations.delegatedBy",
+      ],
     });
   }
 

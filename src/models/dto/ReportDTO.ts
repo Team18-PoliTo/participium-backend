@@ -31,4 +31,5 @@ export class ReportDTO {
   status: string;
   explanation?: string | null;
   assignedTo?: AssignedOfficerDTO | null;
+  delegatedById?: number | null;
 }

@@ -47,6 +47,11 @@ export class ReportMapper {
     const showRealCitizen =
       viewContext === ReportViewContext.INTERNAL || !isAnonymous;
 
+    const delegatedById =
+      reportDAO.delegations && reportDAO.delegations.length > 0
+        ? reportDAO.delegations[0].delegatedBy.id
+        : null;
+
     return {
       id: reportDAO.id,
       isAnonymous,
@@ -66,6 +71,7 @@ export class ReportMapper {
       status: reportDAO.status,
       explanation: reportDAO.explanation,
       assignedTo,
+      delegatedById,
     };
   }
 

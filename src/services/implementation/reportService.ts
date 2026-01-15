@@ -317,8 +317,10 @@ class ReportService implements IReportService {
     const newCommentPayload = {
       id: comment.id,
       comment: comment.comment,
-      commentOwner_id: (comment as any).comment_owner?.id,
-      creation_date: (comment as any).creation_date,
+      commentOwner_id: comment.comment_owner?.id,
+      commentOwner_name: `${user.firstName} ${user.lastName}`,
+      commentOwner_company: user.company?.name,
+      creation_date: comment.creation_date,
       report_id: reportId,
     };
 

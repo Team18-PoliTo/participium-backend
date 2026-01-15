@@ -12,6 +12,7 @@ import InternalUserDAO from "./InternalUserDAO";
 import CategoryDAO from "./CategoryDAO";
 import { ReportStatus } from "../../constants/ReportStatus";
 import CommentDAO from "./CommentDAO";
+import DelegatedReportDAO from "./DelegatedReportDAO";
 
 @Entity("reports")
 class ReportDAO {
@@ -82,6 +83,11 @@ class ReportDAO {
     cascade: true,
   })
   comments: CommentDAO[];
+
+  @OneToMany(() => DelegatedReportDAO, (dr) => dr.report, {
+    nullable: true,
+  })
+  delegations: DelegatedReportDAO[];
 }
 
 export default ReportDAO;
