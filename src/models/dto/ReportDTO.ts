@@ -3,6 +3,7 @@ export class AssignedOfficerDTO {
   email: string;
   firstName: string;
   lastName: string;
+  companyName?: string;
 }
 
 export class CategoryDTO {

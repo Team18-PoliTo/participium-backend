@@ -279,8 +279,12 @@ class ReportService implements IReportService {
     return comments.map((c) => ({
       id: c.id,
       comment: c.comment,
-      commentOwner_id: (c as any).comment_owner?.id,
-      creation_date: (c as any).creation_date,
+      commentOwner_id: c.comment_owner?.id,
+      commentOwner_name: c.comment_owner
+        ? `${c.comment_owner.firstName} ${c.comment_owner.lastName}`
+        : "Unknown",
+      commentOwner_company: c.comment_owner?.company?.name,
+      creation_date: c.creation_date,
       report_id: reportId,
     }));
   }

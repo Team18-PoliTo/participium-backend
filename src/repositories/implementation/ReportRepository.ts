@@ -19,7 +19,7 @@ export class ReportRepository implements IReportRepository {
   async findById(id: number): Promise<ReportDAO | null> {
     return await this.repo.findOne({
       where: { id },
-      relations: ["citizen", "category", "assignedTo"],
+      relations: ["citizen", "category", "assignedTo", "assignedTo.company"],
     });
   }
 
@@ -118,7 +118,7 @@ export class ReportRepository implements IReportRepository {
     const commentRepo = AppDataSource.getRepository(CommentDAO);
     return commentRepo.find({
       where: { report: { id: reportId } },
-      relations: ["comment_owner"],
+      relations: ["comment_owner", "comment_owner.company"],
       order: { creation_date: "ASC" },
     });
   }

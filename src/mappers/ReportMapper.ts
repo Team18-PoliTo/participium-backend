@@ -22,6 +22,7 @@ export class ReportMapper {
         email: reportDAO.assignedTo.email,
         firstName: reportDAO.assignedTo.firstName,
         lastName: reportDAO.assignedTo.lastName,
+        companyName: reportDAO.assignedTo.company?.name,
       };
     }
 
