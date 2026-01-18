@@ -99,12 +99,9 @@ export async function seedCitizenProfiles(
       try {
         const imageBuffer = fs.readFileSync(photoPath);
         const ext = path.extname(foundFilename!).toLowerCase();
-        const mimeType =
-          ext === ".png"
-            ? "image/png"
-            : ext === ".jpeg" || ext === ".jpg"
-              ? "image/jpeg"
-              : "image/jpeg"; // default
+        const mimeType: "image/png" | "image/jpeg" =
+          ext === ".png" ? "image/png" : "image/jpeg";
+
 
         // Use the accountPhotoUrl as the MinIO path
         const minioPath = citizen.accountPhotoUrl;
