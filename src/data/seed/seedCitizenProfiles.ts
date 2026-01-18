@@ -102,7 +102,6 @@ export async function seedCitizenProfiles(
         const mimeType: "image/png" | "image/jpeg" =
           ext === ".png" ? "image/png" : "image/jpeg";
 
-
         // Use the accountPhotoUrl as the MinIO path
         const minioPath = citizen.accountPhotoUrl;
 
